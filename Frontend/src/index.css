@@ -1,0 +1,237 @@
+@import "tailwindcss";
+
+@theme {
+  /* ── Medical Blue Design System ─────────────────────────────── */
+  --color-primary:                  #0A4DBF;
+  --color-primary-container:        #1A5FD4;
+  --color-primary-fixed:            #EAF2FF;
+  --color-primary-fixed-dim:        #C5DAFF;
+  --color-on-primary:               #FFFFFF;
+  --color-on-primary-container:     #FFFFFF;
+  --color-on-primary-fixed:         #001848;
+  --color-on-primary-fixed-variant: #0A4DBF;
+  --color-inverse-primary:          #C5DAFF;
+
+  --color-secondary:                #1976D2;
+  --color-secondary-container:      #BBDEFB;
+  --color-secondary-fixed:          #DDEEFF;
+  --color-secondary-fixed-dim:      #90CAF9;
+  --color-on-secondary:             #FFFFFF;
+  --color-on-secondary-container:   #0D47A1;
+  --color-on-secondary-fixed:       #0D2A5C;
+  --color-on-secondary-fixed-variant:#0A4DBF;
+
+  --color-tertiary:                 #0BA058;
+  --color-tertiary-container:       #006844;
+  --color-tertiary-fixed:           #A8F5C8;
+  --color-tertiary-fixed-dim:       #65DCA4;
+  --color-on-tertiary:              #FFFFFF;
+  --color-on-tertiary-container:    #72E9AF;
+  --color-on-tertiary-fixed:        #002113;
+  --color-on-tertiary-fixed-variant:#005235;
+
+  --color-surface:                  #FFFFFF;
+  --color-surface-dim:              #DAE3FF;
+  --color-surface-bright:           #FFFFFF;
+  --color-surface-container-lowest: #FFFFFF;
+  --color-surface-container-low:    #F5F8FF;
+  --color-surface-container:        #EAF2FF;
+  --color-surface-container-high:   #DEE8FF;
+  --color-surface-container-highest:#D0DFFF;
+  --color-surface-tint:             #0A4DBF;
+  --color-surface-variant:          #EAF2FF;
+  --color-inverse-surface:          #0D1B3E;
+  --color-inverse-on-surface:       #EAF2FF;
+
+  --color-on-surface:               #0D1B3E;
+  --color-on-surface-variant:       #445572;
+  --color-on-background:            #0D1B3E;
+  --color-background:               #F8FAFF;
+
+  --color-outline:                  #7B90B8;
+  --color-outline-variant:          #C8D8F0;
+
+  --color-error:                    #D93025;
+  --color-error-container:          #FFDAD6;
+  --color-on-error:                 #FFFFFF;
+  --color-on-error-container:       #93000A;
+
+  /* ── Animations ─────────────────────────────────────────────── */
+  --animate-float:        float 6s ease-in-out infinite;
+  --animate-fade-in:      fadeIn 0.4s ease-out forwards;
+  --animate-slide-up:     slideUp 0.4s cubic-bezier(0.16,1,0.3,1) forwards;
+  --animate-scale-in:     scaleIn 0.3s cubic-bezier(0.16,1,0.3,1) forwards;
+  --animate-progress-bar: load 3s ease-in-out forwards;
+  --animate-pulse-ring:   pulseRing 2s ease-out infinite;
+  --animate-scale-up:     scaleIn 0.25s cubic-bezier(0.16,1,0.3,1) forwards;
+  --animate-shimmer:      shimmer 2.5s infinite;
+
+  @keyframes float {
+    0%   { transform: translateY(0px); }
+    50%  { transform: translateY(-20px); }
+    100% { transform: translateY(0px); }
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.97) translateY(6px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+  }
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.92); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+  @keyframes load {
+    0%   { width: 0%; }
+    100% { width: 100%; }
+  }
+  @keyframes pulseRing {
+    0%   { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(10,77,191,0.4); }
+    70%  { transform: scale(1);    box-shadow: 0 0 0 14px rgba(10,77,191,0); }
+    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(10,77,191,0); }
+  }
+  @keyframes shimmer {
+    0%   { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+  }
+  @keyframes bounce {
+    0%,100% { transform: translateY(0); }
+    50%     { transform: translateY(-8px); }
+  }
+}
+
+/* ── Base ────────────────────────────────────────────────────── */
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: #F8FAFF;
+  margin: 0;
+  padding: 0;
+  max-width: 100%;
+  overflow-x: hidden;
+  color: #0D1B3E;
+}
+
+html {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* ── Glass helpers ───────────────────────────────────────────── */
+.glass-panel {
+  background: rgba(255,255,255,0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+.glass-card {
+  background: rgba(255,255,255,0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.glass-morphism {
+  background: rgba(255,255,255,0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.4);
+}
+.glass-effect {
+  background: rgba(255,255,255,0.15);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* ── Material Symbols ────────────────────────────────────────── */
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+/* ── Progress bar ────────────────────────────────────────────── */
+.progress-bar-fill {
+  width: 0%;
+  animation: load 3s ease-in-out forwards;
+}
+
+/* ── Shimmer ─────────────────────────────────────────────────── */
+.shimmer-bg {
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,0)   0%,
+    rgba(255,255,255,0.35) 50%,
+    rgba(255,255,255,0)   100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2.5s infinite;
+}
+
+/* ── Hide scrollbar ──────────────────────────────────────────── */
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ── Membership card gradients ───────────────────────────────── */
+.plan-individual {
+  background: linear-gradient(135deg, #0A4DBF 0%, #1976D2 100%);
+}
+.plan-family {
+  background: linear-gradient(135deg, #062E8A 0%, #0A4DBF 50%, #1565C0 100%);
+}
+.plan-premium {
+  background: linear-gradient(135deg, #0D1B3E 0%, #062E8A 50%, #0A4DBF 100%);
+}
+
+/* ── Payment method button ───────────────────────────────────── */
+.payment-method-btn {
+  border: 2px solid #C8D8F0;
+  border-radius: 14px;
+  padding: 14px 16px;
+  background: #fff;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.payment-method-btn.active {
+  border-color: #0A4DBF;
+  background: #EAF2FF;
+}
+
+/* ── Membership badge ────────────────────────────────────────── */
+.membership-active {
+  background: linear-gradient(135deg, #0BA058, #008C4A);
+  color: #fff;
+  border-radius: 100px;
+  padding: 3px 12px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+.membership-expired {
+  background: #FFF3E0;
+  color: #E65100;
+  border-radius: 100px;
+  padding: 3px 12px;
+  font-size: 10px;
+  font-weight: 700;
+}
+.membership-none {
+  background: #FFDAD6;
+  color: #D93025;
+  border-radius: 100px;
+  padding: 3px 12px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+/* ── KYC status badges ───────────────────────────────────────── */
+.kyc-pending  { background:#FFF8E1; color:#F59E0B; }
+.kyc-verified { background:#E8F5E9; color:#0BA058; }
+.kyc-rejected { background:#FFDAD6; color:#D93025; }
+
+/* ── Animate spin utility ────────────────────────────────────── */
+.animate-spin { animation: spin 1s linear infinite; }
+.animate-bounce { animation: bounce 1s ease-in-out infinite; }
+.animate-pulse-ring { animation: pulseRing 2s ease-out infinite; }
+.animate-slide-up { animation: slideUp 0.4s cubic-bezier(0.16,1,0.3,1) forwards; }
+.animate-scale-up { animation: scaleIn 0.25s cubic-bezier(0.16,1,0.3,1) forwards; }

@@ -1,0 +1,168 @@
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import BottomNavBar from '../components/Navigation/BottomNavBar';
+
+export default function SupportPage() {
+  const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+  };
+
+  return (
+    <div className="flex-grow flex flex-col bg-surface text-on-surface font-body-md relative pb-24">
+      {/* TopAppBar */}
+      <header className="flex justify-between items-center pl-2 pr-4 w-full h-20 sticky top-0 z-40 bg-surface shadow-sm border-b border-outline-variant/30">
+        <div className="flex items-center gap-3">
+          <img 
+            alt="MedCred Logo" 
+            className="h-16 w-auto object-contain" 
+            src="/FinalLogo.png"
+          />
+        </div>
+        <button 
+          onClick={() => navigate('/notifications')} 
+          className="material-symbols-outlined text-primary p-2 hover:bg-surface-variant rounded-full cursor-pointer"
+        >
+          notifications
+        </button>
+      </header>
+
+      {/* Main Content */}
+      <main className="flex-grow overflow-y-auto p-4 space-y-6 max-w-md mx-auto w-full animate-fade-in">
+        {/* Hero Search Section */}
+        <section className="text-center py-4">
+          <h2 className="text-2xl font-extrabold text-on-surface tracking-tight">How can we help you?</h2>
+          <p className="text-xs text-on-surface-variant mt-2 max-w-[280px] mx-auto leading-relaxed">
+            Search articles, track active claims, or contact our 24/7 medical support team.
+          </p>
+          <div className="relative mt-5 w-full group">
+            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline group-focus-within:text-primary transition-colors text-xl">search</span>
+            <input 
+              className="w-full pl-11 pr-4 py-3 bg-surface-container border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none text-xs" 
+              placeholder="Search 'Claim status', 'Repayment'..." 
+              type="text"
+              value={searchQuery}
+              onChange={handleSearchChange}
+            />
+          </div>
+        </section>
+
+        {/* Action Cards - Bento Layout */}
+        <section className="grid grid-cols-2 gap-3">
+          {/* Raise Ticket */}
+          <div 
+            onClick={() => alert("Creating a new support ticket...")} 
+            className="col-span-2 relative overflow-hidden bg-primary p-4 rounded-2xl flex flex-col justify-between h-36 cursor-pointer hover:shadow-lg transition-all active:scale-[0.98]"
+          >
+            <div className="absolute -right-6 -top-6 w-24 h-24 bg-white/10 rounded-full blur-xl"></div>
+            <span className="material-symbols-outlined text-white text-3xl p-2 bg-white/10 rounded-xl self-start">confirmation_number</span>
+            <div>
+              <h3 className="text-sm font-bold text-white">Raise Ticket</h3>
+              <p className="text-white/80 text-[10px] mt-0.5">Directly report issues with claims or payouts.</p>
+            </div>
+          </div>
+
+          {/* Chat Support */}
+          <div 
+            onClick={() => alert("Connecting to live chat agent...")}
+            className="bg-surface-container-low border border-outline-variant/50 p-4 rounded-2xl flex flex-col justify-between h-36 cursor-pointer hover:shadow-md transition-all active:scale-[0.98]"
+          >
+            <div className="flex justify-between items-start">
+              <span className="material-symbols-outlined text-primary text-2xl">chat</span>
+              <div className="flex items-center gap-1 px-2 py-0.5 bg-tertiary/10 rounded-full">
+                <span className="w-1.5 h-1.5 bg-tertiary rounded-full animate-pulse"></span>
+                <span className="text-tertiary font-bold text-[8px] uppercase">Online</span>
+              </div>
+            </div>
+            <div>
+              <h3 className="text-xs font-bold text-on-surface">Chat Support</h3>
+              <p className="text-on-surface-variant text-[9px] mt-0.5">Response: 2 mins</p>
+            </div>
+          </div>
+
+          {/* FAQ */}
+          <div 
+            onClick={() => alert("Opening Help Center FAQs...")}
+            className="bg-surface-container-low border border-outline-variant/50 p-4 rounded-2xl flex flex-col justify-between h-36 cursor-pointer hover:shadow-md transition-all active:scale-[0.98]"
+          >
+            <span className="material-symbols-outlined text-secondary text-2xl">help_outline</span>
+            <div>
+              <h3 className="text-xs font-bold text-on-surface">FAQ</h3>
+              <p className="text-on-surface-variant text-[9px] mt-0.5">Get instant answers to basic queries.</p>
+            </div>
+          </div>
+
+          {/* Call Support Row */}
+          <a 
+            href="tel:18005552733"
+            className="col-span-2 bg-surface-container-high border border-outline-variant/80 p-4 rounded-2xl flex items-center justify-between cursor-pointer hover:bg-surface-container transition-all active:scale-[0.98]"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center text-primary">
+                <span className="material-symbols-outlined text-xl">call</span>
+              </div>
+              <div>
+                <h3 className="text-xs font-bold text-on-surface">Call Support</h3>
+                <p className="text-on-surface-variant text-[9px]">Priority line for medical credit</p>
+              </div>
+            </div>
+            <span className="text-primary font-bold text-xs">1800-MED-CRED</span>
+          </a>
+        </section>
+
+        {/* Commonly Searched Topics */}
+        <section className="space-y-3">
+          <h3 className="text-xs font-bold text-on-surface-variant uppercase tracking-wider flex items-center gap-1.5">
+            <span className="material-symbols-outlined text-primary text-base">auto_stories</span>
+            Commonly Searched Topics
+          </h3>
+          <div className="space-y-2">
+            <div className="p-3 bg-surface-container-lowest rounded-xl border border-outline-variant/50 hover:border-primary transition-colors cursor-pointer flex gap-3 items-start">
+              <span className="material-symbols-outlined text-outline text-lg">description</span>
+              <div>
+                <p className="font-bold text-xs text-on-surface">Claim Documentation</p>
+                <p className="text-[10px] text-on-surface-variant mt-0.5">Which documents are required for pre-approval?</p>
+              </div>
+            </div>
+            <div className="p-3 bg-surface-container-lowest rounded-xl border border-outline-variant/50 hover:border-primary transition-colors cursor-pointer flex gap-3 items-start">
+              <span className="material-symbols-outlined text-outline text-lg">payments</span>
+              <div>
+                <p className="font-bold text-xs text-on-surface">Loan Repayment</p>
+                <p className="text-[10px] text-on-surface-variant mt-0.5">How to set up auto-debit for monthly EMIs?</p>
+              </div>
+            </div>
+            <div className="p-3 bg-surface-container-lowest rounded-xl border border-outline-variant/50 hover:border-primary transition-colors cursor-pointer flex gap-3 items-start">
+              <span className="material-symbols-outlined text-outline text-lg">security</span>
+              <div>
+                <p className="font-bold text-xs text-on-surface">Account Security</p>
+                <p className="text-[10px] text-on-surface-variant mt-0.5">Resetting your 2FA and secure login tips.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Banner Promo */}
+        <section className="relative rounded-2xl overflow-hidden h-44 shadow-md bg-slate-900">
+          <img 
+            alt="Consultation Support Background" 
+            className="w-full h-full object-cover opacity-20 absolute inset-0"
+            src="https://lh3.googleusercontent.com/aida-public/AB6AXuAupaUjWjUc9Hy3gOtW6iCQV1-nK6kOM1eWaUqGDieca3vXSyrO8VdiLz-GnQ8wiJnoyxbqxvRHsir87vwamiFGjAEBoT5GJX03BLZXdzCYM_HUOeOc_ULx8bt-cBAkBJO3a3Jv6RS7kesFNy1hW8VE6nWib0YLdHrWllxlc8UTPfotjpHscIaf1LkTvClrE8XwFDUoF5ij_U94o2P_Zphou7pHa1Hmj4Jfo0eE9xZSzDz_hxsT_mZhmGdZEZADPKpFMrU-CZcyScil"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/95 to-transparent flex flex-col justify-center p-5 text-white">
+            <h4 className="font-bold text-sm">Need a Specialist?</h4>
+            <p className="text-[10px] opacity-80 mt-1 max-w-[200px] leading-relaxed">
+              Our financial advisors can help you navigate complex medical loan structures.
+            </p>
+            <button className="bg-white text-primary text-[10px] font-bold px-4 py-1.5 rounded-lg w-fit mt-3 hover:bg-surface-container-high transition-colors cursor-pointer">
+              Book Consultation
+            </button>
+          </div>
+        </section>
+      </main>
+
+      <BottomNavBar />
+    </div>
+  );
+}
