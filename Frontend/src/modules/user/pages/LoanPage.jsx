@@ -8,7 +8,7 @@ export default function LoanPage() {
   const [loanAmount, setLoanAmount] = useState(200000);
   const [tenure, setTenure] = useState(12);
   const [applied, setApplied] = useState(false);
-
+  const [isApplying, setIsApplying] = useState(false);
   const isMember = hasMembership();
   const loanEligible = isLoanEligible();
   const daysUntilEligible = getDaysUntilLoanEligible();
@@ -27,9 +27,8 @@ export default function LoanPage() {
   };
 
   const handleApply = () => {
-    setApplied(true);
+    setIsApplying(true);
   };
-
   return (
     <div className="flex-grow flex flex-col bg-surface text-on-surface font-body-md relative pb-24">
       {/* TopAppBar */}
@@ -233,10 +232,20 @@ export default function LoanPage() {
             {/* Apply Action */}
             <button
               onClick={handleApply}
-              className="w-full bg-primary text-white py-3 rounded-xl font-bold shadow-lg hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer text-xs"
+              disabled={isApplying}
+              className={`w-full ${isApplying ? 'bg-primary/80 cursor-wait' : 'bg-primary hover:opacity-90 cursor-pointer'} text-white py-3 rounded-xl font-bold shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-2 text-xs`}
             >
-              <span className="material-symbols-outlined text-base">send</span>
-              Apply Instantly
+              {isApplying ? (
+                <>
+                  <span className="material-symbols-outlined text-base animate-spin">progress_activity</span>
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <span className="material-symbols-outlined text-base">send</span>
+                  Apply Instantly
+                </>
+              )}
             </button>
           </>
         )}

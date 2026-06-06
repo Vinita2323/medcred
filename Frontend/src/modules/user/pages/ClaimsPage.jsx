@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import BottomNavBar from '../components/Navigation/BottomNavBar';
 import { hasMembership } from '../utils/storage';
@@ -41,17 +41,33 @@ export default function ClaimsPage() {
 
   const [selectedClaimId, setSelectedClaimId] = useState('MC-8291');
 
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [formData, setFormData] = useState({ hospital: '', amount: '5000' });
+
+  useEffect(() => {
+    if (isModalOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isModalOpen]);
+
   const handleNewClaim = () => {
-    const hospital = prompt("Enter Hospital Name:");
-    if (!hospital) return;
-    const amountVal = prompt("Enter Claim Amount (INR):", "5000");
-    if (!amountVal) return;
+    setFormData({ hospital: '', amount: '5000' });
+    setIsModalOpen(true);
+  };
+
+  const submitNewClaim = () => {
+    if (!formData.hospital || !formData.amount) return;
 
     const newClaim = {
       id: `MC-${Math.floor(1000 + Math.random() * 9000)}`,
-      hospital,
+      hospital: formData.hospital,
       date: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
-      amount: `₹${parseFloat(amountVal).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`,
+      amount: `₹${parseFloat(formData.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`,
       status: 'Pending',
       type: 'medical_services',
       bg: 'bg-primary-fixed',
@@ -60,6 +76,7 @@ export default function ClaimsPage() {
 
     setClaims([newClaim, ...claims]);
     setSelectedClaimId(newClaim.id);
+    setIsModalOpen(false);
   };
 
   const getStatusClass = (status) => {
@@ -78,20 +95,22 @@ export default function ClaimsPage() {
   const selectedClaim = claims.find(c => c.id === selectedClaimId) || claims[0];
 
   return (
-    <div className="flex-grow flex flex-col bg-surface text-on-surface font-body-md relative pb-24">
-      <header className="flex justify-between items-center pl-2 pr-4 w-full h-20 sticky top-0 z-40 bg-surface shadow-sm border-b border-outline-variant/30">
-        <div className="flex items-center gap-4">
-          <img alt="MedCred Logo" className="h-16 w-auto object-contain" src="/FinalLogo.png" />
-        </div>
-        <button 
-          onClick={() => navigate('/notifications')} 
-          className="w-10 h-10 flex items-center justify-center rounded-full hover:opacity-80 cursor-pointer"
-        >
-          <span className="material-symbols-outlined text-primary">notifications</span>
-        </button>
-      </header>
+    <div className={`flex-grow flex flex-col bg-surface text-on-surface font-body-md relative ${isModalOpen ? 'h-screen overflow-hidden' : 'pb-24'}`}>
+      {!isModalOpen && (
+        <header className="flex justify-between items-center pl-2 pr-4 w-full h-20 sticky top-0 z-40 bg-surface shadow-sm border-b border-outline-variant/30">
+          <div className="flex items-center gap-4">
+            <img alt="MedCred Logo" className="h-16 w-auto object-contain" src="/FinalLogo.png" />
+          </div>
+          <button 
+            onClick={() => navigate('/notifications')} 
+            className="w-10 h-10 flex items-center justify-center rounded-full hover:opacity-80 cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-primary">notifications</span>
+          </button>
+        </header>
+      )}
 
-      <main className="flex-grow overflow-y-auto p-4 space-y-4 animate-fade-in">
+      <main className={`flex-grow p-4 space-y-4 animate-fade-in ${isModalOpen ? 'overflow-hidden' : 'overflow-y-auto'}`}>
         {/* Membership Gate */}
         {!isMember && (
           <div className="flex flex-col items-center justify-center py-12 text-center space-y-4">
@@ -266,10 +285,55 @@ export default function ClaimsPage() {
             </button>
           </div>
         </section>
+
+        {/* New Claim Modal */}
+        {isModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-start justify-center pt-24 bg-[#0D1B3E]/60 backdrop-blur-sm animate-fade-in px-4">
+            <div className="bg-white rounded-2xl p-5 w-full max-w-sm shadow-2xl animate-slide-up">
+              <h3 className="text-lg font-bold text-on-surface mb-4">Submit New Claim</h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Hospital Name</label>
+                  <input 
+                    type="text" 
+                    value={formData.hospital} 
+                    onChange={e => setFormData({...formData, hospital: e.target.value})}
+                    placeholder="e.g. Apollo Hospitals"
+                    className="w-full h-12 px-4 mt-1 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Claim Amount (INR)</label>
+                  <input 
+                    type="number" 
+                    value={formData.amount} 
+                    onChange={e => setFormData({...formData, amount: e.target.value})}
+                    placeholder="5000"
+                    className="w-full h-12 px-4 mt-1 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                  />
+                </div>
+                <div className="flex gap-3 pt-2">
+                  <button 
+                    onClick={() => setIsModalOpen(false)}
+                    className="flex-1 py-3 rounded-xl border border-outline-variant text-on-surface-variant font-bold text-sm hover:bg-surface-container transition-all cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    onClick={submitNewClaim}
+                    className="flex-1 py-3 rounded-xl bg-primary text-white font-bold text-sm hover:opacity-90 active:scale-95 transition-all cursor-pointer"
+                  >
+                    Submit
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
         </>}
       </main>
 
-      <BottomNavBar />
+      {!isModalOpen && <BottomNavBar />}
     </div>
   );
 }

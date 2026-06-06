@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import Lottie from 'lottie-react';
+import membershipActivAnim from '../../../assets/Lotties/membershipActiv.json';
 import { PLANS, saveMembership, getMembership } from '../utils/storage';
 
 const METHODS = [
@@ -64,56 +66,56 @@ export default function PaymentPage() {
   // ── Success Screen ────────────────────────────────────────────────
   if (success && membership) {
     return (
-      <div className="flex-grow flex flex-col bg-white min-h-screen items-center justify-center px-6 py-10 animate-fade-in">
+      <div className="flex-grow flex flex-col bg-white min-h-screen items-center justify-center px-5 py-6 animate-fade-in">
         {/* Animated checkmark */}
-        <div className="relative mb-6">
-          <div className="w-28 h-28 rounded-full bg-tertiary/10 flex items-center justify-center animate-pulse-ring">
-            <span className="material-symbols-outlined text-tertiary text-6xl" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+        <div className="relative mb-2">
+          <div className="w-24 h-24 flex items-center justify-center">
+            <Lottie animationData={membershipActivAnim} loop={false} />
           </div>
         </div>
 
-        <h1 className="text-2xl font-black text-on-surface text-center mb-1">Membership Activated!</h1>
-        <p className="text-sm text-on-surface-variant text-center mb-6">Your healthcare membership is now active. You have full access to all MedCred benefits.</p>
+        <h1 className="text-xl font-black text-on-surface text-center mb-1">Membership Activated!</h1>
+        <p className="text-xs text-on-surface-variant text-center mb-4 px-2">Your healthcare membership is now active. You have full access to all MedCred benefits.</p>
 
         {/* Membership card */}
-        <div className="w-full max-w-sm bg-gradient-to-br from-[#0D1B3E] via-[#062E8A] to-[#0A4DBF] rounded-3xl p-6 text-white shadow-2xl mb-6 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full -mr-16 -mt-16" />
+        <div className="w-full max-w-sm bg-gradient-to-br from-[#0D1B3E] via-[#062E8A] to-[#0A4DBF] rounded-2xl p-5 text-white shadow-xl mb-4 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-10 -mt-10" />
           <div className="relative z-10">
-            <div className="flex justify-between items-start mb-4">
+            <div className="flex justify-between items-start mb-3">
               <div>
-                <p className="text-[9px] opacity-60 uppercase tracking-widest font-semibold">Healthcare Membership</p>
-                <p className="text-sm font-bold mt-0.5">{membership.planName}</p>
+                <p className="text-[8px] opacity-60 uppercase tracking-widest font-semibold">Healthcare Membership</p>
+                <p className="text-xs font-bold mt-0.5">{membership.planName}</p>
               </div>
-              <span className="material-symbols-outlined text-white/60 text-2xl">health_and_safety</span>
+              <span className="material-symbols-outlined text-white/60 text-xl">health_and_safety</span>
             </div>
-            <p className="text-lg font-mono tracking-[0.2em] font-bold mb-4">{membership.cardNumber}</p>
-            <div className="flex justify-between text-xs">
+            <p className="text-base font-mono tracking-[0.15em] font-bold mb-3">{membership.cardNumber}</p>
+            <div className="flex justify-between text-[10px]">
               <div>
-                <p className="opacity-60 text-[9px] uppercase">Coverage</p>
+                <p className="opacity-60 text-[8px] uppercase">Coverage</p>
                 <p className="font-bold">{plan.coverage}</p>
               </div>
               <div>
-                <p className="opacity-60 text-[9px] uppercase">Valid Till</p>
+                <p className="opacity-60 text-[8px] uppercase">Valid Till</p>
                 <p className="font-bold">{new Date(membership.expiresAt).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}</p>
               </div>
               <div>
-                <p className="opacity-60 text-[9px] uppercase">Status</p>
+                <p className="opacity-60 text-[8px] uppercase">Status</p>
                 <p className="font-bold text-tertiary-fixed">Active</p>
               </div>
             </div>
           </div>
-          <div className="shimmer-bg absolute inset-0 rounded-3xl" />
+          <div className="shimmer-bg absolute inset-0 rounded-2xl" />
         </div>
 
         {/* Txn details */}
-        <div className="w-full max-w-sm bg-surface-container-low rounded-2xl p-4 space-y-2 text-xs mb-6">
+        <div className="w-full max-w-sm bg-surface-container-low rounded-xl p-3 space-y-1.5 text-[10px] mb-4">
           {[
             ['Amount Paid', `₹${membership.price.toLocaleString()}`],
             ['Transaction ID', membership.transactionId],
             ['Payment Method', method.toUpperCase()],
             ['Date', new Date().toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' })],
           ].map(([k,v]) => (
-            <div key={k} className="flex justify-between items-center py-1.5 border-b border-outline-variant/30 last:border-0">
+            <div key={k} className="flex justify-between items-center py-1 border-b border-outline-variant/30 last:border-0">
               <span className="text-on-surface-variant font-semibold">{k}</span>
               <span className="text-on-surface font-bold font-mono">{v}</span>
             </div>
@@ -122,12 +124,12 @@ export default function PaymentPage() {
 
         <button
           onClick={() => navigate('/dashboard')}
-          className="w-full max-w-sm py-4 bg-primary text-white font-black rounded-2xl shadow-lg hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-2"
+          className="w-full max-w-sm py-3 bg-primary text-white font-black rounded-xl shadow-lg hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-2 text-sm"
         >
           Go to Dashboard
-          <span className="material-symbols-outlined">arrow_forward</span>
+          <span className="material-symbols-outlined text-lg">arrow_forward</span>
         </button>
-        <p className="text-[10px] text-on-surface-variant mt-3 text-center">A confirmation has been sent to your registered mobile number.</p>
+        <p className="text-[9px] text-on-surface-variant mt-2 text-center">A confirmation has been sent to your registered mobile number.</p>
       </div>
     );
   }

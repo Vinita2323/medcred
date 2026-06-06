@@ -5,8 +5,6 @@ import UserMainLayout from '../components/Layout/UserMainLayout';
 // Import Pages
 import SplashPage from '../pages/SplashPage';
 import Onboarding1 from '../pages/Onboarding1';
-import Onboarding2 from '../pages/Onboarding2';
-import Onboarding3 from '../pages/Onboarding3';
 import RegisterPage from '../pages/RegisterPage';
 import OtpPage from '../pages/OtpPage';
 import LoginPage from '../pages/LoginPage';
@@ -18,6 +16,7 @@ import DashboardPage from '../pages/DashboardPage';
 import FamilyManagementPage from '../pages/FamilyManagementPage';
 import AddFamilyMemberPage from '../pages/AddFamilyMemberPage';
 import DigitalCardPage from '../pages/DigitalCardPage';
+import PurchaseCardPage from '../pages/PurchaseCardPage';
 import ClaimsPage from '../pages/ClaimsPage';
 import ProfilePage from '../pages/ProfilePage';
 import SupportPage from '../pages/SupportPage';
@@ -27,6 +26,8 @@ import WalletPage from '../pages/WalletPage';
 import InsurancePage from '../pages/InsurancePage';
 import CheckupBookingPage from '../pages/CheckupBookingPage';
 import HospitalsPage from '../pages/HospitalsPage';
+import PrivacyPolicyPage from '../pages/PrivacyPolicyPage';
+import TermsConditionsPage from '../pages/TermsConditionsPage';
 
 export default function UserRoutes() {
   return (
@@ -35,8 +36,6 @@ export default function UserRoutes() {
         {/* ── Auth & Onboarding ─────────────────────────────── */}
         <Route path="/"               element={<SplashPage />} />
         <Route path="/onboarding/1"   element={<Onboarding1 />} />
-        <Route path="/onboarding/2"   element={<Onboarding2 />} />
-        <Route path="/onboarding/3"   element={<Onboarding3 />} />
         <Route path="/register"       element={<RegisterPage />} />
         <Route path="/verify-otp"     element={<OtpPage />} />
         <Route path="/login"          element={<LoginPage />} />
@@ -52,6 +51,7 @@ export default function UserRoutes() {
         <Route path="/family"     element={<FamilyManagementPage />} />
         <Route path="/family/add" element={<AddFamilyMemberPage />} />
         <Route path="/card"       element={<DigitalCardPage />} />
+        <Route path="/purchase-card" element={<PurchaseCardPage />} />
         <Route path="/claims"     element={<ClaimsPage />} />
         <Route path="/profile"    element={<ProfilePage />} />
         <Route path="/support"    element={<SupportPage />} />
@@ -61,6 +61,8 @@ export default function UserRoutes() {
         <Route path="/insurance"  element={<InsurancePage />} />
         <Route path="/book-checkup" element={<CheckupBookingPage />} />
         <Route path="/hospitals"  element={<HospitalsPage />} />
+        <Route path="/privacy"    element={<PrivacyPolicyPage />} />
+        <Route path="/terms"      element={<TermsConditionsPage />} />
       </Routes>
     </UserMainLayout>
   );

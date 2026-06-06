@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import BottomNavBar from '../components/Navigation/BottomNavBar';
 import { getUser, updateUser, getFamilyMembers, clearUser, formatDobDisplay, getAgeFromDob } from '../utils/storage';
 
 const DEFAULT_AVATAR = null;
@@ -74,28 +73,22 @@ export default function ProfilePage() {
   );
 
   const InfoRow = ({ label, value }) => (
-    <div className="space-y-0.5">
-      <p className="text-on-surface-variant font-semibold uppercase tracking-wider text-[9px]">{label}</p>
-      <p className="text-on-surface font-semibold text-xs">{value}</p>
+    <div className="space-y-0.5 min-w-0">
+      <p className="text-on-surface-variant font-semibold uppercase tracking-wider text-[8px] truncate">{label}</p>
+      <p className="text-on-surface font-semibold text-[11px] truncate" title={value}>{value}</p>
     </div>
   );
 
   return (
     <div className="flex-grow flex flex-col bg-surface text-on-surface font-body-md relative pb-24">
-      {/* TopAppBar */}
-      <header className="flex justify-between items-center pl-2 pr-4 w-full h-20 sticky top-0 z-40 bg-surface shadow-sm border-b border-outline-variant/30">
-        <div className="flex items-center gap-3">
-          <img
-            alt="MedCred Logo"
-            className="h-16 w-auto object-contain"
-            src="/FinalLogo.png"
-          />
-        </div>
-        <button
-          onClick={() => navigate('/notifications')}
-          className="material-symbols-outlined text-primary p-2 hover:bg-surface-variant rounded-full cursor-pointer"
-        >
-          notifications
+      {/* Profile Header */}
+      <header className="flex items-center px-4 w-full h-16 sticky top-0 z-40 bg-surface shadow-sm border-b border-outline-variant/30">
+        <button onClick={() => navigate(-1)} className="material-symbols-outlined text-on-surface hover:bg-surface-variant p-2 rounded-full -ml-2 transition-colors cursor-pointer">
+          arrow_back
+        </button>
+        <h1 className="flex-1 text-center text-lg font-bold text-on-surface">My Profile</h1>
+        <button onClick={handleEditClick} className="material-symbols-outlined text-primary hover:bg-surface-variant p-2 rounded-full -mr-2 transition-colors cursor-pointer">
+          edit
         </button>
       </header>
 
@@ -147,25 +140,7 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          <div className="flex gap-3 mt-4 w-full">
-            <button
-              onClick={handleEditClick}
-              className="flex-1 bg-primary text-white text-xs font-bold py-3 rounded-xl shadow-md hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <span className="material-symbols-outlined text-base">edit</span>
-              Edit Profile
-            </button>
-            <button
-              onClick={() => {
-                clearUser();
-                navigate('/login');
-              }}
-              className="flex-1 border border-outline text-on-surface-variant text-xs font-bold py-3 rounded-xl hover:bg-surface-container-low active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <span className="material-symbols-outlined text-base">logout</span>
-              Logout
-            </button>
-          </div>
+
         </section>
 
         {/* Expandable Sections */}
@@ -175,8 +150,8 @@ export default function ProfilePage() {
           <div className="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden shadow-sm">
             <SectionHeader icon="person" title="Personal Information" section="personal" />
             {openSection === 'personal' && (
-              <div className="p-4 pt-2 border-t border-outline-variant/30">
-                <div className="grid grid-cols-2 gap-4 text-xs">
+              <div className="p-3 pt-2 border-t border-outline-variant/30">
+                <div className="grid grid-cols-2 gap-x-2 gap-y-3 text-xs">
                   <InfoRow label="Full Name" value={profileName} />
                   <InfoRow label="Email Address" value={profileEmail} />
                   <InfoRow label="Phone Number" value={profilePhone} />
@@ -186,9 +161,9 @@ export default function ProfilePage() {
                   <InfoRow label="Occupation" value={user?.occupation || '—'} />
                   <InfoRow label="Annual Income" value={user?.income || '—'} />
                 </div>
-                <div className="mt-3 pt-3 border-t border-outline-variant/20">
-                  <p className="text-on-surface-variant font-semibold uppercase tracking-wider text-[9px] mb-1">Residential Address</p>
-                  <p className="text-on-surface font-semibold text-xs">{profileAddress}</p>
+                <div className="mt-2.5 pt-2.5 border-t border-outline-variant/20">
+                  <p className="text-on-surface-variant font-semibold uppercase tracking-wider text-[8px] mb-0.5">Residential Address</p>
+                  <p className="text-on-surface font-semibold text-[11px] leading-snug">{profileAddress}</p>
                 </div>
               </div>
             )}
@@ -437,13 +412,10 @@ export default function ProfilePage() {
               <div className="p-4 pt-2 border-t border-outline-variant/30 space-y-1 text-xs">
                 {[
                   { icon: 'notifications', label: 'Push Notifications', value: 'Enabled' },
-                  { icon: 'language', label: 'Language', value: 'English' },
-                  { icon: 'dark_mode', label: 'Theme', value: 'System' },
-                  { icon: 'lock', label: 'Biometric Lock', value: 'Enabled' },
-                  { icon: 'privacy_tip', label: 'Privacy Policy', value: '' },
-                  { icon: 'gavel', label: 'Terms & Conditions', value: '' },
+                  { icon: 'privacy_tip', label: 'Privacy Policy', value: '', action: () => navigate('/privacy') },
+                  { icon: 'gavel', label: 'Terms & Conditions', value: '', action: () => navigate('/terms') },
                 ].map(item => (
-                  <div key={item.label} className="flex items-center justify-between py-2.5 border-b border-outline-variant/20 last:border-0 cursor-pointer hover:bg-surface-container-low rounded-lg px-1 transition-colors">
+                  <div key={item.label} onClick={item.action} className="flex items-center justify-between py-2.5 border-b border-outline-variant/20 last:border-0 cursor-pointer hover:bg-surface-container-low rounded-lg px-1 transition-colors">
                     <div className="flex items-center gap-2">
                       <span className="material-symbols-outlined text-on-surface-variant text-base">{item.icon}</span>
                       <span className="text-on-surface font-semibold">{item.label}</span>
@@ -460,16 +432,30 @@ export default function ProfilePage() {
 
         </section>
 
-        {/* Danger Zone */}
-        <div className="border border-error/20 rounded-xl p-4 space-y-2 bg-error/5">
-          <p className="text-[10px] font-bold text-error uppercase tracking-widest">Account Actions</p>
+        {/* Account Actions */}
+        <div className="space-y-4 pt-2">
           <button
-            onClick={() => alert("Account deletion request submitted. Our team will contact you within 48 hours.")}
-            className="w-full text-xs text-error font-bold py-2.5 rounded-xl border border-error/30 hover:bg-error/10 transition-all cursor-pointer flex items-center justify-center gap-2"
+            onClick={() => {
+              clearUser();
+              navigate('/login');
+            }}
+            className="w-full border border-outline text-on-surface-variant text-xs font-bold py-3.5 rounded-xl hover:bg-surface-container-low active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm"
           >
-            <span className="material-symbols-outlined text-sm">delete_forever</span>
-            Delete Account
+            Logout
+            <span className="material-symbols-outlined text-base">logout</span>
           </button>
+
+          {/* Danger Zone */}
+          <div className="border border-error/20 rounded-xl p-4 space-y-2 bg-error/5">
+            <p className="text-[10px] font-bold text-error uppercase tracking-widest">Danger Zone</p>
+            <button
+              onClick={() => alert("Account deletion request submitted. Our team will contact you within 48 hours.")}
+              className="w-full text-xs text-error font-bold py-2.5 rounded-xl border border-error/30 hover:bg-error/10 transition-all cursor-pointer flex items-center justify-center gap-2"
+            >
+              <span className="material-symbols-outlined text-sm">delete_forever</span>
+              Delete Account
+            </button>
+          </div>
         </div>
 
       </main>
@@ -542,7 +528,7 @@ export default function ProfilePage() {
         </div>
       )}
 
-      <BottomNavBar />
+
     </div>
   );
 }
