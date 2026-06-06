@@ -72,35 +72,35 @@ export default function LoanPage() {
 
         {/* 30-day waiting period */}
         {isMember && !loanEligible && (
-          <div className="flex flex-col items-center text-center space-y-5 py-8">
-            <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center animate-pulse-ring">
-              <span className="material-symbols-outlined text-primary text-4xl">hourglass_top</span>
+          <div className="flex flex-col items-center text-center space-y-3 py-4">
+            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center animate-pulse-ring">
+              <span className="material-symbols-outlined text-primary text-3xl">hourglass_top</span>
             </div>
             <div>
-              <h3 className="text-xl font-black text-on-surface">Almost There!</h3>
-              <p className="text-sm text-on-surface-variant mt-1 max-w-[260px] mx-auto leading-relaxed">
+              <h3 className="text-lg font-black text-on-surface">Almost There!</h3>
+              <p className="text-xs text-on-surface-variant mt-1 max-w-[260px] mx-auto leading-relaxed">
                 Loan eligibility unlocks after 30 days of active membership.
               </p>
             </div>
-            <div className="w-full bg-white border border-outline-variant rounded-2xl p-5 space-y-4">
-              <div className="flex justify-between items-center text-xs">
+            <div className="w-full bg-white border border-outline-variant rounded-xl p-4 space-y-3">
+              <div className="flex justify-between items-center text-[11px]">
                 <span className="font-bold text-on-surface">Eligibility Progress</span>
                 <span className="font-black text-primary">{progressPct}%</span>
               </div>
-              <div className="h-3 bg-surface-container rounded-full overflow-hidden">
+              <div className="h-1.5 bg-surface-container rounded-full overflow-hidden">
                 <div
                   className="h-full bg-gradient-to-r from-primary to-secondary rounded-full transition-all"
                   style={{ width: `${progressPct}%` }}
                 />
               </div>
-              <div className="flex justify-between text-xs text-on-surface-variant">
+              <div className="flex justify-between text-[10px] text-on-surface-variant">
                 <span>Day {daysActive} of 30</span>
                 <span className="font-bold text-primary">{daysUntilEligible} days remaining</span>
               </div>
-              <div className="bg-primary/5 rounded-xl p-3 flex items-center gap-3">
-                <span className="material-symbols-outlined text-primary text-xl">calendar_today</span>
-                <p className="text-xs text-on-surface font-semibold">
-                  Your loan access unlocks in <span className="text-primary font-black">{daysUntilEligible} days</span>. Keep your membership active!
+              <div className="bg-primary/5 rounded-lg p-2.5 flex items-center gap-2.5">
+                <span className="material-symbols-outlined text-primary text-base">calendar_today</span>
+                <p className="text-[10px] text-on-surface font-semibold text-left">
+                  Unlocks in <span className="text-primary font-black">{daysUntilEligible} days</span>. Keep membership active!
                 </p>
               </div>
             </div>
@@ -127,23 +127,54 @@ export default function LoanPage() {
           </div>
         ) : (
           <>
-            {/* Approved Limit Card */}
-            <section className="bg-gradient-to-br from-primary to-secondary rounded-2xl p-5 text-white shadow-xl relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-36 h-36 bg-white/10 rounded-full -mr-16 -mt-16 blur-2xl"></div>
-              <div className="relative z-10">
-                <span className="text-[10px] bg-white/20 text-white font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Approved Credit Line</span>
-                <div className="mt-4">
-                  <p className="text-3xl font-black tracking-tight">₹{(maxLimit).toLocaleString('en-IN')}</p>
-                  <p className="text-[10px] opacity-80 mt-1">Maximum Instant Cash Payout Limit</p>
+            {/* Approved Limit Cards */}
+            <section className="grid grid-cols-2 gap-3">
+              {/* Individual Card */}
+              <div 
+                onClick={() => navigate('/loan-details', { state: { type: 'Individual', limit: 100000 } })}
+                className="bg-gradient-to-br from-[#0A4DBF] to-[#1976D2] rounded-2xl p-4 text-white shadow-lg relative overflow-hidden flex flex-col justify-between cursor-pointer hover:shadow-xl transition-all hover:scale-[1.02]"
+              >
+                <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -mr-10 -mt-10 blur-xl"></div>
+                <div className="relative z-10">
+                  <span className="text-[9px] bg-white/20 text-white font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Individual</span>
+                  <div className="mt-3">
+                    <p className="text-xl font-black tracking-tight">₹1,00,000</p>
+                    <p className="text-[9px] opacity-80 mt-0.5">Max Payout Limit</p>
+                  </div>
                 </div>
-                <div className="mt-6 flex justify-between items-center text-[10px] border-t border-white/20 pt-4">
+                <div className="relative z-10 flex justify-between items-end mt-4 pt-3 border-t border-white/20">
                   <div>
-                    <p className="opacity-70">Interest Rate</p>
-                    <p className="font-bold text-sm mt-0.5">0% (Interest-Free)</p>
+                    <p className="text-[8px] opacity-70">Interest Rate</p>
+                    <p className="font-bold text-[11px] mt-0.5">0%</p>
                   </div>
                   <div>
-                    <p className="opacity-70">Processing Fee</p>
-                    <p className="font-bold text-sm mt-0.5">₹0 (Zero Charges)</p>
+                    <p className="text-[8px] opacity-70">Proc. Fee</p>
+                    <p className="font-bold text-[11px] mt-0.5">₹0</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Family Card */}
+              <div 
+                onClick={() => navigate('/loan-details', { state: { type: 'Family', limit: 200000 } })}
+                className="bg-gradient-to-br from-primary to-secondary rounded-2xl p-4 text-white shadow-lg relative overflow-hidden flex flex-col justify-between cursor-pointer hover:shadow-xl transition-all hover:scale-[1.02]"
+              >
+                <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -mr-10 -mt-10 blur-xl"></div>
+                <div className="relative z-10">
+                  <span className="text-[9px] bg-white/20 text-white font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Family</span>
+                  <div className="mt-3">
+                    <p className="text-xl font-black tracking-tight">₹2,00,000</p>
+                    <p className="text-[9px] opacity-80 mt-0.5">Max Payout Limit</p>
+                  </div>
+                </div>
+                <div className="relative z-10 flex justify-between items-end mt-4 pt-3 border-t border-white/20">
+                  <div>
+                    <p className="text-[8px] opacity-70">Interest Rate</p>
+                    <p className="font-bold text-[11px] mt-0.5">0%</p>
+                  </div>
+                  <div>
+                    <p className="text-[8px] opacity-70">Proc. Fee</p>
+                    <p className="font-bold text-[11px] mt-0.5">₹0</p>
                   </div>
                 </div>
               </div>

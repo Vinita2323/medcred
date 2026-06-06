@@ -25,11 +25,9 @@ export default function MembershipPlansPage() {
     <div className="flex-grow flex flex-col bg-[#F8FAFF] min-h-screen">
       {/* Header */}
       <header className="flex items-center gap-3 px-4 h-16 sticky top-0 z-40 bg-white border-b border-outline-variant/30 shadow-sm">
-        {fromRenew && (
-          <button onClick={() => navigate(-1)} className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-surface-container-low cursor-pointer transition-colors">
-            <span className="material-symbols-outlined text-primary">arrow_back</span>
-          </button>
-        )}
+        <button onClick={() => navigate(-1)} className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-surface-container-low cursor-pointer transition-colors">
+          <span className="material-symbols-outlined text-primary">arrow_back</span>
+        </button>
         <img src="/FinalLogo.png" alt="MedCred" className="h-10 w-auto object-contain" />
         {!fromRenew && (
           <div className="ml-auto">

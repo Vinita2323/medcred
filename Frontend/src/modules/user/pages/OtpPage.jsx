@@ -58,7 +58,7 @@ export default function OtpPage() {
       setSuccess(true);
       setLoggedIn(true);
       setTimeout(() => {
-        navigate('/kyc');
+        navigate('/dashboard');
       }, 1000);
     }, 1500);
   };

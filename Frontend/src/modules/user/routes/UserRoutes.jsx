@@ -22,12 +22,16 @@ import ProfilePage from '../pages/ProfilePage';
 import SupportPage from '../pages/SupportPage';
 import NotificationsPage from '../pages/NotificationsPage';
 import LoanPage from '../pages/LoanPage';
+import LoanDetailsPage from '../pages/LoanDetailsPage';
 import WalletPage from '../pages/WalletPage';
 import InsurancePage from '../pages/InsurancePage';
 import CheckupBookingPage from '../pages/CheckupBookingPage';
 import HospitalsPage from '../pages/HospitalsPage';
 import PrivacyPolicyPage from '../pages/PrivacyPolicyPage';
 import TermsConditionsPage from '../pages/TermsConditionsPage';
+import ProductDetailsPage from '../pages/ProductDetailsPage';
+import CheckoutPage from '../pages/CheckoutPage';
+import OrdersPage from '../pages/OrdersPage';
 
 export default function UserRoutes() {
   return (
@@ -57,12 +61,16 @@ export default function UserRoutes() {
         <Route path="/support"    element={<SupportPage />} />
         <Route path="/notifications" element={<NotificationsPage />} />
         <Route path="/loan"       element={<LoanPage />} />
+        <Route path="/loan-details" element={<LoanDetailsPage />} />
         <Route path="/wallet"     element={<WalletPage />} />
         <Route path="/insurance"  element={<InsurancePage />} />
         <Route path="/book-checkup" element={<CheckupBookingPage />} />
         <Route path="/hospitals"  element={<HospitalsPage />} />
         <Route path="/privacy"    element={<PrivacyPolicyPage />} />
         <Route path="/terms"      element={<TermsConditionsPage />} />
+        <Route path="/product-details" element={<ProductDetailsPage />} />
+        <Route path="/checkout"   element={<CheckoutPage />} />
+        <Route path="/orders"     element={<OrdersPage />} />
       </Routes>
     </UserMainLayout>
   );

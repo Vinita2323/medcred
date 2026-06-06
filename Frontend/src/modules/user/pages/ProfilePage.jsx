@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getUser, updateUser, getFamilyMembers, clearUser, formatDobDisplay, getAgeFromDob } from '../utils/storage';
+import BottomNavBar from '../components/Navigation/BottomNavBar';
+import { getUser, updateUser, getFamilyMembers, clearUser, formatDobDisplay, getAgeFromDob, isLoggedIn } from '../utils/storage';
 
 const DEFAULT_AVATAR = null;
 
@@ -19,10 +20,33 @@ export default function ProfilePage() {
   const [tempPhone, setTempPhone] = useState('');
 
   useEffect(() => {
-    const stored = getUser();
-    setUser(stored);
-    setFamilyMembers(getFamilyMembers());
+    if (isLoggedIn()) {
+      const stored = getUser();
+      setUser(stored);
+      setFamilyMembers(getFamilyMembers());
+    }
   }, []);
+
+  if (!isLoggedIn()) {
+    return (
+      <div className="flex-grow flex flex-col bg-surface min-h-screen font-body-md pb-20 items-center justify-center p-6 text-center space-y-4">
+        <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mb-2">
+          <span className="material-symbols-outlined text-primary text-5xl">account_circle</span>
+        </div>
+        <h2 className="text-xl font-black text-on-surface">Login Required</h2>
+        <p className="text-sm text-on-surface-variant max-w-xs">
+          Please log in to view your profile, manage orders, and access your health information.
+        </p>
+        <button 
+          onClick={() => navigate('/login')}
+          className="w-full max-w-xs py-3.5 bg-primary text-white font-bold rounded-xl shadow-lg hover:opacity-90 active:scale-95 transition-all mt-4 cursor-pointer"
+        >
+          Login to Continue
+        </button>
+        <BottomNavBar />
+      </div>
+    );
+  }
 
   // Derived display values (fallback to demo if no user registered)
   const profileName = user?.name || 'Arjun Mehta';
@@ -167,6 +191,20 @@ export default function ProfilePage() {
                 </div>
               </div>
             )}
+          </div>
+
+          {/* My Orders */}
+          <div 
+            onClick={() => navigate('/orders')}
+            className="bg-surface-container-lowest border border-outline-variant rounded-xl p-4 flex items-center justify-between cursor-pointer hover:bg-surface-container-low transition-colors shadow-sm"
+          >
+            <div className="flex items-center gap-3">
+              <div className="bg-primary/10 p-2 rounded-lg flex items-center justify-center">
+                <span className="material-symbols-outlined text-primary">local_shipping</span>
+              </div>
+              <h3 className="text-sm font-bold text-on-surface">My Orders</h3>
+            </div>
+            <span className="material-symbols-outlined text-outline text-lg">chevron_right</span>
           </div>
 
           {/* Health Information */}

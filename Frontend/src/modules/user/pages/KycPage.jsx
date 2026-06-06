@@ -92,10 +92,10 @@ export default function KycPage() {
               <span className="text-xs font-bold text-tertiary">Aadhaar Verified · Identity Confirmed</span>
             </div>
             <button
-              onClick={() => navigate('/membership-plans')}
+              onClick={() => navigate('/dashboard')}
               className="mt-4 w-full h-13 bg-primary text-white font-bold rounded-2xl flex items-center justify-center gap-2 shadow-lg hover:opacity-90 active:scale-95 transition-all cursor-pointer py-4"
             >
-              <span>Choose a Plan</span>
+              <span>Go to Dashboard</span>
               <span className="material-symbols-outlined">arrow_forward</span>
             </button>
           </div>

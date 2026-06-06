@@ -15,12 +15,7 @@ export default function LoginPage() {
       return;
     }
     setLoggedIn(true);
-    // Redirect based on membership status
-    if (hasMembership()) {
-      navigate('/dashboard');
-    } else {
-      navigate('/membership-plans');
-    }
+    navigate('/dashboard');
   };
 
   return (
