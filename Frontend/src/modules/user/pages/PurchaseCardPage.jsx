@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import BottomNavBar from '../components/Navigation/BottomNavBar';
-
 export default function PurchaseCardPage() {
   const navigate = useNavigate();
   const [selectedCard, setSelectedCard] = useState(null);
@@ -50,8 +48,8 @@ export default function PurchaseCardPage() {
   };
 
   return (
-    <div className="flex-grow flex flex-col bg-surface text-on-surface font-body-md relative pb-24">
-      <header className="flex justify-between items-center pl-2 pr-4 w-full h-20 sticky top-0 z-40 bg-surface shadow-sm border-b border-outline-variant/30">
+    <div className="flex-grow flex flex-col bg-surface text-on-surface font-body-md relative">
+      <header className="flex justify-between items-center pl-2 pr-4 w-full h-14 sticky top-0 z-40 bg-surface shadow-sm border-b border-outline-variant/30">
         <div className="flex items-center gap-4">
           <button 
             onClick={() => navigate(-1)} 
@@ -63,7 +61,7 @@ export default function PurchaseCardPage() {
         </div>
       </header>
 
-      <main className="flex-grow overflow-y-auto p-4 space-y-6 max-w-md mx-auto w-full animate-fade-in">
+      <main className="flex-grow overflow-y-auto p-4 space-y-6 max-w-md mx-auto w-full animate-fade-in pb-24">
         <div className="text-center space-y-2 mt-4 mb-8">
           <h2 className="text-2xl font-bold text-on-surface">Choose Your Plan</h2>
           <p className="text-sm text-on-surface-variant">Select a health card that fits your needs.</p>
@@ -113,22 +111,24 @@ export default function PurchaseCardPage() {
           ))}
         </div>
 
-        <div className="pt-6 pb-4">
+      </main>
+
+      {/* Fixed Bottom CTA */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-outline-variant/30 px-4 py-4 z-50 pb-safe">
+        <div className="max-w-md mx-auto">
           <button 
             onClick={handlePurchase}
             disabled={!selectedCard}
-            className={`w-full py-4 rounded-xl text-sm font-bold shadow-md transition-all duration-200 ${
+            className={`w-full py-3.5 rounded-xl text-sm font-bold shadow-md transition-all duration-200 ${
               selectedCard 
-                ? 'bg-primary text-on-primary hover:opacity-90 active:scale-95' 
+                ? 'bg-primary text-white hover:opacity-90 active:scale-95' 
                 : 'bg-surface-container-high text-on-surface-variant cursor-not-allowed opacity-70'
             }`}
           >
             {selectedCard ? 'Proceed to Claim' : 'Select a Plan'}
           </button>
         </div>
-      </main>
-
-      <BottomNavBar />
+      </div>
     </div>
   );
 }

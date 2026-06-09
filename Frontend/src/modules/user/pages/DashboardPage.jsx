@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import BottomNavBar from '../components/Navigation/BottomNavBar';
 import { getMembership, hasMembership, getMembershipDaysRemaining, getDaysActive, isLoanEligible, getDaysUntilLoanEligible, PLANS } from '../utils/storage';
@@ -16,6 +16,15 @@ export default function DashboardPage() {
   const daysLeft = getMembershipDaysRemaining();
   const loanReady = isLoanEligible();
   const loanDays = getDaysUntilLoanEligible();
+  const [isBenefitsModalOpen, setIsBenefitsModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (isBenefitsModalOpen) {
+      document.body.classList.add('overflow-hidden');
+    } else {
+      document.body.classList.remove('overflow-hidden');
+    }
+  }, [isBenefitsModalOpen]);
 
   return (
     <div className="flex-grow flex flex-col bg-surface text-on-surface font-body-md relative pb-20">
@@ -62,7 +71,10 @@ export default function DashboardPage() {
         )}
 
         {active && (
-          <div className="flex items-center justify-between bg-white border border-outline-variant rounded-2xl px-4 py-3 shadow-sm">
+          <div 
+            onClick={() => setIsBenefitsModalOpen(true)}
+            className="flex items-center justify-between bg-white border border-outline-variant rounded-2xl px-4 py-3 shadow-sm cursor-pointer hover:shadow-md transition-all active:scale-[0.99]"
+          >
             <div className="flex items-center gap-2">
               <span className="material-symbols-outlined text-tertiary text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
               <div>
@@ -247,6 +259,45 @@ export default function DashboardPage() {
           </div>
         </section>
       </main>
+
+      {/* Benefits Modal */}
+      {isBenefitsModalOpen && membership && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white w-full max-w-sm rounded-3xl p-5 shadow-2xl relative">
+            <button 
+              onClick={() => setIsBenefitsModalOpen(false)}
+              className="absolute top-4 right-4 text-on-surface-variant hover:text-on-surface cursor-pointer w-8 h-8 flex items-center justify-center rounded-full bg-surface-container hover:bg-surface-container-high transition-colors"
+            >
+              <span className="material-symbols-outlined text-sm">close</span>
+            </button>
+            
+            <div className="mb-4 mt-1">
+              <div className="w-12 h-12 bg-tertiary/10 text-tertiary rounded-full flex items-center justify-center mb-3">
+                <span className="material-symbols-outlined text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
+              </div>
+              <h3 className="text-lg font-black text-on-surface">{membership.planName}</h3>
+              <p className="text-xs text-on-surface-variant mt-0.5">Active until {new Date(membership.expiresAt).toLocaleDateString()}</p>
+            </div>
+
+            <div className="space-y-2 mb-4">
+              <h4 className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider mb-2">Included Benefits</h4>
+              {PLANS[membership.planId]?.features.map((feature, idx) => (
+                <div key={idx} className="flex items-start gap-2">
+                  <span className="material-symbols-outlined text-primary text-base shrink-0 mt-0.5" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+                  <span className="text-xs text-on-surface font-semibold leading-snug">{feature}</span>
+                </div>
+              ))}
+            </div>
+
+            <button
+              onClick={() => setIsBenefitsModalOpen(false)}
+              className="w-full py-3 bg-surface-container-low text-on-surface font-bold rounded-xl hover:bg-surface-container-high active:scale-[0.98] transition-all cursor-pointer"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
 
       <BottomNavBar />
     </div>

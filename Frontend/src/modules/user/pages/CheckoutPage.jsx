@@ -55,6 +55,85 @@ export default function CheckoutPage() {
     }, 2000);
   };
 
+  const handleDownloadInvoice = () => {
+    const invoiceHtml = `
+      <html>
+        <head>
+          <meta charset="UTF-8">
+          <title>Invoice - ${product.label}</title>
+          <style>
+            body { font-family: system-ui, -apple-system, sans-serif; padding: 40px; color: #333; max-width: 800px; margin: 0 auto; }
+            .header { border-bottom: 2px solid #0052CC; padding-bottom: 20px; margin-bottom: 30px; }
+            .logo { font-size: 24px; font-weight: bold; color: #0052CC; }
+            .row { display: flex; justify-content: space-between; margin-bottom: 10px; }
+            table { border-collapse: collapse; margin-top: 20px; width: 100%; }
+            th, td { text-align: left; padding: 12px; border-bottom: 1px solid #ddd; }
+            th { color: #666; font-weight: 600; font-size: 14px; }
+            .total { font-size: 20px; font-weight: bold; color: #0052CC; text-align: right; margin-top: 20px; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div class="logo">MedCred India</div>
+            <div style="color: #666; margin-top: 5px;">Invoice #MC-${Math.floor(100000 + Math.random() * 900000)}</div>
+            <div style="color: #666;">Date: ${new Date().toLocaleDateString()}</div>
+          </div>
+          
+          <div class="row">
+            <div>
+              <strong>Billed To:</strong><br/>
+              Customer<br/>
+              MedCred User
+            </div>
+            <div style="text-align: right;">
+              <strong>Agent Details:</strong><br/>
+              Referred by: Agent Partner<br/>
+              Channel: Direct / Agent
+            </div>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Description</th>
+                <th>Included Benefits</th>
+                <th style="text-align: right;">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <strong>${product.label}</strong><br/>
+                  <span style="color: #666; font-size: 13px;">1 Year Validity</span>
+                </td>
+                <td style="color: #666; font-size: 13px;">
+                  - Medical Coverage<br/>
+                  - Free Consultations<br/>
+                  - Pharmacy Discounts
+                </td>
+                <td style="text-align: right;">₹${price.toLocaleString()}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="total">
+            Total Paid: ₹${price.toLocaleString()}
+          </div>
+          
+          <div style="margin-top: 60px; font-size: 12px; color: #888; text-align: center;">
+            This is a computer generated invoice and does not require a physical signature.
+          </div>
+          <script>
+            window.onload = function() { window.print(); }
+          </script>
+        </body>
+      </html>
+    `;
+    const blob = new Blob([invoiceHtml], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
+  };
+
   if (success) {
     return (
       <div className="flex-grow flex flex-col bg-white min-h-screen items-center justify-center px-5 py-6 animate-fade-in">
@@ -63,14 +142,24 @@ export default function CheckoutPage() {
         </div>
         <h1 className="text-2xl font-black text-on-surface text-center mb-2">Order Confirmed!</h1>
         <p className="text-sm text-on-surface-variant text-center mb-8 px-4">
-          Your order for <strong>{product.label}</strong> has been placed successfully and will be delivered within 2-3 business days.
+          Your order for <strong>{product.label}</strong> has been placed successfully and will be activated shortly.
         </p>
-        <button
-          onClick={() => navigate('/dashboard')}
-          className="w-full max-w-sm py-4 bg-primary text-white font-black rounded-xl shadow-lg hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-2 text-sm"
-        >
-          Back to Dashboard
-        </button>
+        
+        <div className="flex flex-col w-full max-w-sm gap-3">
+          <button
+            onClick={handleDownloadInvoice}
+            className="w-full py-4 bg-surface-container border-2 border-primary text-primary font-black rounded-xl shadow-sm hover:bg-primary/5 active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-2 text-sm"
+          >
+            <span className="material-symbols-outlined text-lg">receipt_long</span>
+            Download Invoice
+          </button>
+          <button
+            onClick={() => navigate('/dashboard')}
+            className="w-full py-4 bg-primary text-white font-black rounded-xl shadow-lg hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-2 text-sm"
+          >
+            Back to Dashboard
+          </button>
+        </div>
       </div>
     );
   }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { PLANS, saveMembership } from '../utils/storage';
 
@@ -17,8 +17,51 @@ export default function MembershipPlansPage() {
   const [selected, setSelected] = useState('family');
   const fromRenew = location.state?.renew;
 
-  const handlePurchase = () => {
-    navigate('/payment', { state: { planId: selected } });
+  const [isReferralModalOpen, setIsReferralModalOpen] = useState(false);
+  const [sourceType, setSourceType] = useState('self'); // 'self' or 'agent'
+  const [referralCode, setReferralCode] = useState('');
+  const [agentDetail, setAgentDetail] = useState('');
+  const [isCodeApplied, setIsCodeApplied] = useState(false);
+
+  useEffect(() => {
+    if (isReferralModalOpen) {
+      document.body.classList.add('overflow-hidden');
+      document.documentElement.classList.add('overflow-hidden');
+    } else {
+      document.body.classList.remove('overflow-hidden');
+      document.documentElement.classList.remove('overflow-hidden');
+    }
+    return () => {
+      document.body.classList.remove('overflow-hidden');
+      document.documentElement.classList.remove('overflow-hidden');
+    };
+  }, [isReferralModalOpen]);
+  const handlePurchaseClick = () => {
+    setIsReferralModalOpen(true);
+  };
+
+  const applyCode = () => {
+    if (referralCode.trim().length > 3) {
+      setIsCodeApplied(true);
+    } else {
+      alert('Please enter a valid Referral Code (e.g. AGENT123).');
+    }
+  };
+
+  const handleProceedToPayment = () => {
+    const basePrice = PLANS[selected].price;
+    const finalPrice = isCodeApplied && sourceType === 'agent' ? basePrice - 200 : basePrice;
+    
+    // Pass the discounted price, code, and agent info to the payment page
+    navigate('/payment', { 
+      state: { 
+        planId: selected, 
+        price: finalPrice, 
+        discount: isCodeApplied ? 200 : 0,
+        agentDetail: sourceType === 'agent' ? agentDetail : null,
+        referralCode: isCodeApplied ? referralCode : null
+      } 
+    });
   };
 
   return (
@@ -36,7 +79,7 @@ export default function MembershipPlansPage() {
         )}
       </header>
 
-      <main className="flex-grow overflow-y-auto px-4 py-6 max-w-md mx-auto w-full space-y-6">
+      <main className="flex-grow overflow-y-auto px-4 pt-6 pb-28 max-w-md mx-auto w-full space-y-6">
 
         {/* Title */}
         <div className="text-center animate-slide-up">
@@ -141,21 +184,121 @@ export default function MembershipPlansPage() {
             </div>
           ))}
         </div>
+      </main>
 
-        {/* Sticky CTA */}
-        <div className="sticky bottom-0 bg-[#F8FAFF] pt-2 pb-4">
+      {/* Fixed Bottom CTA */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-outline-variant/30 px-4 py-4 z-50 pb-safe">
+        <div className="max-w-md mx-auto">
           <button
-            onClick={handlePurchase}
+            onClick={handlePurchaseClick}
             className="w-full py-3 bg-primary text-white font-black rounded-xl shadow-xl hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-2 text-sm px-2 whitespace-nowrap"
           >
             <span className="material-symbols-outlined text-lg">shopping_cart</span>
             <span>Purchase {PLANS[selected].name} — ₹{PLANS[selected].price.toLocaleString()}</span>
           </button>
-          <p className="text-center text-[10px] text-on-surface-variant mt-2">
-            Cancel anytime · Auto-renewal can be disabled in settings
-          </p>
         </div>
-      </main>
+      </div>
+
+      {/* Referral Modal */}
+      {isReferralModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white w-full max-w-sm rounded-3xl p-5 shadow-2xl relative">
+            <button 
+              onClick={() => setIsReferralModalOpen(false)}
+              className="absolute top-4 right-4 text-on-surface-variant hover:text-on-surface cursor-pointer w-8 h-8 flex items-center justify-center rounded-full bg-surface-container hover:bg-surface-container-high transition-colors"
+            >
+              <span className="material-symbols-outlined text-sm">close</span>
+            </button>
+            
+            <div className="text-center mb-4 mt-1">
+              <div className="w-12 h-12 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto mb-2">
+                <span className="material-symbols-outlined text-2xl">loyalty</span>
+              </div>
+              <h3 className="text-lg font-black text-on-surface">How did you find us?</h3>
+              <p className="text-xs text-on-surface-variant mt-0.5">Help us serve you better</p>
+            </div>
+
+            <div className="flex gap-3 mb-4">
+              <button
+                onClick={() => { setSourceType('self'); setIsCodeApplied(false); setReferralCode(''); }}
+                className={`flex-1 py-2.5 px-2 border-2 rounded-xl text-sm font-bold flex flex-col items-center gap-1 transition-all cursor-pointer ${
+                  sourceType === 'self' ? 'border-primary bg-primary/5 text-primary' : 'border-outline-variant/30 text-on-surface-variant hover:bg-surface-container-low'
+                }`}
+              >
+                <span className="material-symbols-outlined">person</span>
+                Self
+              </button>
+              <button
+                onClick={() => setSourceType('agent')}
+                className={`flex-1 py-2.5 px-2 border-2 rounded-xl text-sm font-bold flex flex-col items-center gap-1 transition-all cursor-pointer ${
+                  sourceType === 'agent' ? 'border-primary bg-primary/5 text-primary' : 'border-outline-variant/30 text-on-surface-variant hover:bg-surface-container-low'
+                }`}
+              >
+                <span className="material-symbols-outlined">support_agent</span>
+                Via Agent
+              </button>
+            </div>
+
+            {sourceType === 'agent' && (
+              <div className="space-y-3 mb-4 animate-fade-in text-left">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Agent Name / Number</label>
+                  <input
+                    type="text"
+                    value={agentDetail}
+                    onChange={(e) => setAgentDetail(e.target.value)}
+                    placeholder="Enter Agent Details"
+                    className="w-full bg-surface-container-low border border-outline-variant/50 rounded-xl px-3 py-2.5 text-sm font-semibold focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                  />
+                </div>
+                
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Agent Referral Code</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                    value={referralCode}
+                    onChange={(e) => {
+                      setReferralCode(e.target.value.toUpperCase());
+                      setIsCodeApplied(false);
+                    }}
+                    placeholder="Enter Code"
+                    className="flex-1 w-full bg-surface-container-low border border-outline-variant/50 rounded-xl px-4 py-3 text-sm font-bold focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all uppercase"
+                  />
+                  <button
+                    onClick={applyCode}
+                    disabled={!referralCode || isCodeApplied}
+                    className={`px-4 font-bold rounded-xl text-xs transition-all ${
+                      isCodeApplied 
+                        ? 'bg-tertiary text-white cursor-default' 
+                        : 'bg-primary text-white hover:opacity-90 active:scale-95 cursor-pointer'
+                    }`}
+                  >
+                    {isCodeApplied ? 'APPLIED' : 'APPLY'}
+                  </button>
+                </div>
+                {isCodeApplied && (
+                  <p className="text-[10px] font-bold text-tertiary flex items-center gap-1 mt-1">
+                    <span className="material-symbols-outlined text-[12px]" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+                    Flat ₹200 Discount applied successfully!
+                  </p>
+                )}
+                </div>
+              </div>
+            )}
+
+            <button
+              onClick={handleProceedToPayment}
+              className="w-full py-3 bg-primary text-white font-black rounded-xl shadow-xl hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer flex justify-center items-center gap-2 mt-2"
+            >
+              <span>Proceed to Pay</span>
+              <span className="font-extrabold text-lg">
+                ₹{sourceType === 'agent' && isCodeApplied ? (PLANS[selected].price - 200).toLocaleString() : PLANS[selected].price.toLocaleString()}
+              </span>
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

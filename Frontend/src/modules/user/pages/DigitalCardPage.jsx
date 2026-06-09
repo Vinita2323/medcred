@@ -137,7 +137,14 @@ export default function DigitalCardPage() {
           {/* Action Buttons */}
           <div className="flex flex-col gap-3 pt-2">
             <button 
-              onClick={() => alert("Card PDF copy downloaded to your device.")}
+              onClick={() => {
+                const link = document.createElement('a');
+                link.href = '/FinalLogo.png';
+                link.download = 'MedCred-Health-Card.png';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+              }}
               className="w-full bg-primary text-on-primary py-3.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-md hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer"
             >
               <span className="material-symbols-outlined text-base">download</span>

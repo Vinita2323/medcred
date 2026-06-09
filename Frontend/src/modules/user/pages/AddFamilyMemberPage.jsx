@@ -93,20 +93,22 @@ export default function AddFamilyMemberPage() {
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* Profile Photo Upload */}
           <div className="flex flex-col items-center gap-2">
-            <div className="relative group">
-              <label className="w-24 h-24 rounded-full bg-surface-container-high border-2 border-dashed border-outline-variant flex items-center justify-center overflow-hidden cursor-pointer hover:border-primary transition-all relative">
-                {profilePic ? (
-                  <img src={profilePic} alt="Preview" className="w-full h-full object-cover" />
-                ) : (
-                  <span className="material-symbols-outlined text-outline text-4xl">person_add</span>
-                )}
-                <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
-              </label>
-              <div className="absolute bottom-0 right-0 bg-primary text-white w-8 h-8 rounded-full flex items-center justify-center shadow-md pointer-events-none">
-                <span className="material-symbols-outlined text-sm">photo_camera</span>
+            <label className="flex flex-col items-center gap-2 cursor-pointer group">
+              <div className="relative">
+                <div className="w-24 h-24 rounded-full bg-surface-container-high border-2 border-dashed border-outline-variant flex items-center justify-center overflow-hidden group-hover:border-primary transition-all relative">
+                  {profilePic ? (
+                    <img src={profilePic} alt="Preview" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="material-symbols-outlined text-outline text-4xl">person_add</span>
+                  )}
+                  <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+                </div>
+                <div className="absolute bottom-0 right-0 bg-primary text-white w-8 h-8 rounded-full flex items-center justify-center shadow-md pointer-events-none">
+                  <span className="material-symbols-outlined text-sm">photo_camera</span>
+                </div>
               </div>
-            </div>
-            <span className="text-xs font-bold text-primary">Upload Profile Photo</span>
+              <span className="text-xs font-bold text-primary group-hover:underline">Upload Profile Photo</span>
+            </label>
           </div>
 
           {/* Form Fields */}

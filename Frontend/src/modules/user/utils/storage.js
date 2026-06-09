@@ -94,7 +94,7 @@ export const PLANS = {
     name: 'Individual Plan',
     price: 999,
     members: 1,
-    coverage: '₹1,00,000',
+    coverage: '₹2,00,000',
     validity: '1 Year',
     color: 'plan-individual',
     features: [
@@ -116,9 +116,9 @@ export const PLANS = {
     popular: true,
     features: [
       'All Individual Benefits',
+      'Includes Parents & In-laws',
       'Up to 4 Family Members',
       'Family Floater Coverage',
-      'Maternity Benefits',
       'Higher Loan Eligibility',
     ],
   },
@@ -132,9 +132,9 @@ export const PLANS = {
     color: 'plan-premium',
     features: [
       'All Family Plan Benefits',
+      'Includes Parents & In-laws',
       'Up to 6 Family Members',
       'International Coverage',
-      'Priority Claim Processing',
       'Dedicated Health Manager',
     ],
   },

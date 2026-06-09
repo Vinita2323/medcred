@@ -66,7 +66,7 @@ export default function LoanDetailsPage() {
         </section>
 
         <button 
-          onClick={() => navigate('/loan')}
+          onClick={() => navigate('/loan-application-form', { state })}
           className="w-full py-4 bg-primary text-white font-bold rounded-xl shadow-lg hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer"
         >
           Proceed with {state.type} Loan

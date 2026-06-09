@@ -17,6 +17,9 @@ export default function PaymentPage() {
   const location = useLocation();
   const planId = location.state?.planId || 'family';
   const plan = PLANS[planId];
+  const finalPrice = location.state?.price || plan.price;
+  const agentDetail = location.state?.agentDetail || null;
+  const referralCode = location.state?.referralCode || null;
 
   const [method, setMethod] = useState('upi');
   const [processing, setProcessing] = useState(false);
@@ -56,11 +59,88 @@ export default function PaymentPage() {
     if (!validateForm()) return;
     setProcessing(true);
     setTimeout(() => {
-      saveMembership(planId, { method, txnId: 'MC' + Date.now().toString(36).toUpperCase() });
+      saveMembership(planId, { method, txnId: 'MC' + Date.now().toString(36).toUpperCase(), price: finalPrice });
       setMembership(getMembership());
       setProcessing(false);
       setSuccess(true);
     }, 2500);
+  };
+
+  const handleDownloadInvoice = () => {
+    const invoiceHtml = `
+      <html>
+        <head>
+          <meta charset="UTF-8">
+          <title>Invoice - ${plan.name}</title>
+          <style>
+            body { font-family: system-ui, -apple-system, sans-serif; padding: 40px; color: #333; max-width: 800px; margin: 0 auto; }
+            .header { border-bottom: 2px solid #0052CC; padding-bottom: 20px; margin-bottom: 30px; }
+            .logo { font-size: 24px; font-weight: bold; color: #0052CC; }
+            .row { display: flex; justify-content: space-between; margin-bottom: 10px; }
+            table { border-collapse: collapse; margin-top: 20px; width: 100%; }
+            th, td { text-align: left; padding: 12px; border-bottom: 1px solid #ddd; }
+            th { color: #666; font-weight: 600; font-size: 14px; }
+            .total { font-size: 20px; font-weight: bold; color: #0052CC; text-align: right; margin-top: 20px; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div class="logo">MedCred India</div>
+            <div style="color: #666; margin-top: 5px;">Invoice #MC-${Math.floor(100000 + Math.random() * 900000)}</div>
+            <div style="color: #666;">Date: ${new Date().toLocaleDateString()}</div>
+          </div>
+          
+          <div class="row">
+            <div>
+              <strong>Billed To:</strong><br/>
+              Customer<br/>
+              MedCred User
+            </div>
+            <div style="text-align: right;">
+              <strong>Agent Details:</strong><br/>
+              ${(agentDetail || referralCode) ? `Name/No: ${agentDetail || 'N/A'}<br/>Code: ${referralCode || 'N/A'}` : 'Channel: Direct / Self'}
+            </div>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Description</th>
+                <th>Included Benefits</th>
+                <th style="text-align: right;">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <strong>${plan.name}</strong><br/>
+                  <span style="color: #666; font-size: 13px;">${plan.validity}</span>
+                </td>
+                <td style="color: #666; font-size: 13px;">
+                  - Up to ${plan.members} members<br/>
+                  - ${plan.coverage} Coverage<br/>
+                </td>
+                <td style="text-align: right;">₹${finalPrice.toLocaleString()}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="total">
+            Total Paid: ₹${finalPrice.toLocaleString()}
+          </div>
+          
+          <div style="margin-top: 60px; font-size: 12px; color: #888; text-align: center;">
+            This is a computer generated invoice and does not require a physical signature.
+          </div>
+          <script>
+            window.onload = function() { window.print(); }
+          </script>
+        </body>
+      </html>
+    `;
+    const blob = new Blob([invoiceHtml], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
   };
 
   // ── Success Screen ────────────────────────────────────────────────
@@ -122,14 +202,23 @@ export default function PaymentPage() {
           ))}
         </div>
 
-        <button
-          onClick={() => navigate('/dashboard')}
-          className="w-full max-w-sm py-3 bg-primary text-white font-black rounded-xl shadow-lg hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-2 text-sm"
-        >
-          Go to Dashboard
-          <span className="material-symbols-outlined text-lg">arrow_forward</span>
-        </button>
-        <p className="text-[9px] text-on-surface-variant mt-2 text-center">A confirmation has been sent to your registered mobile number.</p>
+        <div className="flex flex-col w-full max-w-sm gap-3">
+          <button
+            onClick={handleDownloadInvoice}
+            className="w-full py-3 bg-surface-container border-2 border-primary text-primary font-black rounded-xl shadow-sm hover:bg-primary/5 active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-2 text-sm"
+          >
+            <span className="material-symbols-outlined text-lg">receipt_long</span>
+            Download Invoice
+          </button>
+          <button
+            onClick={() => navigate('/dashboard')}
+            className="w-full py-3 bg-primary text-white font-black rounded-xl shadow-lg hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-2 text-sm"
+          >
+            Go to Dashboard
+            <span className="material-symbols-outlined text-lg">arrow_forward</span>
+          </button>
+        </div>
+        <p className="text-[9px] text-on-surface-variant mt-3 text-center">A confirmation has been sent to your registered mobile number.</p>
       </div>
     );
   }
@@ -174,7 +263,7 @@ export default function PaymentPage() {
               <p className="font-bold">{plan.name}</p>
               <p className="text-xs opacity-70">{plan.validity} · Up to {plan.members} members · {plan.coverage} coverage</p>
             </div>
-            <p className="text-2xl font-black">₹{plan.price.toLocaleString()}</p>
+            <p className="text-2xl font-black">₹{finalPrice.toLocaleString()}</p>
           </div>
         </div>
 
@@ -293,7 +382,7 @@ export default function PaymentPage() {
             className="w-full py-4 bg-primary text-white font-black rounded-2xl shadow-xl hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-3 text-base"
           >
             <span className="material-symbols-outlined">lock</span>
-            Pay ₹{plan.price.toLocaleString()} Securely
+            Pay ₹{finalPrice.toLocaleString()} Securely
           </button>
           <p className="text-center text-[10px] text-on-surface-variant mt-2">
             🔒 Payment secured by Razorpay · PCI DSS Compliant

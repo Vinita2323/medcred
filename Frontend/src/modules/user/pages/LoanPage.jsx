@@ -16,7 +16,7 @@ export default function LoanPage() {
   const progressPct = Math.min(100, Math.round((daysActive / 30) * 100));
 
   const maxLimit = 500000;
-  const minAmount = 50000;
+  const minAmount = 10000;
 
   const handleSliderChange = (e) => {
     setLoanAmount(Number(e.target.value));
@@ -129,14 +129,14 @@ export default function LoanPage() {
           <>
             {/* Approved Limit Cards */}
             <section className="grid grid-cols-2 gap-3">
-              {/* Individual Card */}
+              {/* Home Treatment Card */}
               <div 
-                onClick={() => navigate('/loan-details', { state: { type: 'Individual', limit: 100000 } })}
+                onClick={() => navigate('/loan-details', { state: { type: 'Home Treatment', limit: 100000 } })}
                 className="bg-gradient-to-br from-[#0A4DBF] to-[#1976D2] rounded-2xl p-4 text-white shadow-lg relative overflow-hidden flex flex-col justify-between cursor-pointer hover:shadow-xl transition-all hover:scale-[1.02]"
               >
                 <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -mr-10 -mt-10 blur-xl"></div>
                 <div className="relative z-10">
-                  <span className="text-[9px] bg-white/20 text-white font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Individual</span>
+                  <span className="inline-block whitespace-nowrap text-[9px] bg-white/20 text-white font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Home Treatment</span>
                   <div className="mt-3">
                     <p className="text-xl font-black tracking-tight">₹1,00,000</p>
                     <p className="text-[9px] opacity-80 mt-0.5">Max Payout Limit</p>
@@ -154,17 +154,17 @@ export default function LoanPage() {
                 </div>
               </div>
 
-              {/* Family Card */}
+              {/* Hospitalization Card */}
               <div 
-                onClick={() => navigate('/loan-details', { state: { type: 'Family', limit: 200000 } })}
+                onClick={() => navigate('/loan-details', { state: { type: 'Hospitalization', limit: 200000 } })}
                 className="bg-gradient-to-br from-primary to-secondary rounded-2xl p-4 text-white shadow-lg relative overflow-hidden flex flex-col justify-between cursor-pointer hover:shadow-xl transition-all hover:scale-[1.02]"
               >
                 <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -mr-10 -mt-10 blur-xl"></div>
                 <div className="relative z-10">
-                  <span className="text-[9px] bg-white/20 text-white font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Family</span>
+                  <span className="inline-block whitespace-nowrap text-[9px] bg-white/20 text-white font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Hospitalization</span>
                   <div className="mt-3">
                     <p className="text-xl font-black tracking-tight">₹2,00,000</p>
-                    <p className="text-[9px] opacity-80 mt-0.5">Max Payout Limit</p>
+                    <p className="text-[9px] opacity-80 mt-0.5">Max Payout / Member</p>
                   </div>
                 </div>
                 <div className="relative z-10 flex justify-between items-end mt-4 pt-3 border-t border-white/20">
@@ -200,7 +200,7 @@ export default function LoanPage() {
                   className="w-full h-2 bg-surface-container rounded-lg appearance-none cursor-pointer accent-primary"
                 />
                 <div className="flex justify-between text-[9px] text-outline font-semibold">
-                  <span>Min: ₹50,000</span>
+                  <span>Min: ₹10,000</span>
                   <span>Max: ₹5,00,000</span>
                 </div>
               </div>

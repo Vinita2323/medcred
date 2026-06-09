@@ -9,6 +9,7 @@ export default function ProfilePage() {
   const navigate = useNavigate();
   const [openSection, setOpenSection] = useState('personal');
   const [isEditing, setIsEditing] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   // Live data from localStorage
   const [user, setUser] = useState(null);
@@ -18,6 +19,17 @@ export default function ProfilePage() {
   const [tempName, setTempName] = useState('');
   const [tempEmail, setTempEmail] = useState('');
   const [tempPhone, setTempPhone] = useState('');
+
+  // Health edit fields
+  const [isHealthEditing, setIsHealthEditing] = useState(false);
+  const [tempHealth, setTempHealth] = useState({
+    height: '',
+    weight: '',
+    bloodGroup: '',
+    allergies: '',
+    chronic: '',
+    medications: ''
+  });
 
   useEffect(() => {
     if (isLoggedIn()) {
@@ -49,12 +61,12 @@ export default function ProfilePage() {
   }
 
   // Derived display values (fallback to demo if no user registered)
-  const profileName = user?.name || 'Arjun Mehta';
-  const profileEmail = user?.email || 'arjun.mehta@example.com';
-  const profilePhone = user?.mobile ? `+91 ${user.mobile}` : '+91 98765 43210';
-  const profileDob = user?.dob ? formatDobDisplay(user.dob) : '14 May 1992';
-  const profileGender = user?.gender || 'Male';
-  const profileAddress = user?.address || '42, Shastri Nagar, Bhopal, MP – 462001';
+  const profileName = user?.name || 'User Profile';
+  const profileEmail = user?.email || 'No email provided';
+  const profilePhone = user?.mobile ? `+91 ${user.mobile}` : 'No phone provided';
+  const profileDob = user?.dob ? formatDobDisplay(user.dob) : 'Not provided';
+  const profileGender = user?.gender || 'Not provided';
+  const profileAddress = user?.address || 'Not provided';
   const profilePic = user?.profilePic || null;
 
   const toggleSection = (section) => {
@@ -77,6 +89,26 @@ export default function ProfilePage() {
     updateUser({ name: tempName, email: tempEmail, mobile: tempPhone });
     setUser(getUser());
     setIsEditing(false);
+  };
+
+  const handleEditHealthClick = (e) => {
+    e.stopPropagation(); // Prevent toggling the accordion
+    setTempHealth({
+      height: user?.health?.height || "5'9\"",
+      weight: user?.health?.weight || "72",
+      bloodGroup: user?.health?.bloodGroup || "B+",
+      allergies: user?.health?.allergies || "Penicillin, Dust",
+      chronic: user?.health?.chronic || "None",
+      medications: user?.health?.medications || "None"
+    });
+    setIsHealthEditing(true);
+  };
+
+  const handleSaveHealth = (e) => {
+    e.preventDefault();
+    updateUser({ health: tempHealth });
+    setUser(getUser());
+    setIsHealthEditing(false);
   };
 
   const SectionHeader = ({ icon, title, section }) => (
@@ -209,14 +241,37 @@ export default function ProfilePage() {
 
           {/* Health Information */}
           <div className="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden shadow-sm">
-            <SectionHeader icon="favorite" title="Health Information" section="health" />
+            <button
+              onClick={() => toggleSection('health')}
+              className="w-full p-4 flex items-center justify-between cursor-pointer hover:bg-surface-container-low transition-colors outline-none text-left"
+            >
+              <div className="flex items-center gap-3">
+                <div className="bg-primary/10 p-2 rounded-lg flex items-center justify-center">
+                  <span className="material-symbols-outlined text-primary">favorite</span>
+                </div>
+                <h3 className="text-sm font-bold text-on-surface">Health Information</h3>
+              </div>
+              <div className="flex items-center gap-2">
+                {openSection === 'health' && (
+                  <span 
+                    onClick={handleEditHealthClick}
+                    className="material-symbols-outlined text-primary bg-primary/10 p-1.5 rounded-full hover:bg-primary/20 transition-colors text-sm"
+                  >
+                    edit
+                  </span>
+                )}
+                <span className={`material-symbols-outlined text-outline transition-transform duration-300 ${openSection === 'health' ? 'rotate-180' : ''}`}>
+                  expand_more
+                </span>
+              </div>
+            </button>
             {openSection === 'health' && (
               <div className="p-4 pt-2 border-t border-outline-variant/30">
                 <div className="grid grid-cols-2 gap-3 mb-3">
                   {[
-                    { label: 'Height', value: '5\'9"', icon: 'height', color: 'text-primary' },
-                    { label: 'Weight', value: '72 kg', icon: 'monitor_weight', color: 'text-secondary' },
-                    { label: 'Blood Group', value: 'B+', icon: 'bloodtype', color: 'text-error' },
+                    { label: 'Height', value: user?.health?.height || "5'9\"", icon: 'height', color: 'text-primary' },
+                    { label: 'Weight', value: (user?.health?.weight || "72") + " kg", icon: 'monitor_weight', color: 'text-secondary' },
+                    { label: 'Blood Group', value: user?.health?.bloodGroup || "B+", icon: 'bloodtype', color: 'text-error' },
                     { label: 'BMI', value: '23.4', icon: 'bar_chart', color: 'text-tertiary' },
                   ].map(stat => (
                     <div key={stat.label} className="bg-surface-container-low rounded-xl p-3 flex items-center gap-3">
@@ -231,15 +286,15 @@ export default function ProfilePage() {
                 <div className="space-y-2 text-xs">
                   <div className="flex justify-between items-center py-2 border-b border-outline-variant/20">
                     <span className="text-on-surface-variant font-semibold">Allergies</span>
-                    <span className="text-on-surface font-bold text-right">Penicillin, Dust</span>
+                    <span className="text-on-surface font-bold text-right">{user?.health?.allergies || "Penicillin, Dust"}</span>
                   </div>
                   <div className="flex justify-between items-center py-2 border-b border-outline-variant/20">
                     <span className="text-on-surface-variant font-semibold">Chronic Conditions</span>
-                    <span className="text-on-surface font-bold">None</span>
+                    <span className="text-on-surface font-bold">{user?.health?.chronic || "None"}</span>
                   </div>
                   <div className="flex justify-between items-center py-2 border-b border-outline-variant/20">
                     <span className="text-on-surface-variant font-semibold">Current Medications</span>
-                    <span className="text-on-surface font-bold">None</span>
+                    <span className="text-on-surface font-bold">{user?.health?.medications || "None"}</span>
                   </div>
                   <div className="flex justify-between items-center py-2">
                     <span className="text-on-surface-variant font-semibold">Last Checkup</span>
@@ -483,17 +538,13 @@ export default function ProfilePage() {
             <span className="material-symbols-outlined text-base">logout</span>
           </button>
 
-          {/* Danger Zone */}
-          <div className="border border-error/20 rounded-xl p-4 space-y-2 bg-error/5">
-            <p className="text-[10px] font-bold text-error uppercase tracking-widest">Danger Zone</p>
-            <button
-              onClick={() => alert("Account deletion request submitted. Our team will contact you within 48 hours.")}
-              className="w-full text-xs text-error font-bold py-2.5 rounded-xl border border-error/30 hover:bg-error/10 transition-all cursor-pointer flex items-center justify-center gap-2"
-            >
-              <span className="material-symbols-outlined text-sm">delete_forever</span>
-              Delete Account
-            </button>
-          </div>
+          <button
+            onClick={() => setIsDeleteModalOpen(true)}
+            className="w-full text-xs text-error font-bold py-3.5 rounded-xl border border-error/30 hover:bg-error/5 transition-all cursor-pointer flex items-center justify-center gap-2"
+          >
+            <span className="material-symbols-outlined text-base">delete_forever</span>
+            Delete Account
+          </button>
         </div>
 
       </main>
@@ -566,6 +617,149 @@ export default function ProfilePage() {
         </div>
       )}
 
+      {/* Edit Health Modal */}
+      {isHealthEditing && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center animate-fade-in p-4">
+          <div className="bg-white border border-outline-variant/50 w-full max-w-[340px] rounded-2xl p-5 shadow-2xl flex flex-col space-y-4 animate-scale-up h-auto max-h-[80vh] overflow-y-auto hide-scrollbar">
+            <div className="flex justify-between items-center pb-2 border-b border-outline-variant/20 sticky top-0 bg-white z-10">
+              <h3 className="font-bold text-sm text-primary">Edit Health Info</h3>
+              <button
+                onClick={() => setIsHealthEditing(false)}
+                className="material-symbols-outlined text-outline hover:text-on-surface cursor-pointer text-lg"
+              >
+                close
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveHealth} className="space-y-3.5">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-on-surface-variant">Height</label>
+                  <input
+                    type="text"
+                    value={tempHealth.height}
+                    onChange={(e) => setTempHealth({ ...tempHealth, height: e.target.value })}
+                    placeholder="e.g. 5'9&quot;"
+                    className="w-full px-3 py-2 bg-surface border border-outline-variant rounded-xl text-xs font-semibold focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                    required
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-on-surface-variant">Weight (kg)</label>
+                  <input
+                    type="number"
+                    value={tempHealth.weight}
+                    onChange={(e) => setTempHealth({ ...tempHealth, weight: e.target.value })}
+                    placeholder="e.g. 72"
+                    className="w-full px-3 py-2 bg-surface border border-outline-variant rounded-xl text-xs font-semibold focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-on-surface-variant">Blood Group</label>
+                <select
+                  value={tempHealth.bloodGroup}
+                  onChange={(e) => setTempHealth({ ...tempHealth, bloodGroup: e.target.value })}
+                  className="w-full px-3 py-2 bg-surface border border-outline-variant rounded-xl text-xs font-semibold focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                >
+                  <option value="A+">A+</option>
+                  <option value="A-">A-</option>
+                  <option value="B+">B+</option>
+                  <option value="B-">B-</option>
+                  <option value="O+">O+</option>
+                  <option value="O-">O-</option>
+                  <option value="AB+">AB+</option>
+                  <option value="AB-">AB-</option>
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-on-surface-variant">Allergies</label>
+                <input
+                  type="text"
+                  value={tempHealth.allergies}
+                  onChange={(e) => setTempHealth({ ...tempHealth, allergies: e.target.value })}
+                  placeholder="e.g. Penicillin, Dust (or None)"
+                  className="w-full px-3 py-2 bg-surface border border-outline-variant rounded-xl text-xs font-semibold focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-on-surface-variant">Chronic Conditions</label>
+                <input
+                  type="text"
+                  value={tempHealth.chronic}
+                  onChange={(e) => setTempHealth({ ...tempHealth, chronic: e.target.value })}
+                  placeholder="e.g. Asthma, Diabetes (or None)"
+                  className="w-full px-3 py-2 bg-surface border border-outline-variant rounded-xl text-xs font-semibold focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-on-surface-variant">Current Medications</label>
+                <input
+                  type="text"
+                  value={tempHealth.medications}
+                  onChange={(e) => setTempHealth({ ...tempHealth, medications: e.target.value })}
+                  placeholder="e.g. Inhaler (or None)"
+                  className="w-full px-3 py-2 bg-surface border border-outline-variant rounded-xl text-xs font-semibold focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                />
+              </div>
+
+              <div className="flex gap-2 pt-2 pb-1">
+                <button
+                  type="button"
+                  onClick={() => setIsHealthEditing(false)}
+                  className="flex-1 border border-outline text-on-surface-variant text-xs font-bold py-2 rounded-xl hover:bg-surface-container-low cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 bg-primary text-white text-xs font-bold py-2 rounded-xl hover:opacity-90 active:scale-95 transition-all cursor-pointer shadow"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {isDeleteModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center animate-fade-in p-4">
+          <div className="bg-white border border-outline-variant/50 w-full max-w-[320px] rounded-2xl p-6 shadow-2xl flex flex-col space-y-4 animate-scale-up text-center relative">
+            <div className="w-14 h-14 bg-error/10 text-error rounded-full flex items-center justify-center mx-auto mb-1">
+              <span className="material-symbols-outlined text-3xl">warning</span>
+            </div>
+            <div>
+              <h3 className="font-black text-xl text-on-surface">Delete Account?</h3>
+              <p className="text-xs text-on-surface-variant mt-2">This action cannot be undone. All your personal data, health records, and family details will be permanently removed.</p>
+            </div>
+            
+            <div className="flex gap-3 pt-3">
+              <button
+                onClick={() => setIsDeleteModalOpen(false)}
+                className="flex-1 border border-outline text-on-surface-variant text-sm font-bold py-3 rounded-xl hover:bg-surface-container-low cursor-pointer transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  clearUser();
+                  navigate('/');
+                }}
+                className="flex-1 bg-error text-white text-sm font-bold py-3 rounded-xl hover:opacity-90 active:scale-95 transition-all cursor-pointer shadow-md"
+              >
+                Yes, Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
