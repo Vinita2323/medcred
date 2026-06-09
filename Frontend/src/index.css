@@ -115,6 +115,14 @@ body {
   max-width: 100%;
   overflow-x: hidden;
   color: #0D1B3E;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+input, textarea, [contenteditable] {
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 html {

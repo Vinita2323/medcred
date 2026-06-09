@@ -136,29 +136,31 @@ export default function CheckoutPage() {
 
   if (success) {
     return (
-      <div className="flex-grow flex flex-col bg-white min-h-screen items-center justify-center px-5 py-6 animate-fade-in">
-        <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center mb-6">
-          <span className="material-symbols-outlined text-primary text-5xl">check_circle</span>
-        </div>
-        <h1 className="text-2xl font-black text-on-surface text-center mb-2">Order Confirmed!</h1>
-        <p className="text-sm text-on-surface-variant text-center mb-8 px-4">
-          Your order for <strong>{product.label}</strong> has been placed successfully and will be activated shortly.
-        </p>
-        
-        <div className="flex flex-col w-full max-w-sm gap-3">
-          <button
-            onClick={handleDownloadInvoice}
-            className="w-full py-4 bg-surface-container border-2 border-primary text-primary font-black rounded-xl shadow-sm hover:bg-primary/5 active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-2 text-sm"
-          >
-            <span className="material-symbols-outlined text-lg">receipt_long</span>
-            Download Invoice
-          </button>
-          <button
-            onClick={() => navigate('/dashboard')}
-            className="w-full py-4 bg-primary text-white font-black rounded-xl shadow-lg hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-2 text-sm"
-          >
-            Back to Dashboard
-          </button>
+      <div className="bg-white min-h-screen flex flex-col overflow-y-auto hide-scrollbar">
+        <div className="flex-grow flex flex-col items-center justify-center px-5 py-8 animate-fade-in my-auto">
+          <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center mb-6">
+            <span className="material-symbols-outlined text-primary text-5xl">check_circle</span>
+          </div>
+          <h1 className="text-2xl font-black text-on-surface text-center mb-2">Order Confirmed!</h1>
+          <p className="text-sm text-on-surface-variant text-center mb-8 px-4">
+            Your order for <strong>{product.label}</strong> has been placed successfully and will be activated shortly.
+          </p>
+          
+          <div className="flex flex-col w-full max-w-sm gap-3">
+            <button
+              onClick={handleDownloadInvoice}
+              className="w-full py-4 bg-surface-container border-2 border-primary text-primary font-black rounded-xl shadow-sm hover:bg-primary/5 active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-2 text-sm"
+            >
+              <span className="material-symbols-outlined text-lg">receipt_long</span>
+              Download Invoice
+            </button>
+            <button
+              onClick={() => navigate('/dashboard')}
+              className="w-full py-4 bg-primary text-white font-black rounded-xl shadow-lg hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-2 text-sm"
+            >
+              Back to Dashboard
+            </button>
+          </div>
         </div>
       </div>
     );

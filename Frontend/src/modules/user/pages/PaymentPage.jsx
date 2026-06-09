@@ -146,7 +146,8 @@ export default function PaymentPage() {
   // ── Success Screen ────────────────────────────────────────────────
   if (success && membership) {
     return (
-      <div className="flex-grow flex flex-col bg-white min-h-screen items-center justify-center px-5 py-6 animate-fade-in">
+      <div className="bg-white min-h-screen flex flex-col overflow-y-auto hide-scrollbar">
+        <div className="flex-grow flex flex-col items-center justify-center px-5 py-8 animate-fade-in my-auto">
         {/* Animated checkmark */}
         <div className="relative mb-2">
           <div className="w-24 h-24 flex items-center justify-center">
@@ -219,6 +220,7 @@ export default function PaymentPage() {
           </button>
         </div>
         <p className="text-[9px] text-on-surface-variant mt-3 text-center">A confirmation has been sent to your registered mobile number.</p>
+        </div>
       </div>
     );
   }
