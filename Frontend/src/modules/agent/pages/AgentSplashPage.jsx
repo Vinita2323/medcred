@@ -1,0 +1,147 @@
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+
+export default function AgentSplashPage() {
+  const navigate = useNavigate();
+  const [loadingText, setLoadingText] = useState("Securing session...");
+
+  useEffect(() => {
+    // Dynamic text sequence
+    const t1 = setTimeout(() => {
+      setLoadingText("Authenticating Agent Credentials");
+    }, 1800);
+    
+    const t2 = setTimeout(() => {
+      setLoadingText("Welcome back, Agent MC-9921");
+    }, 3200);
+
+    // Transition timer
+    const redirectTimer = setTimeout(() => {
+      navigate('/agent/login');
+    }, 4500);
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(redirectTimer);
+    };
+  }, [navigate]);
+
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen w-full relative bg-[#E0F2F1] overflow-hidden select-none">
+      {/* Dynamic Keyframe Animations */}
+      <style dangerouslySetInnerHTML={{__html: `
+        .bg-pattern {
+          background-image: radial-gradient(#003d9b11 1.5px, transparent 1.5px);
+          background-size: 24px 24px;
+        }
+
+        @keyframes pulse-ring {
+          0% { transform: scale(0.8); opacity: 0; }
+          50% { opacity: 0.2; }
+          100% { transform: scale(1.5); opacity: 0; }
+        }
+
+        .pulse-effect {
+          position: absolute;
+          width: 240px;
+          height: 240px;
+          border: 2px solid #003d9b;
+          border-radius: 50%;
+          animation: pulse-ring 3s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        }
+
+        .loading-bar {
+          width: 140px;
+          height: 4px;
+          background: #d4e6e5;
+          border-radius: 9999px;
+          overflow: hidden;
+          position: relative;
+        }
+
+        .loading-progress {
+          position: absolute;
+          height: 100%;
+          width: 30%;
+          background: #003d9b;
+          border-radius: 9999px;
+          animation: loading-slide 1.5s ease-in-out infinite;
+        }
+
+        @keyframes loading-slide {
+          0% { left: -30%; }
+          100% { left: 100%; }
+        }
+
+        .fade-in {
+          animation: fadeIn 1.2s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}} />
+
+      {/* Background Layers */}
+      <div className="absolute inset-0 bg-pattern opacity-40"></div>
+      <div className="absolute inset-0 bg-gradient-to-tr from-[#E0F2F1] via-[#faf8ff] to-[#E0F2F1] opacity-60"></div>
+      
+      {/* Main Content Container */}
+      <div className="z-10 flex flex-col items-center justify-center space-y-12 fade-in">
+        {/* Animated Logo Symbol Area */}
+        <div className="relative flex items-center justify-center">
+          <div className="pulse-effect" style={{ animationDelay: '0s' }}></div>
+          <div className="pulse-effect" style={{ animationDelay: '1.5s' }}></div>
+          
+          <div className="relative w-32 h-32 md:w-40 md:h-40 bg-white rounded-full shadow-lg flex items-center justify-center border border-primary/10 transition-transform duration-300 hover:scale-105">
+            <div className="flex flex-col items-center">
+              <span className="material-symbols-outlined text-[64px] md:text-[80px] text-[#003d9b]" style={{ fontVariationSettings: "'FILL' 1" }}>
+                health_and_safety
+              </span>
+              <div className="absolute -bottom-1 -right-1 bg-[#003d9b] text-white w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center shadow-md border-4 border-[#faf8ff]">
+                <span className="material-symbols-outlined text-[28px] md:text-[36px]" style={{ fontVariationSettings: "'FILL' 1" }}>
+                  verified_user
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Brand Identity */}
+        <div className="text-center space-y-2">
+          <h1 className="text-[28px] md:text-[32px] leading-[36px] md:leading-[40px] font-bold text-[#003d9b] tracking-tight">
+            MedCred India
+          </h1>
+          <p className="text-sm font-semibold text-[#434654] tracking-widest uppercase opacity-70">
+            Agent Terminal
+          </p>
+        </div>
+      </div>
+
+      {/* Bottom Section: Loading & Trust Indicators */}
+      <div className="absolute bottom-20 z-10 flex flex-col items-center space-y-8 fade-in" style={{ animationDelay: '0.5s' }}>
+        {/* Loading Indicator */}
+        <div className="flex flex-col items-center space-y-3">
+          <div className="loading-bar">
+            <div className="loading-progress"></div>
+          </div>
+          <p className="text-xs text-[#516161]/60 font-semibold h-4">{loadingText}</p>
+        </div>
+
+        {/* Trust Badges */}
+        <div className="flex items-center space-x-6 opacity-40 grayscale hover:grayscale-0 transition-all duration-500">
+          <div className="flex items-center space-x-2">
+            <span class="material-symbols-outlined text-base">shield</span>
+            <span class="text-[12px] font-medium">End-to-End Encrypted</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <span class="material-symbols-outlined text-base">account_balance</span>
+            <span class="text-[12px] font-medium">RBI Compliant</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
