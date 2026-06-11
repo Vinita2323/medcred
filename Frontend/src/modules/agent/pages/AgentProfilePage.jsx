@@ -1,139 +1,156 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 export default function AgentProfilePage() {
   const navigate = useNavigate();
+  const [currentUser, setCurrentUser] = useState(null);
+
+  useEffect(() => {
+    const userJson = localStorage.getItem('currentUser');
+    if (userJson) {
+      setCurrentUser(JSON.parse(userJson));
+    }
+  }, []);
 
   const handleLogout = () => {
+    localStorage.removeItem('currentUser');
     alert('Logged out from Agent Portal.');
     navigate('/agent/login');
   };
 
+  if (!currentUser) {
+    return (
+      <div className="flex items-center justify-center min-h-[300px] text-[#516161]">
+        Loading profile...
+      </div>
+    );
+  }
+
+  // Determine ranking badge details
+  const getRankBadgeInfo = (rank) => {
+    switch (rank) {
+      case 'Platinum':
+        return { label: 'Platinum Partner', style: 'bg-purple-100 text-purple-800 border-purple-300', desc: 'Top Tier override of 4.5% network sales.' };
+      case 'Gold':
+        return { label: 'Gold Partner', style: 'bg-yellow-100 text-yellow-800 border-yellow-300', desc: 'Overriding commissions of 3.0% network sales.' };
+      case 'Silver':
+        return { label: 'Silver Partner', style: 'bg-gray-100 text-gray-800 border-gray-300', desc: 'Standard 2.5% commission override.' };
+      default:
+        return { label: 'Bronze Partner', style: 'bg-amber-100 text-amber-800 border-amber-300', desc: 'Entry rank. Upgrade by generating sales & referrals.' };
+    }
+  };
+
+  const badge = getRankBadgeInfo(currentUser.rank);
+
   return (
-    <div className="bg-[#faf8ff] text-[#191b23] font-body-md min-h-screen pb-24">
-      {/* Header */}
-      <header className="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-4 h-16 bg-white shadow-sm border-b border-[#c3c6d6]/20">
-        <div className="flex items-center gap-3">
-          <button onClick={() => navigate('/agent/dashboard')} className="material-symbols-outlined text-[#003d9b] p-1 rounded-full hover:bg-[#f3f3fd] transition-colors">
-            arrow_back
-          </button>
-          <h1 className="text-xl font-bold text-[#003d9b]">Agent Profile</h1>
+    <div className="space-y-6 max-w-3xl mx-auto animate-fade-in">
+      {/* Profile summary card */}
+      <section className="bg-white border border-[#c3c6d6]/30 rounded-2xl p-6 shadow-sm flex flex-col sm:flex-row items-center gap-6">
+        <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-[#dae2ff] p-0.5 shadow-md flex-shrink-0 bg-[#003d9b]/10 flex items-center justify-center text-3xl font-bold text-[#003d9b]">
+          {currentUser.fullName.charAt(0)}
         </div>
-      </header>
+        <div className="flex-grow text-center sm:text-left space-y-2">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 justify-center sm:justify-start">
+            <h2 className="text-xl font-bold text-[#191b23]">{currentUser.fullName}</h2>
+            <span className={`text-xs font-semibold px-3 py-0.5 rounded-full border ${badge.style} inline-block w-max mx-auto sm:mx-0`}>
+              {badge.label}
+            </span>
+          </div>
+          <p className="text-xs text-[#516161]">
+            Designation: <strong className="text-[#003d9b]">{currentUser.role}</strong> • 
+            Status: <strong className="text-green-700">{currentUser.status}</strong>
+          </p>
+          <p className="text-[11px] text-[#737685]">{badge.desc}</p>
+        </div>
+      </section>
 
-      {/* Main Content */}
-      <main className="pt-20 px-4 max-w-2xl mx-auto space-y-6">
+      {/* Network & Hierarchy Details */}
+      <section className="bg-white border border-[#c3c6d6]/30 rounded-2xl p-6 shadow-sm space-y-4">
+        <h3 className="font-bold text-[#191b23] border-b border-[#c3c6d6]/20 pb-2 flex items-center gap-2 text-sm">
+          <span className="material-symbols-outlined text-[#003d9b] text-[18px]">partner_exchange</span>
+          <span>Hierarchy &amp; Referral Details</span>
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+          <div className="flex justify-between border-b border-[#faf8ff] pb-2 md:border-none">
+            <span className="text-[#516161]">Agent ID</span>
+            <span className="font-mono font-bold text-[#003d9b]">{currentUser.agentId || 'PENDING'}</span>
+          </div>
+          <div className="flex justify-between border-b border-[#faf8ff] pb-2 md:border-none">
+            <span className="text-[#516161]">Reporting Manager</span>
+            <span className="font-semibold">{currentUser.reportingManager || 'System Administrator'}</span>
+          </div>
+          <div className="flex justify-between border-b border-[#faf8ff] pb-2 md:border-none">
+            <span className="text-[#516161]">Referral Code</span>
+            <span className="font-mono font-bold text-[#0c56d0]">{currentUser.referralCode || '—'}</span>
+          </div>
+          <div className="flex justify-between border-b border-[#faf8ff] pb-2 md:border-none">
+            <span className="text-[#516161]">Commission Percentage</span>
+            <span className="font-semibold text-green-700">{currentUser.commissionRate}% override</span>
+          </div>
+          <div className="flex justify-between border-b border-[#faf8ff] pb-2 md:border-none col-span-1 md:col-span-2">
+            <span className="text-[#516161]">Onboarding Network Level</span>
+            <span className="font-semibold text-xs text-[#003d9b] bg-[#dae2ff] px-2.5 py-0.5 rounded-full">
+              {currentUser.role === 'Super Agent' ? 'Level 1 Network Coordinator' : currentUser.role === 'Team Leader' ? 'Level 2 Squad Lead' : 'Level 3 Field Representative'}
+            </span>
+          </div>
+        </div>
+      </section>
+
+      {/* Account Details */}
+      <section className="bg-white border border-[#c3c6d6]/30 rounded-2xl p-6 shadow-sm space-y-4">
+        <h3 className="font-bold text-[#191b23] border-b border-[#c3c6d6]/20 pb-2 flex items-center gap-2 text-sm">
+          <span className="material-symbols-outlined text-[#003d9b] text-[18px]">domain</span>
+          <span>General Info</span>
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+          <div className="flex justify-between border-b border-[#faf8ff] pb-2 md:border-none">
+            <span className="text-[#516161]">Mobile Registered</span>
+            <span className="font-semibold">{currentUser.mobileNumber}</span>
+          </div>
+          <div className="flex justify-between border-b border-[#faf8ff] pb-2 md:border-none">
+            <span className="text-[#516161]">Email Address</span>
+            <span className="font-semibold">{currentUser.email}</span>
+          </div>
+          <div className="flex justify-between border-b border-[#faf8ff] pb-2 md:border-none">
+            <span className="text-[#516161]">Joined Date</span>
+            <span className="font-semibold">{currentUser.joiningDate || 'June 11, 2026'}</span>
+          </div>
+          <div className="flex justify-between border-b border-[#faf8ff] pb-2 md:border-none">
+            <span className="text-[#516161]">Aadhaar Number</span>
+            <span className="font-mono text-xs">{currentUser.aadhaarNumber || 'XXXXXXXX9921'}</span>
+          </div>
+        </div>
+      </section>
+
+      {/* Account Settings Menu */}
+      <section className="bg-white border border-[#c3c6d6]/30 rounded-2xl p-4 shadow-sm space-y-1">
+        <button className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-[#f3f3fd] transition-colors text-left text-sm group cursor-pointer">
+          <div className="flex items-center gap-3">
+            <span className="material-symbols-outlined text-[#516161] group-hover:text-[#003d9b]">security</span>
+            <span className="font-semibold">Vault Security Settings</span>
+          </div>
+          <span className="material-symbols-outlined text-[#737685]">chevron_right</span>
+        </button>
         
-        {/* Profile Card */}
-        <section className="bg-white border border-[#c3c6d6]/30 rounded-2xl p-6 shadow-sm flex flex-col items-center text-center space-y-4">
-          <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-[#dae2ff] p-0.5 shadow-md">
-            <img 
-              alt="Agent Avatar" 
-              className="w-full h-full object-cover rounded-full"
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuDd9ThGrfGVzkidmRPTIDI9rqsV9Mu7No1auYCUdjrLGKvR0chE5rKk5qXivEhGft-ssJ52oNhXZKIqadr7z0uPvL4E27WhBMSnOMELffRrGsIpt2535LoA_D7pCM0N0F1uPv0n9EfIIQdfHgf-yTt7AC-2qpI6HPwzyDq-eXE2q72CG0qs8fdSgGQw0F-BPWWbKOYbuU-mBlamu_eTKw6z_So_NHd-C0dhjwvgRDdxW3n1ETevc-mcG8Xn9dGFYWLfwK7gljabIChN"
-            />
+        <button className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-[#f3f3fd] transition-colors text-left text-sm group cursor-pointer">
+          <div className="flex items-center gap-3">
+            <span className="material-symbols-outlined text-[#516161] group-hover:text-[#003d9b]">payments</span>
+            <span className="font-semibold">Payout Account Info</span>
           </div>
-          <div>
-            <h2 className="text-xl font-bold text-[#191b23]">Agent MC-9921</h2>
-            <p className="text-xs font-semibold text-[#0052cc] bg-[#dae2ff] px-3 py-1 rounded-full mt-1.5 inline-block">Authorized Partner</p>
+          <span className="material-symbols-outlined text-[#737685]">chevron_right</span>
+        </button>
+
+        <button 
+          onClick={handleLogout}
+          className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-red-50 text-left text-sm group cursor-pointer"
+        >
+          <div className="flex items-center gap-3 text-red-600">
+            <span className="material-symbols-outlined">logout</span>
+            <span className="font-semibold">Sign Out Portal</span>
           </div>
-          <div className="w-full border-t border-[#c3c6d6]/20 pt-4 grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <p className="text-xs text-[#737685] font-semibold">Tier Status</p>
-              <p className="font-bold text-[#003d9b]">Platinum Partner</p>
-            </div>
-            <div>
-              <p className="text-xs text-[#737685] font-semibold">Commission Rate</p>
-              <p className="font-bold text-[#003d9b]">1.8% / Lead</p>
-            </div>
-          </div>
-        </section>
-
-        {/* Agency Information */}
-        <section className="bg-white border border-[#c3c6d6]/30 rounded-2xl p-6 shadow-sm space-y-4">
-          <h3 className="font-bold text-[#191b23] border-b border-[#c3c6d6]/20 pb-2 flex items-center gap-2">
-            <span className="material-symbols-outlined text-[#003d9b]">domain</span>
-            <span>Agency Details</span>
-          </h3>
-          <div className="space-y-3 text-sm">
-            <div className="flex justify-between">
-              <span className="text-[#516161]">Agency Name</span>
-              <span className="font-semibold">Apex Health Solutions</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-[#516161]">Partner ID</span>
-              <span className="font-semibold font-mono text-[#003d9b]">MC-9921-2023</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-[#516161]">Location</span>
-              <span className="font-semibold">Delhi NCR, India</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-[#516161]">Joined Date</span>
-              <span className="font-semibold">March 14, 2023</span>
-            </div>
-          </div>
-        </section>
-
-        {/* Account Settings Menu */}
-        <section className="bg-white border border-[#c3c6d6]/30 rounded-2xl p-4 shadow-sm space-y-1">
-          <button className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-[#f3f3fd] transition-colors text-left text-sm group">
-            <div className="flex items-center gap-3">
-              <span className="material-symbols-outlined text-[#516161] group-hover:text-[#003d9b]">security</span>
-              <span className="font-semibold">Vault Security Settings</span>
-            </div>
-            <span className="material-symbols-outlined text-[#737685]">chevron_right</span>
-          </button>
-          
-          <button className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-[#f3f3fd] transition-colors text-left text-sm group">
-            <div className="flex items-center gap-3">
-              <span className="material-symbols-outlined text-[#516161] group-hover:text-[#003d9b]">payments</span>
-              <span className="font-semibold">Payout Account Info</span>
-            </div>
-            <span className="material-symbols-outlined text-[#737685]">chevron_right</span>
-          </button>
-
-          <button className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-[#f3f3fd] transition-colors text-left text-sm group">
-            <div className="flex items-center gap-3">
-              <span className="material-symbols-outlined text-[#516161] group-hover:text-[#003d9b]">contact_support</span>
-              <span className="font-semibold">Contact Partner Support</span>
-            </div>
-            <span className="material-symbols-outlined text-[#737685]">chevron_right</span>
-          </button>
-
-          <button 
-            onClick={handleLogout}
-            className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-red-50 text-left text-sm group"
-          >
-            <div className="flex items-center gap-3 text-red-600">
-              <span className="material-symbols-outlined">logout</span>
-              <span className="font-semibold">Sign Out Portal</span>
-            </div>
-            <span className="material-symbols-outlined text-[#737685]">chevron_right</span>
-          </button>
-        </section>
-
-      </main>
-
-      {/* Bottom Navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-2 py-3 bg-white shadow-[0_-4px_15px_rgba(0,0,0,0.06)] border-t border-[#c3c6d6]/20">
-        <div className="flex flex-col items-center justify-center text-[#434654] px-4 py-1 cursor-pointer" onClick={() => navigate('/agent/dashboard')}>
-          <span className="material-symbols-outlined">dashboard</span>
-          <span className="text-[10px] font-semibold">Dashboard</span>
-        </div>
-        <div className="flex flex-col items-center justify-center text-[#434654] px-4 py-1 cursor-pointer" onClick={() => navigate('/agent/register')}>
-          <span className="material-symbols-outlined">person_add</span>
-          <span className="text-[10px] font-semibold">Register</span>
-        </div>
-        <div className="flex flex-col items-center justify-center text-[#434654] px-4 py-1 cursor-pointer" onClick={() => navigate('/agent/customers')}>
-          <span className="material-symbols-outlined">group</span>
-          <span className="text-[10px] font-semibold">Users</span>
-        </div>
-        <div className="flex flex-col items-center justify-center text-[#003d9b] px-4 py-1 cursor-pointer">
-          <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>account_circle</span>
-          <span className="text-[10px] font-semibold">Profile</span>
-        </div>
-      </nav>
+          <span className="material-symbols-outlined text-[#737685]">chevron_right</span>
+        </button>
+      </section>
     </div>
   );
 }

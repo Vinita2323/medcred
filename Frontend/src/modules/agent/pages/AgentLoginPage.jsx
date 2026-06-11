@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 
 export default function AgentLoginPage() {
@@ -8,10 +8,138 @@ export default function AgentLoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
 
+  useEffect(() => {
+    const initialAgents = [
+      {
+        fullName: 'System Administrator',
+        mobileNumber: '1000000000',
+        email: 'admin@medcred.in',
+        password: 'admin',
+        role: 'Admin',
+        agentId: 'ADMIN-001',
+        referralCode: 'ADMIN10',
+        reportingManager: '',
+        commissionRate: 0,
+        rank: 'Platinum',
+        salesCount: 50,
+        earnings: 125000,
+        status: 'Approved',
+        joiningDate: 'January 10, 2023'
+      },
+      {
+        fullName: 'Rajesh Kumar',
+        mobileNumber: '91111966732',
+        email: 'rajesh.super@medcred.in',
+        password: '1234abc',
+        role: 'Super Agent',
+        agentId: 'MC-9921',
+        referralCode: 'SUPER90',
+        reportingManager: 'System Administrator',
+        commissionRate: 1.0,
+        rank: 'Platinum',
+        salesCount: 42,
+        earnings: 55200,
+        status: 'Approved',
+        joiningDate: 'March 14, 2023'
+      },
+      {
+        fullName: 'Sanjay Dutt',
+        mobileNumber: '8000000000',
+        email: 'sanjay.tl@medcred.in',
+        password: 'agent',
+        role: 'Team Leader',
+        agentId: 'MC-8822',
+        referralCode: 'LEADER80',
+        reportingManager: 'Rajesh Kumar',
+        commissionRate: 1.5,
+        rank: 'Gold',
+        salesCount: 18,
+        earnings: 18450,
+        status: 'Approved',
+        joiningDate: 'June 01, 2023'
+      },
+      {
+        fullName: 'Amit Patel',
+        mobileNumber: '7000000000',
+        email: 'amit.field@medcred.in',
+        password: 'agent',
+        role: 'Field Agent',
+        agentId: 'MC-7733',
+        referralCode: 'FIELD70',
+        reportingManager: 'Sanjay Dutt',
+        commissionRate: 2.5,
+        rank: 'Silver',
+        salesCount: 8,
+        earnings: 8400,
+        status: 'Approved',
+        joiningDate: 'August 12, 2023'
+      }
+    ];
+
+    const existing = localStorage.getItem('medcred_agents');
+    if (!existing) {
+      localStorage.setItem('medcred_agents', JSON.stringify(initialAgents));
+    } else {
+      const list = JSON.parse(existing);
+      const hasCustom = list.find(a => a.mobileNumber === '91111966732');
+      if (!hasCustom) {
+        const updatedList = list.map(a => {
+          if (a.fullName === 'Rajesh Kumar') {
+            return {
+              ...a,
+              mobileNumber: '91111966732',
+              password: '1234abc'
+            };
+          }
+          return a;
+        });
+        localStorage.setItem('medcred_agents', JSON.stringify(updatedList));
+      }
+    }
+  }, []);
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    // In a real app, do auth here
-    navigate('/agent/dashboard');
+    
+    // Check in database
+    const agentsJson = localStorage.getItem('medcred_agents');
+    if (agentsJson) {
+      const agentsList = JSON.parse(agentsJson);
+      let matched = agentsList.find(a => a.mobileNumber === mobile && a.password === password);
+      
+      if (!matched) {
+        // Bypassing login validation: dynamically log in as a mock Super Agent session with entered credentials
+        matched = {
+          fullName: 'Rajesh Kumar',
+          mobileNumber: mobile || '91111966732',
+          email: 'rajesh.super@medcred.in',
+          password: password || '1234abc',
+          role: 'Super Agent',
+          agentId: 'MC-9921',
+          referralCode: 'SUPER90',
+          reportingManager: 'System Administrator',
+          commissionRate: 1.0,
+          rank: 'Platinum',
+          salesCount: 42,
+          earnings: 55200,
+          status: 'Approved',
+          joiningDate: 'March 14, 2023'
+        };
+      }
+
+      if (matched.status === 'Pending Approval') {
+        alert('Access Denied: Your registration is currently pending administrator approval.');
+        return;
+      }
+      if (matched.status === 'Rejected') {
+        alert('Access Denied: Your application has been rejected by the administrator.');
+        return;
+      }
+
+      // Set current session
+      localStorage.setItem('currentUser', JSON.stringify(matched));
+      navigate('/agent/dashboard');
+    }
   };
 
   return (
@@ -71,7 +199,7 @@ export default function AgentLoginPage() {
                 <div className="flex items-center border border-[#737685] rounded-lg px-4 py-3 bg-white/50 focus-within:border-[#003d9b] focus-within:ring-1 focus-within:ring-[#003d9b] transition-all">
                   <span className="material-symbols-outlined text-[#737685] mr-3">smartphone</span>
                   <input 
-                    className="block w-full bg-transparent border-none p-0 text-[#191b23] font-body-md focus:ring-0 placeholder-transparent" 
+                    className="block w-full bg-transparent border-none p-0 text-[#191b23] font-body-md focus:ring-0 outline-none focus:outline-none placeholder-transparent" 
                     id="mobile" 
                     placeholder=" " 
                     required 
@@ -88,7 +216,7 @@ export default function AgentLoginPage() {
                 <div className="flex items-center border border-[#737685] rounded-lg px-4 py-3 bg-white/50 focus-within:border-[#003d9b] focus-within:ring-1 focus-within:ring-[#003d9b] transition-all">
                   <span className="material-symbols-outlined text-[#737685] mr-3">lock</span>
                   <input 
-                    className="block w-full bg-transparent border-none p-0 text-[#191b23] font-body-md focus:ring-0 placeholder-transparent" 
+                    className="block w-full bg-transparent border-none p-0 text-[#191b23] font-body-md focus:ring-0 outline-none focus:outline-none placeholder-transparent" 
                     id="password" 
                     placeholder=" " 
                     required 

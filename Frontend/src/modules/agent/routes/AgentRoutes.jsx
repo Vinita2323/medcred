@@ -10,6 +10,12 @@ import AgentDashboardPage from '../pages/AgentDashboardPage';
 import AgentCustomersPage from '../pages/AgentCustomersPage';
 import AgentProfilePage from '../pages/AgentProfilePage';
 import AgentLoanFormPage from '../pages/AgentLoanFormPage';
+import AgentOnboardCustomerPage from '../pages/AgentOnboardCustomerPage';
+import AgentWalletPage from '../pages/AgentWalletPage';
+import AgentTeamPage from '../pages/AgentTeamPage';
+import AgentAdminPage from '../pages/AgentAdminPage';
+
+import AgentLayout from '../components/AgentLayout';
 
 export default function AgentRoutes() {
   return (
@@ -19,10 +25,18 @@ export default function AgentRoutes() {
       <Route path="/agent/login"     element={<AgentLoginPage />} />
       <Route path="/agent/otp"       element={<AgentOtpPage />} />
       <Route path="/agent/register"  element={<AgentRegisterPage />} />
-      <Route path="/agent/dashboard" element={<AgentDashboardPage />} />
-      <Route path="/agent/customers" element={<AgentCustomersPage />} />
-      <Route path="/agent/profile"   element={<AgentProfilePage />} />
-      <Route path="/agent/apply-loan" element={<AgentLoanFormPage />} />
+      
+      {/* Authenticated Dashboard Pages wrapped in AgentLayout */}
+      <Route element={<AgentLayout />}>
+        <Route path="/agent/dashboard" element={<AgentDashboardPage />} />
+        <Route path="/agent/customers" element={<AgentCustomersPage />} />
+        <Route path="/agent/profile"   element={<AgentProfilePage />} />
+        <Route path="/agent/apply-loan" element={<AgentLoanFormPage />} />
+        <Route path="/agent/register-customer" element={<AgentOnboardCustomerPage />} />
+        <Route path="/agent/wallet" element={<AgentWalletPage />} />
+        <Route path="/agent/team" element={<AgentTeamPage />} />
+        <Route path="/agent/admin" element={<AgentAdminPage />} />
+      </Route>
     </Routes>
   );
 }

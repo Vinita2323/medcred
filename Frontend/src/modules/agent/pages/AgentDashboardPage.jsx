@@ -1,158 +1,276 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 export default function AgentDashboardPage() {
   const navigate = useNavigate();
+  const [currentUser, setCurrentUser] = useState(null);
+  const [agents, setAgents] = useState([]);
+  const [stats, setStats] = useState([]);
+  const [quickActions, setQuickActions] = useState([]);
 
-  const stats = [
-    { label: 'Active Users', value: '142', icon: 'group', color: 'text-[#003d9b]', bg: 'bg-[#dae2ff]' },
-    { label: 'Pending Approvals', value: '05', icon: 'pending_actions', color: 'text-[#7b2600]', bg: 'bg-[#ffdbcf]' },
-    { label: 'Credit Disbursed', value: '₹28.5L', icon: 'payments', color: 'text-[#0c56d0]', bg: 'bg-[#d4e6e5]' },
-    { label: 'My Commission', value: '₹18,450', icon: 'account_balance_wallet', color: 'text-green-700', bg: 'bg-green-100' },
-  ];
+  useEffect(() => {
+    // Get current logged-in agent session
+    const userJson = localStorage.getItem('currentUser');
+    if (userJson) {
+      const userObj = JSON.parse(userJson);
+      setCurrentUser(userObj);
 
-  const quickActions = [
-    { label: 'Onboard User', icon: 'person_add', route: '/agent/register' },
-    { label: 'Apply Loan', icon: 'payments', route: '/agent/apply-loan' },
-    { label: 'Submit Claim', icon: 'post_add', route: '/agent/customers' },
-    { label: 'Support Desk', icon: 'support_agent', route: '/agent/profile' },
-  ];
+      // Load agents list to aggregate dynamic stats
+      const agentsJson = localStorage.getItem('medcred_agents');
+      const allAgents = agentsJson ? JSON.parse(agentsJson) : [];
+      setAgents(allAgents);
 
-  const customerList = [
-    { name: 'Arjun Mehta', id: 'MC-88219', relation: 'Self', age: '32 Years', status: 'Approved', limit: '₹5,00,000', photo: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB5hPVSJVnDBeM_NU087CySc1Nj5JvsQumfiId7OJct49Qa77heLrFpiB7mj1ju2IDHI7keh9EIMKh7escMxoAAIkpZgceUPIECby_M8SvJoj4B-oZDrF749Dr0ocU1cIiWWL-pi7TS0ERiElEdVsXIMC7J27_GSeOc8SJ6U_ia4fwifb1YgB2FuLP9annHcDHXsjwbFeOFx1_gHuJ2l8k8P-OUbE00BppwZf28afD52_WGG_Dr4W9N6zzNmZxQqu2cWBHERgwSCrVL' },
-    { name: 'Priya Mehta', id: 'MC-88220', relation: 'Spouse', age: '30 Years', status: 'Approved', limit: '₹3,00,000', photo: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDKzpUBEs6q65rb5FuihZ4BcbkUZxrlLKjtU70Den4RgiicBIoE8OFnuHFaq0OWKiRKFq_xqbJnsj4k1uaQAJl53r2wMglpc_8ORni3N0aiQoLmp0oJfzkwca8uCeJrn8_m8dtGutdpckbcD9sUnr8_w9XOLXIeXfm80XTfgQ8AHP4yrHTW_X_rwfEBxFjHrNRLaY_4595EJd5wv6MYYEr34LFvb0T4JF3g-fV4RtMOncytABGaiKpLSCQVhbPMDlcLfHw9kyBY2gqJ' },
-    { name: 'Kabir Mehta', id: 'MC-Pending', relation: 'Son', age: '4 Years', status: 'Pending Verification', limit: '—', photo: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAhb0OIZiIExbXKGFMjW3BeHdb6QnL15jEuvmCkyecro3XwiW_ZaD3VjcS2a8epvQdSwOrtDHefPyxrBqTmy1PYtyjfiNYxQAgMtBhfc2U3ApBjrx61Jo3-6l8-xKmTnmMz4URqCTOELr8oSj1W9E7GuF5yzN2lndekjEKit6c4P-waj5ACZZPZNnkb7AU2-LjMUL0JLG9Shdhg9jUPsJBY64bZjJQN-ugOAttJXMbHblLiUb7qQtQ5rkvooQxKWzA0Fttt8ZLMsd_G' },
+      // Customize stats and quick actions based on designation
+      if (userObj.role === 'Admin') {
+        const pendingCount = allAgents.filter(a => a.status === 'Pending Approval').length;
+        const approvedCount = allAgents.filter(a => a.status === 'Approved').length;
+
+        setStats([
+          { label: 'Active Roster', value: approvedCount.toString(), icon: 'group', color: 'text-[#003d9b]', bg: 'bg-[#dae2ff]', route: '/agent/admin' },
+          { label: 'Pending Approvals', value: pendingCount.toString(), icon: 'how_to_reg', color: 'text-[#7b2600]', bg: 'bg-[#ffdbcf]', route: '/agent/admin' },
+          { label: 'Active Teams', value: allAgents.filter(a => a.role === 'Team Leader').length.toString(), icon: 'partner_exchange', color: 'text-[#0c56d0]', bg: 'bg-[#d4e6e5]', route: '/agent/admin' },
+          { label: 'Dynamic Plans', value: '3 Active', icon: 'payments', color: 'text-green-700', bg: 'bg-green-100', route: '/agent/admin' },
+        ]);
+
+        setQuickActions([
+          { label: 'Review Approvals', icon: 'how_to_reg', route: '/agent/admin' },
+          { label: 'Commission Engine', icon: 'account_balance_wallet', route: '/agent/admin' },
+          { label: 'Manage Roster', icon: 'badge', route: '/agent/admin' },
+          { label: 'Admin Settings', icon: 'admin_panel_settings', route: '/agent/profile' },
+        ]);
+      } else if (userObj.role === 'Super Agent') {
+        const tls = allAgents.filter(a => a.role === 'Team Leader' && a.reportingManager === userObj.fullName);
+        const fas = allAgents.filter(a => a.role === 'Field Agent' && tls.map(t => t.fullName).includes(a.reportingManager));
+
+        setStats([
+          { label: 'Team Leaders', value: tls.length.toString(), icon: 'partner_exchange', color: 'text-[#003d9b]', bg: 'bg-[#dae2ff]', route: '/agent/team' },
+          { label: 'Field Agents', value: fas.length.toString(), icon: 'badge', color: 'text-[#0c56d0]', bg: 'bg-[#d4e6e5]', route: '/agent/team' },
+          { label: 'Network Sales', value: '₹8.4L', icon: 'payments', color: 'text-[#7b2600]', bg: 'bg-[#ffdbcf]' },
+          { label: 'Overriding Earnings', value: `₹${userObj.earnings.toLocaleString('en-IN')}`, icon: 'account_balance_wallet', color: 'text-green-700', bg: 'bg-green-100', route: '/agent/wallet' },
+        ]);
+
+        setQuickActions([
+          { label: 'Manage Team', icon: 'group', route: '/agent/team' },
+          { label: 'Network Performance', icon: 'insights', route: '/agent/team' },
+          { label: 'Wallet Payouts', icon: 'account_balance', route: '/agent/wallet' },
+          { label: 'Support Desk', icon: 'support_agent', route: '/agent/profile' },
+        ]);
+      } else if (userObj.role === 'Team Leader') {
+        const fas = allAgents.filter(a => a.role === 'Field Agent' && a.reportingManager === userObj.fullName);
+
+        setStats([
+          { label: 'Field Agents Managed', value: fas.length.toString(), icon: 'badge', color: 'text-[#003d9b]', bg: 'bg-[#dae2ff]', route: '/agent/team' },
+          { label: 'Active Leads', value: (fas.length * 8).toString(), icon: 'group', color: 'text-[#0c56d0]', bg: 'bg-[#d4e6e5]', route: '/agent/team' },
+          { label: 'Team Revenue', value: '₹2.1L', icon: 'payments', color: 'text-[#7b2600]', bg: 'bg-[#ffdbcf]' },
+          { label: 'My Override', value: `₹${userObj.earnings.toLocaleString('en-IN')}`, icon: 'account_balance_wallet', color: 'text-green-700', bg: 'bg-green-100', route: '/agent/wallet' },
+        ]);
+
+        setQuickActions([
+          { label: 'My Agents', icon: 'group', route: '/agent/team' },
+          { label: 'Commission Wallet', icon: 'account_balance_wallet', route: '/agent/wallet' },
+          { label: 'Apply Loan', icon: 'payments', route: '/agent/apply-loan' },
+          { label: 'Support Desk', icon: 'support_agent', route: '/agent/profile' },
+        ]);
+      } else {
+        // Field Agent
+        setStats([
+          { label: 'Onboarded Clients', value: userObj.salesCount.toString(), icon: 'group', color: 'text-[#003d9b]', bg: 'bg-[#dae2ff]', route: '/agent/customers' },
+          { label: 'Subscriptions Sold', value: userObj.salesCount.toString(), icon: 'verified_user', color: 'text-[#0c56d0]', bg: 'bg-[#d4e6e5]', route: '/agent/customers' },
+          { label: 'Total Revenue', value: `₹${(userObj.salesCount * 50000).toLocaleString('en-IN')}`, icon: 'payments', color: 'text-[#7b2600]', bg: 'bg-[#ffdbcf]' },
+          { label: 'Wallet Earnings', value: `₹${userObj.earnings.toLocaleString('en-IN')}`, icon: 'account_balance_wallet', color: 'text-green-700', bg: 'bg-green-100', route: '/agent/wallet' },
+        ]);
+
+        setQuickActions([
+          { label: 'Onboard Customer', icon: 'person_add', route: '/agent/register-customer' },
+          { label: 'Apply Loan', icon: 'payments', route: '/agent/apply-loan' },
+          { label: 'Customer Directory', icon: 'group', route: '/agent/customers' },
+          { label: 'My Wallet', icon: 'account_balance_wallet', route: '/agent/wallet' },
+        ]);
+      }
+    }
+  }, []);
+
+  if (!currentUser) {
+    return (
+      <div className="flex items-center justify-center min-h-[300px] text-[#516161]">
+        Loading your agent dashboard...
+      </div>
+    );
+  }
+
+  // Fetch pending registrations for Admin list
+  const pendingRegistrations = agents.filter(a => a.status === 'Pending Approval');
+  
+  // Fetch team list for Super Agent / Team Leader
+  const getSubordinateAgents = () => {
+    if (currentUser.role === 'Super Agent') {
+      const tls = agents.filter(a => a.role === 'Team Leader' && a.reportingManager === currentUser.fullName);
+      return tls;
+    }
+    if (currentUser.role === 'Team Leader') {
+      const fas = agents.filter(a => a.role === 'Field Agent' && a.reportingManager === currentUser.fullName);
+      return fas;
+    }
+    return [];
+  };
+
+  const subordinateList = getSubordinateAgents();
+
+  const mockActivities = [
+    { title: 'New Customer Onboarded', desc: 'Amit Patel registered Priya Mehta successfully.', time: '10 mins ago', icon: 'person_add', bg: 'bg-[#dae2ff]', text: 'text-[#003d9b]' },
+    { title: 'Commission Credited', desc: '₹4,500 override credited for Sanjay Dutt\'s sale.', time: '2 hours ago', icon: 'payments', bg: 'bg-green-100', text: 'text-green-700' },
+    { title: 'Rank Promoted', desc: 'Amit Patel promoted to Silver Agent tier.', time: '1 day ago', icon: 'stars', bg: 'bg-yellow-100', text: 'text-yellow-700' },
   ];
 
   return (
-    <div className="bg-[#faf8ff] text-[#191b23] font-body-md min-h-screen pb-24 md:pb-8">
-      {/* Header */}
-      <header className="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-4 h-16 bg-white shadow-sm border-b border-[#c3c6d6]/20">
-        <div className="flex items-center gap-3">
-          <span className="material-symbols-outlined text-[#003d9b] text-2xl font-bold">medical_services</span>
-          <h1 className="text-xl font-bold text-[#003d9b]">MedCred India</h1>
+    <div className="space-y-6 md:space-y-8 animate-fade-in">
+      {/* Banner */}
+      <section className="bg-gradient-to-r from-[#003d9b] to-[#0052cc] text-white rounded-2xl p-6 shadow-md relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-10 -mt-10 blur-xl"></div>
+        <div className="relative z-10 space-y-2">
+          <span className="text-xs uppercase tracking-widest text-[#ffdbcf] font-bold">
+            {currentUser.role} Dashboard
+          </span>
+          <h2 className="text-xl md:text-2xl font-bold">Welcome back, {currentUser.fullName}</h2>
+          <p className="text-sm opacity-90 max-w-xl">
+            {currentUser.role === 'Admin' 
+              ? 'Oversee the MedCred agent network, audit payouts, and configure plan commissions.' 
+              : `Access your hierarchy controls, client registrations, and override logs.`}
+          </p>
         </div>
-        <div className="flex items-center gap-4">
-          <button className="p-2 rounded-full hover:bg-[#f3f3fd] transition-colors duration-200">
-            <span className="material-symbols-outlined text-[#434654]">notifications</span>
-          </button>
-          <div className="w-10 h-10 rounded-full bg-[#0052cc] flex items-center justify-center text-white font-bold overflow-hidden border border-primary/20">
-            <img 
-              alt="Agent Profile" 
-              className="w-full h-full object-cover"
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuDd9ThGrfGVzkidmRPTIDI9rqsV9Mu7No1auYCUdjrLGKvR0chE5rKk5qXivEhGft-ssJ52oNhXZKIqadr7z0uPvL4E27WhBMSnOMELffRrGsIpt2535LoA_D7pCM0N0F1uPv0n9EfIIQdfHgf-yTt7AC-2qpI6HPwzyDq-eXE2q72CG0qs8fdSgGQw0F-BPWWbKOYbuU-mBlamu_eTKw6z_So_NHd-C0dhjwvgRDdxW3n1ETevc-mcG8Xn9dGFYWLfwK7gljabIChN"
-            />
-          </div>
-        </div>
-      </header>
+      </section>
 
-      {/* Main Panel */}
-      <main className="pt-24 px-4 max-w-4xl mx-auto space-y-8">
-        {/* Banner Section */}
-        <section className="bg-gradient-to-r from-[#003d9b] to-[#0052cc] text-white rounded-2xl p-6 shadow-md relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-10 -mt-10 blur-xl"></div>
-          <div className="relative z-10 space-y-2">
-            <span className="text-xs uppercase tracking-widest text-[#ffdbcf]">Agent Workspace</span>
-            <h2 className="text-xl md:text-2xl font-bold">Welcome back, Agent MC-9921</h2>
-            <p className="text-sm opacity-90">Facilitate healthcare registrations, checkups, and claim verification in real-time.</p>
-          </div>
-        </section>
-
-        {/* Stats Bento Grid */}
-        <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {stats.map((stat, idx) => (
-            <div key={idx} className="bg-white p-4 rounded-xl border border-[#c3c6d6]/20 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
-              <div className={`w-10 h-10 ${stat.bg} ${stat.color} rounded-full flex items-center justify-center mb-3`}>
-                <span className="material-symbols-outlined text-[20px]">{stat.icon}</span>
-              </div>
-              <div>
-                <p className="text-xs text-[#516161] font-semibold">{stat.label}</p>
-                <p className="text-xl font-bold text-[#003d9b] mt-1">{stat.value}</p>
-              </div>
+      {/* Stats Grid */}
+      <section className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {stats.map((stat, idx) => (
+          <div 
+            key={idx} 
+            onClick={() => stat.route && navigate(stat.route)}
+            className={`bg-white p-5 rounded-xl border border-[#c3c6d6]/20 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow ${stat.route ? 'cursor-pointer hover:border-[#003d9b]/35' : ''}`}
+          >
+            <div className={`w-10 h-10 ${stat.bg} ${stat.color} rounded-full flex items-center justify-center mb-3`}>
+              <span className="material-symbols-outlined text-[20px]">{stat.icon}</span>
             </div>
-          ))}
-        </section>
+            <div>
+              <p className="text-xs text-[#516161] font-semibold">{stat.label}</p>
+              <p className="text-xl font-bold text-[#003d9b] mt-1">{stat.value}</p>
+            </div>
+          </div>
+        ))}
+      </section>
 
-        {/* Quick Actions Grid */}
-        <section className="space-y-4">
-          <h3 className="text-lg font-bold text-[#191b23]">Quick Services</h3>
-          <div className="grid grid-cols-4 gap-2 md:gap-4">
+      {/* Actions and Dynamic Lists */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Quick Actions (1/3 width) */}
+        <section className="space-y-4 lg:col-span-1">
+          <h3 className="text-base md:text-lg font-bold text-[#191b23]">Quick Services</h3>
+          <div className="grid grid-cols-2 gap-3">
             {quickActions.map((act, idx) => (
               <button 
                 key={idx} 
                 onClick={() => navigate(act.route)} 
-                className="flex flex-col items-center gap-2 p-3 bg-white rounded-xl border border-[#c3c6d6]/20 active:scale-95 transition-all group hover:shadow-md shadow-sm"
+                className="flex flex-col items-center gap-2.5 p-4 bg-white rounded-xl border border-[#c3c6d6]/20 active:scale-95 transition-all group hover:shadow-md shadow-sm cursor-pointer"
               >
                 <div className="w-12 h-12 rounded-full bg-[#f3f3fd] text-[#003d9b] flex items-center justify-center group-hover:bg-[#003d9b] group-hover:text-white transition-colors">
                   <span className="material-symbols-outlined text-[22px]">{act.icon}</span>
                 </div>
-                <span className="text-[11px] md:text-xs text-center font-bold text-[#434654]">{act.label}</span>
+                <span className="text-xs text-center font-bold text-[#434654]">{act.label}</span>
               </button>
             ))}
           </div>
         </section>
 
-        {/* Active Customer Leads */}
-        <section className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h3 className="text-lg font-bold text-[#191b23]">Active Registrations</h3>
-            <button onClick={() => navigate('/agent/customers')} className="text-sm font-bold text-[#0052cc] hover:underline">View All</button>
-          </div>
-
-          <div className="space-y-3">
-            {customerList.map((customer, idx) => (
-              <div key={idx} className="bg-white border border-[#c3c6d6]/30 p-4 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm hover:shadow-md transition-shadow">
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-[#dae2ff] p-0.5 flex-shrink-0">
-                    <img alt={customer.name} className="w-full h-full object-cover rounded-full" src={customer.photo} />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h4 className="font-bold text-[#191b23]">{customer.name}</h4>
-                      <span className="text-[10px] font-bold bg-[#dae2ff] text-[#003d9b] px-2 py-0.5 rounded-full">{customer.relation}</span>
-                    </div>
-                    <p className="text-xs text-[#516161] mt-0.5">ID: {customer.id} • {customer.age}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between sm:justify-end gap-6 border-t sm:border-t-0 pt-3 sm:pt-0">
-                  <div className="text-left sm:text-right">
-                    <p className="text-[10px] text-[#737685] font-semibold uppercase">Credit Limit</p>
-                    <p className="text-sm font-bold text-[#003d9b]">{customer.limit}</p>
-                  </div>
-                  <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                    customer.status === 'Approved' 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-orange-100 text-orange-800 animate-pulse'
-                  }`}>
-                    {customer.status}
-                  </span>
-                </div>
+        {/* Dynamic List Section based on role (2/3 width) */}
+        <section className="space-y-4 lg:col-span-2">
+          {currentUser.role === 'Admin' && (
+            <>
+              <div className="flex justify-between items-center">
+                <h3 className="text-base md:text-lg font-bold text-[#191b23]">Pending Approvals</h3>
+                <button onClick={() => navigate('/agent/admin')} className="text-xs font-bold text-[#0052cc] hover:underline cursor-pointer">View Queue</button>
               </div>
-            ))}
-          </div>
-        </section>
-      </main>
+              <div className="space-y-3">
+                {pendingRegistrations.length > 0 ? (
+                  pendingRegistrations.slice(0, 3).map((agent, idx) => (
+                    <div key={idx} className="bg-white border border-[#c3c6d6]/30 p-4 rounded-xl flex items-center justify-between shadow-sm hover:shadow-md transition-shadow">
+                      <div>
+                        <h4 className="font-bold text-[#191b23]">{agent.fullName}</h4>
+                        <p className="text-xs text-[#516161] mt-0.5">{agent.mobileNumber} • {agent.email}</p>
+                      </div>
+                      <button 
+                        onClick={() => navigate('/agent/admin')}
+                        className="bg-[#003d9b] text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-[#0052cc] transition-colors cursor-pointer"
+                      >
+                        Review
+                      </button>
+                    </div>
+                  ))
+                ) : (
+                  <div className="bg-white border border-[#c3c6d6]/30 p-6 rounded-xl text-center text-sm text-[#516161]">
+                    <span className="material-symbols-outlined text-green-600 text-3xl mb-1">check_circle</span>
+                    <p>No pending registrations to approve.</p>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
 
-      {/* Bottom Navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-2 py-3 bg-white shadow-[0_-4px_15px_rgba(0,0,0,0.06)] border-t border-[#c3c6d6]/20">
-        <div className="flex flex-col items-center justify-center text-[#003d9b] px-4 py-1 cursor-pointer">
-          <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>dashboard</span>
-          <span className="text-[10px] font-semibold">Dashboard</span>
-        </div>
-        <div className="flex flex-col items-center justify-center text-[#434654] px-4 py-1 cursor-pointer" onClick={() => navigate('/agent/register')}>
-          <span className="material-symbols-outlined">person_add</span>
-          <span className="text-[10px] font-semibold">Register</span>
-        </div>
-        <div className="flex flex-col items-center justify-center text-[#434654] px-4 py-1 cursor-pointer" onClick={() => navigate('/agent/customers')}>
-          <span className="material-symbols-outlined">group</span>
-          <span className="text-[10px] font-semibold">Users</span>
-        </div>
-        <div className="flex flex-col items-center justify-center text-[#434654] px-4 py-1 cursor-pointer" onClick={() => navigate('/agent/profile')}>
-          <span className="material-symbols-outlined">account_circle</span>
-          <span className="text-[10px] font-semibold">Profile</span>
-        </div>
-      </nav>
+          {(currentUser.role === 'Super Agent' || currentUser.role === 'Team Leader') && (
+            <>
+              <div className="flex justify-between items-center">
+                <h3 className="text-base md:text-lg font-bold text-[#191b23]">
+                  {currentUser.role === 'Super Agent' ? 'My Team Leaders' : 'My Field Agents'}
+                </h3>
+                <button onClick={() => navigate('/agent/team')} className="text-xs font-bold text-[#0052cc] hover:underline cursor-pointer">View Network</button>
+              </div>
+              <div className="space-y-3">
+                {subordinateList.length > 0 ? (
+                  subordinateList.slice(0, 3).map((agent, idx) => (
+                    <div key={idx} className="bg-white border border-[#c3c6d6]/30 p-4 rounded-xl flex items-center justify-between shadow-sm hover:shadow-md transition-shadow">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-[#dae2ff] text-[#003d9b] font-bold flex items-center justify-center">
+                          {agent.fullName.charAt(0)}
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-[#191b23]">{agent.fullName}</h4>
+                          <p className="text-xs text-[#516161] mt-0.5">Rank: {agent.rank} • Sales: {agent.salesCount || 10}</p>
+                        </div>
+                      </div>
+                      <span className="text-xs font-bold text-[#003d9b]">{agent.commissionRate}% override</span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="bg-white border border-[#c3c6d6]/30 p-6 rounded-xl text-center text-sm text-[#516161]">
+                    <span className="material-symbols-outlined text-2xl mb-1">group_off</span>
+                    <p>No subordinate partners registered yet.</p>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+
+          {currentUser.role === 'Field Agent' && (
+            <>
+              <h3 className="text-base md:text-lg font-bold text-[#191b23]">Recent Team Activities</h3>
+              <div className="bg-white border border-[#c3c6d6]/30 rounded-xl p-4 shadow-sm divide-y divide-[#c3c6d6]/10 space-y-4">
+                {mockActivities.map((act, idx) => (
+                  <div key={idx} className="flex gap-4 pt-4 first:pt-0">
+                    <div className={`w-10 h-10 ${act.bg} ${act.text} rounded-full flex items-center justify-center flex-shrink-0`}>
+                      <span className="material-symbols-outlined text-[18px]">{act.icon}</span>
+                    </div>
+                    <div className="space-y-0.5">
+                      <div className="flex items-center justify-between w-full">
+                        <h4 className="font-bold text-xs text-[#191b23]">{act.title}</h4>
+                        <span className="text-[10px] text-[#737685] font-semibold">{act.time}</span>
+                      </div>
+                      <p className="text-[11px] text-[#516161] leading-relaxed">{act.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </section>
+      </div>
     </div>
   );
 }

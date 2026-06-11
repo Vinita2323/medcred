@@ -1,0 +1,1197 @@
+  
+MedCred India   
+  
+Functional   
+Requirement   
+Document   
+MedCred India is a healthcare and financial assistance platform designed to provide users with  medical support services, digital healthcare cards, mediclaim benefits, loan eligibility, family  healthcare coverage, and agent - assisted onboarding through a sec ure digital ecosystem.   
+Confidential   
+—   
+For   
+Client   
+Review   
+Only   
+MedCred   
+India   
+·   
+FRD  v1.0   
+MedCred India   
+Functional   
+Requirement   
+Document   
+Confidential   
+—   
+Prepared   
+for   
+Client   
+Review   
+Page   
+2   
+  
+  
+Table   
+of   
+Contents   
+  
+Sr. No.   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+Module Name   
+1   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+Project Overview   
+2   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+System Objectives   
+3   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+User Roles & Access   
+4   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+User Application Modules   
+5   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+Authentication & Registration   
+6   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+Digital Health Card Management   
+7   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+Family Card Management   
+8   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+Mediclaim Management   
+9   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+Loan Eligibility & Loan System   
+10   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+Aadhaar Verification & KYC   
+11   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+Agent Application   
+12   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+Agent Incentive & Wallet System   
+13   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+Notification System   
+14   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+Wallet & Transaction Management   
+15   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+Hospital Network Module   
+16   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+Fraud Detection & Security System   
+17   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+Admin Panel Modules   
+18   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+Reports & Analytics   
+19   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+Technical Architecture   
+20   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+Third Party Integrations   
+21   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+Security & Compliance   
+22   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+Non Functional Requirements   
+Confidential   
+—   
+Prepared   
+for   
+Client   
+Review   
+Page   
+3   
+MedCred India   
+  
+Functional   
+Requirement   
+Document   
+  
+  
+  
+  
+1. Project Overview   
+MedCred India is a centralized healthcare assistance platform that combines healthcare card  services, mediclaim support, financial assistance workflows, family healthcare coverage, and digital  onboarding into one scalable ecosystem.   
+The platform is designed to simplify:   
+•   
+Medical support access    
+•   
+Claim processing    
+•   
+Family healthcare management    
+•   
+Digital card generation    
+•   
+Agent - based onboarding    
+•   
+User verification    
+•   
+Loan eligibility management    
+The system will support:   
+•   
+Android Application    
+•   
+iOS Application    
+•   
+Web Admin Panel    
+•   
+Agent Application    
+The architecture should be scalable, secure, API - based, and cloud - ready.   
+  
+2. System Objectives   
+The primary objectives of the platform are:   
+•   
+Provide digital healthcare cards    
+•   
+Enable individual and family healthcare coverage    
+•   
+Simplify mediclaim workflows    
+•   
+Digitize user onboarding    
+•   
+Support Aadhaar verification    
+•   
+Create agent - assisted registrations    
+•   
+Prevent fraud and duplicate claims    
+•   
+Maintain centralized healthcare records    
+•   
+Automate claim validations and approvals    
+  
+3. User Roles & Access   
+Role   
+Description   
+User   
+End customer using healthcare and financial services   
+Family Member   
+Members linked under family healthcare card   
+Agent   
+Creates and manages user registrations   
+Admin   
+Complete system controller   
+Hospital Partner   
+Healthcare service provider   
+  
+4. User Application Modules   
+The user application is the primary interface for customers to access healthcare services, digital  cards, claims, and financial support.   
+Major user modules include:   
+•   
+Authentication    
+•   
+Digital Card    
+Confidential   
+—   
+Prepared   
+for   
+Client   
+Review   
+Page   
+4   
+MedCred India   
+  
+Functional   
+Requirement   
+Document   
+  
+  
+  
+•   
+Family Card    
+•   
+Mediclaim    
+•   
+Loan Eligibility    
+•   
+Wallet    
+•   
+Transactions    
+•   
+Notifications    
+•   
+Hospital Access    
+•   
+Support    
+  
+5. Authentication & Registration Module   
+This module manages secure onboarding and user identity creation.   
+5.1 User Registration   
+Users should be able to create accounts using:   
+•   
+Mobile Number    
+•   
+OTP Verification    
+•   
+Aadhaar Verification    
+Registration Fields   
+•   
+Full Name    
+•   
+Mobile Number    
+•   
+Email Address    
+•   
+Date of Birth    
+•   
+Gender    
+•   
+Address    
+•   
+Aadhaar Number    
+•   
+Profile Photo    
+  
+5.2 Login   
+Users can login using:   
+•   
+Mobile + OTP    
+•   
+Password Login    
+  
+5.3 Forgot Password   
+Allows secure password reset using OTP verification.   
+  
+5.4 Account Verification   
+The system should verify:   
+•   
+Mobile Number    
+•   
+Aadhaar Details    
+•   
+Duplicate Accounts    
+  
+6. Digital Health Card Management   
+This module manages digital healthcare cards issued to users.   
+6.1 Individual Card   
+An individual card is issued for one user only.   
+Features   
+•   
+Unique Card ID    
+•   
+QR Based Verification    
+•   
+Digital Card Access    
+•   
+Downloadable Card    
+•   
+Claim Eligibility    
+•   
+Card Validity    
+  
+6.2 Family Card   
+Family cards allow multiple family members under one healthcare plan.   
+Features   
+Confidential   
+—   
+Prepared   
+for   
+Client   
+Review   
+Page   
+5   
+MedCred India   
+  
+Functional   
+Requirement   
+Document   
+  
+  
+  
+•   
+Add Multiple Members    
+•   
+Member Relationship Mapping    
+•   
+Shared Healthcare Benefits    
+•   
+Member Verification    
+•   
+Family Claim Eligibility    
+  
+6.3 Card Status   
+Card statuses include:   
+•   
+Active    
+•   
+Pending Verification    
+•   
+Expired    
+•   
+Suspended    
+•   
+Blocked    
+  
+6.4 Card Renewal   
+Users should be able to:   
+•   
+Renew card    
+•   
+Upgrade plan    
+•   
+Update member details    
+  
+7. Family Card Management   
+This module manages all family - linked healthcare records.   
+7.1 Add Family Members   
+Users can add:   
+•   
+Spouse    
+•   
+Children    
+•   
+Parents    
+•   
+Other eligible members    
+  
+7.2 Member Verification   
+Each family member should require:   
+•   
+Aadhaar Verification    
+•   
+Identity Validation    
+•   
+Relationship Mapping    
+  
+7.3 Family Claim Restrictions   
+Only registered family members should be eligible for:   
+•   
+Mediclaim    
+•   
+Healthcare benefits    
+•   
+Medical support    
+  
+8. Mediclaim Management Module   
+This module manages medical claim requests and approvals.   
+  
+8.1 Claim Types   
+Hospital Claim   
+Maximum claim limit:   
+•   
+₹ 2,00,000    
+Required documents:   
+•   
+Hospital Bills    
+•   
+Discharge Summary    
+•   
+Prescription    
+•   
+Medical Reports    
+  
+Home Treatment Claim   
+Confidential   
+—   
+Prepared   
+for   
+Client   
+Review   
+Page   
+6   
+MedCred India   
+  
+Functional   
+Requirement   
+Document   
+  
+  
+  
+Maximum claim limit:   
+•   
+₹ 80,000    
+Required documents:   
+•   
+Medicine Bills    
+•   
+Consultation Documents    
+•   
+Treatment Proof    
+  
+8.2 Claim Submission   
+Users should be able to:   
+•   
+Upload claim documents    
+•   
+Track claim status    
+•   
+View claim history    
+  
+8.3 Claim Workflow   
+Claim stages:   
+•   
+Submitted    
+•   
+Under Review    
+•   
+Verification Pending    
+•   
+Approved    
+•   
+Rejected    
+•   
+Completed    
+  
+8.4 Claim Validation Rules   
+System should validate:   
+•   
+Claim limit    
+•   
+Duplicate claims    
+•   
+Card validity    
+•   
+User eligibility    
+  
+9. Loan Eligibility & Loan System   
+This module controls loan eligibility and application restrictions.   
+  
+9.1 Loan Eligibility Rule   
+Users can apply for loan only after:   
+•   
+30 days of card purchase    
+  
+9.2 Loan Restriction   
+Only one loan should be approved per user.   
+System should block:   
+•   
+Duplicate applications    
+•   
+Multiple active loans    
+  
+9.3 Eligibility Tracking   
+The system should display:   
+•   
+Eligible    
+•   
+Not Eligible    
+•   
+Waiting Period Remaining    
+  
+10. Aadhaar Verification & KYC Module   
+This module handles user verification and identity validation.   
+  
+10.1 Aadhaar Verification   
+The system should support:   
+•   
+Aadhaar Number Validation    
+•   
+OTP Authentication    
+Confidential   
+—   
+Prepared   
+for   
+Client   
+Review   
+Page   
+7   
+MedCred India   
+  
+Functional   
+Requirement   
+Document   
+  
+  
+  
+•   
+Identity Matching    
+  
+10.2 KYC Verification   
+The system should verify:   
+•   
+User identity    
+•   
+Duplicate profiles    
+•   
+Family member verification    
+  
+10.3 Verification Status   
+Verification statuses:   
+•   
+Pending    
+•   
+Verified    
+•   
+Rejected    
+  
+11. Agent Application   
+The platform should support agent - assisted onboarding.   
+  
+11.1 Agent Registration   
+Agents should be able to register using:   
+•   
+Mobile Number    
+•   
+Aadhaar Verification    
+•   
+Business Details    
+  
+11.2 Agent Dashboard   
+Agents should be able to:   
+•   
+Register users    
+•   
+Upload documents    
+•   
+Track applications    
+•   
+View registered users    
+•   
+Track approvals    
+  
+11.3 User Creation by Agent   
+Agents can:   
+•   
+Create healthcare cards    
+•   
+Upload customer documents    
+•   
+Submit verification requests    
+  
+11.4 Agent Performance Tracking   
+Admin should track:   
+•   
+Total registrations    
+•   
+Active users    
+•   
+Conversion count    
+•   
+Incentives    
+  
+12. Agent Incentive & Wallet System   
+This module manages commission and earnings for agents.   
+  
+12.1 Incentive Management   
+Agents should receive:   
+•   
+Registration incentive    
+•   
+Card activation commission    
+Commission values should be dynamic from admin panel.   
+  
+12.2 Agent Wallet   
+Wallet should display:   
+Confidential   
+—   
+Prepared   
+for   
+Client   
+Review   
+Page   
+8   
+MedCred India   
+  
+Functional   
+Requirement   
+Document   
+  
+  
+  
+•   
+Total Earnings    
+•   
+Pending Earnings    
+•   
+Paid Earnings    
+•   
+Transaction History    
+  
+12.3 Settlement Management   
+Admin should manage:   
+•   
+Commission approvals    
+•   
+Payment settlements    
+•   
+Wallet credits    
+  
+13. Notification System   
+This module handles alerts and communication.   
+  
+Notification Types   
+•   
+Registration Alerts    
+•   
+Verification Alerts    
+•   
+Claim Updates    
+•   
+Loan Eligibility Alerts    
+•   
+Card Expiry Alerts    
+•   
+Family Member Updates    
+  
+Notification Channels   
+•   
+Push Notifications    
+•   
+SMS    
+•   
+Email    
+•   
+In - App Notifications    
+  
+14. Wallet & Transaction Management   
+This module stores all financial records.   
+  
+14.1 Wallet Dashboard   
+Displays:   
+•   
+Wallet Balance    
+•   
+Claim Credits    
+•   
+Refunds    
+•   
+Incentives    
+  
+14.2 Transaction History   
+Tracks:   
+•   
+Claims    
+•   
+Refunds    
+•   
+Wallet Usage    
+•   
+Incentives    
+  
+15. Hospital Network Module   
+This module manages partner hospitals.   
+  
+15.1 Hospital Listings   
+Users should view:   
+•   
+Hospital Name    
+•   
+Location    
+•   
+Contact Details    
+Confidential   
+—   
+Prepared   
+for   
+Client   
+Review   
+Page   
+9   
+MedCred India   
+  
+Functional   
+Requirement   
+Document   
+  
+  
+  
+•   
+Supported Claims    
+  
+15.2 Hospital Verification   
+Admin should verify hospitals before activation.   
+  
+15.3 Claim Supported Hospitals   
+The system should identify:   
+•   
+Claim - enabled hospitals    
+•   
+Network hospitals    
+•   
+Partner healthcare centers    
+  
+16. Fraud Detection & Security System   
+This module prevents misuse and duplicate activities.   
+  
+Security Checks   
+The system should detect:   
+•   
+Duplicate claims    
+•   
+Fake registrations    
+•   
+Multiple loans    
+•   
+Invalid documents    
+•   
+Suspicious activity    
+  
+Security Actions   
+Admin should be able to:   
+•   
+Block users    
+•   
+Suspend accounts    
+•   
+Flag suspicious claims    
+  
+17. Admin Panel Modules   
+The admin panel acts as the central management system.   
+  
+17.1 Dashboard   
+Displays:   
+•   
+Total Users    
+•   
+Active Cards    
+•   
+Claims Count    
+•   
+Active Agents    
+•   
+Revenue    
+•   
+Pending Verifications    
+  
+17.2 User Management   
+Admin can:   
+•   
+View users    
+•   
+Block users    
+•   
+Verify users    
+•   
+Manage cards    
+  
+17.3 Family Card Management   
+Admin can:   
+•   
+View family members    
+•   
+Verify member records    
+•   
+Suspend family cards    
+  
+17.4 Claim Management   
+Admin can:   
+Confidential   
+—   
+Prepared   
+for   
+Client   
+Review   
+Page   
+10   
+MedCred India   
+  
+Functional   
+Requirement   
+Document   
+  
+  
+  
+•   
+Review claims    
+•   
+Approve claims    
+•   
+Reject claims    
+•   
+Validate documents    
+  
+17.5 Loan Eligibility Monitoring   
+Admin can:   
+•   
+Track loan eligibility    
+•   
+View waiting periods    
+•   
+Block duplicate applications    
+  
+17.6 Agent Management   
+Admin can:   
+•   
+Approve agents    
+•   
+Block agents    
+•   
+Track performance    
+•   
+Manage incentives    
+  
+17.7 Hospital Management   
+Admin can:   
+•   
+Add hospitals    
+•   
+Approve hospitals    
+•   
+Update hospital records    
+  
+17.8 Notification Management   
+Admin can send:   
+•   
+Broadcast notifications    
+•   
+Claim alerts    
+•   
+Renewal reminders    
+  
+17.9 Reports & Analytics   
+Admin should access:   
+•   
+User Reports    
+•   
+Claim Reports    
+•   
+Agent Reports    
+•   
+Financial Reports    
+•   
+Verification Reports    
+  
+18. Reports & Analytics   
+The system should generate:   
+•   
+Daily Reports    
+•   
+Monthly Reports    
+•   
+Claim Analytics    
+•   
+Registration Analytics    
+•   
+Agent Performance Reports    
+•   
+Revenue Reports    
+Export formats:   
+•   
+Excel    
+•   
+PDF    
+  
+19. Technical Architecture   
+The platform should use:   
+•   
+Microservice Architecture    
+•   
+API - first Structure    
+•   
+Cloud - ready Infrastructure    
+Confidential   
+—   
+Prepared   
+for   
+Client   
+Review   
+Page   
+11   
+MedCred India   
+  
+Functional   
+Requirement   
+Document   
+  
+  
+  
+  
+Recommended Stack   
+Layer   
+Technology   
+Frontend   
+React .js   
+Admin Panel   
+React.js   
+Backend   
+Node.js ( mono )   
+Database   
+MongoDB   
+Cache   
+Redis   
+  
+20. Third Party Integrations   
+Required Integrations   
+•   
+Aadhaar Verification API    
+•   
+SMS Gateway    
+•   
+Email Service    
+•   
+Push Notification Service    
+•   
+Payment Gateway    
+•   
+Cloud Storage    
+  
+21. Security & Compliance   
+The platform should support:   
+•   
+JWT Authentication    
+•   
+Encrypted Passwords    
+•   
+Secure APIs    
+•   
+SSL Security    
+•   
+Access Logs    
+•   
+Data Protection Policies    
+  
+22. Non Functional Requirements   
+Requirement   
+  
+  
+  
+  
+Description   
+Scalability   
+  
+  
+  
+  
+System should support large user growth   
+Availability   
+  
+  
+  
+  
+High uptime architecture   
+Security   
+  
+  
+  
+  
+Secure user data protection   
+Performance   
+  
+  
+  
+  
+Fast API response time   
+Reliability   
+  
+  
+  
+  
+Stable healthcare workflows   
+Maintainability   
+  
+  
+  
+  
+Modular development structure   
+Backup   
+  
+  
+  
+  
+Automated backup support   
+  
