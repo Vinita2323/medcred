@@ -59,7 +59,7 @@ export default function AgentRegisterPage() {
         mobileNumber: '8000000000',
         email: 'sanjay.tl@medcred.in',
         password: 'agent',
-        role: 'Team Leader',
+        role: 'Agent',
         agentId: 'MC-8822',
         referralCode: 'LEADER80',
         reportingManager: 'Rajesh Kumar',
@@ -157,11 +157,11 @@ export default function AgentRegisterPage() {
         return;
       }
 
-      // Check if code matches a Team Leader or Super Agent
+      // Check if code matches a Agent or Super Agent
       let suggestedRole = role; 
       let suggManager = '';
 
-      if (suggestedRole === 'Team Leader') {
+      if (suggestedRole === 'Agent') {
         suggManager = 'Rajesh Kumar';
       } else if (suggestedRole === 'Field Agent') {
         suggManager = 'Sanjay Dutt';
@@ -181,7 +181,7 @@ export default function AgentRegisterPage() {
         reportingManager: suggManager,
         agentId: 'MC-PENDING',
         referralCode: '',
-        commissionRate: suggestedRole === 'Super Agent' ? 1.0 : suggestedRole === 'Team Leader' ? 1.5 : 2.5,
+        commissionRate: suggestedRole === 'Super Agent' ? 1.0 : suggestedRole === 'Agent' ? 1.5 : 2.5,
         rank: 'Bronze',
         salesCount: 0,
         earnings: 0,
@@ -332,7 +332,7 @@ export default function AgentRegisterPage() {
                       required
                     >
                       <option value="Super Agent">Super Agent</option>
-                      <option value="Team Leader">Team Leader</option>
+                      <option value="Agent">Agent</option>
                       <option value="Field Agent">Field Agent</option>
                     </select>
                   </div>

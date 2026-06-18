@@ -47,15 +47,15 @@ export default function AgentWalletPage() {
         ]);
       } else if (user.role === 'Super Agent') {
         setTransactions([
-          { id: 'TX-99021', date: 'June 10, 2026', client: 'Sanjay Dutt (Team Leader)', details: 'Team Activations Override Commission', amount: 8500, type: 'credit', status: 'Paid' },
+          { id: 'TX-99021', date: 'June 10, 2026', client: 'Sanjay Dutt (Agent)', details: 'Team Activations Override Commission', amount: 8500, type: 'credit', status: 'Paid' },
           { id: 'TX-99018', date: 'June 08, 2026', client: 'Amit Patel (Field Agent)', details: 'Field Activations Override Commission', amount: 4500, type: 'credit', status: 'Paid' },
           { id: 'TX-99014', date: 'June 05, 2026', client: 'Super Agent Withdrawal', details: 'Payout Settlement Approved', amount: 15000, type: 'debit', status: 'Paid' },
         ]);
-      } else if (user.role === 'Team Leader') {
+      } else if (user.role === 'Agent') {
         setTransactions([
           { id: 'TX-88021', date: 'June 10, 2026', client: 'Amit Patel (Field Agent)', details: 'Field Activation Override Commission', amount: 4500, type: 'credit', status: 'Paid' },
           { id: 'TX-88018', date: 'June 08, 2026', client: 'Sanjay Dutt', details: 'Personal card sale reward', amount: 3750, type: 'credit', status: 'Paid' },
-          { id: 'TX-88014', date: 'June 05, 2026', client: 'Team Leader Withdrawal', details: 'Payout Settlement Approved', amount: 8000, type: 'debit', status: 'Paid' },
+          { id: 'TX-88014', date: 'June 05, 2026', client: 'Agent Withdrawal', details: 'Payout Settlement Approved', amount: 8000, type: 'debit', status: 'Paid' },
         ]);
       } else {
         // Field Agent

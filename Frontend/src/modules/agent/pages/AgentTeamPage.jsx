@@ -21,16 +21,16 @@ export default function AgentTeamPage() {
         const allAgents = JSON.parse(agentsJson);
         
         if (userObj.role === 'Super Agent') {
-          // Team Leaders reporting to this Super Agent
-          const tls = allAgents.filter(a => a.role === 'Team Leader' && a.reportingManager === userObj.fullName);
+          // Agents reporting to this Super Agent
+          const tls = allAgents.filter(a => a.role === 'Agent' && a.reportingManager === userObj.fullName);
           setTeamLeaders(tls);
           
-          // Field Agents reporting to those Team Leaders
+          // Field Agents reporting to those Agents
           const tlNames = tls.map(t => t.fullName);
           const fas = allAgents.filter(a => a.role === 'Field Agent' && tlNames.includes(a.reportingManager));
           setFieldAgents(fas);
-        } else if (userObj.role === 'Team Leader') {
-          // Field Agents reporting directly to this Team Leader
+        } else if (userObj.role === 'Agent') {
+          // Field Agents reporting directly to this Agent
           const fas = allAgents.filter(a => a.role === 'Field Agent' && a.reportingManager === userObj.fullName);
           setFieldAgents(fas);
         }
@@ -50,7 +50,7 @@ export default function AgentTeamPage() {
   const getFilteredAgents = () => {
     let result = [];
     if (currentUser.role === 'Super Agent') {
-      if (roleFilter === 'Team Leader') {
+      if (roleFilter === 'Agent') {
         result = [...teamLeaders];
       } else if (roleFilter === 'Field Agent') {
         result = [...fieldAgents];
@@ -65,7 +65,7 @@ export default function AgentTeamPage() {
           result = result.filter(a => a.agentId === selectedLeaderId || a.reportingManager === leader.fullName);
         }
       }
-    } else if (currentUser.role === 'Team Leader') {
+    } else if (currentUser.role === 'Agent') {
       result = [...fieldAgents];
     }
 
@@ -101,7 +101,7 @@ export default function AgentTeamPage() {
           <h2 className="text-xl md:text-2xl font-bold">Team Performance &amp; Network</h2>
           <p className="text-xs opacity-90 max-w-xl">
             {currentUser.role === 'Super Agent' 
-              ? `Managing ${teamLeaders.length} Team Leaders and ${fieldAgents.length} Field Agents in your downline.` 
+              ? `Managing ${teamLeaders.length} Agents and ${fieldAgents.length} Field Agents in your downline.` 
               : `Managing ${fieldAgents.length} Field Agents reporting directly to you.`}
           </p>
         </div>
@@ -154,7 +154,7 @@ export default function AgentTeamPage() {
           <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
             {currentUser.role === 'Super Agent' && (
               <>
-                {/* Team Leader Filter */}
+                {/* Agent Filter */}
                 <select 
                   className="bg-white border border-[#c3c6d6]/40 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none focus:border-[#003d9b]"
                   value={selectedLeaderId}
@@ -168,7 +168,7 @@ export default function AgentTeamPage() {
 
                 {/* Role Filter */}
                 <div className="flex gap-1 bg-[#f3f3fd] p-1 rounded-xl">
-                  {['All', 'Team Leader', 'Field Agent'].map(role => (
+                  {['All', 'Agent', 'Field Agent'].map(role => (
                     <button
                       key={role}
                       onClick={() => setRoleFilter(role)}
@@ -215,7 +215,7 @@ export default function AgentTeamPage() {
                     </td>
                     <td className="px-6 py-4">
                       <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                        agent.role === 'Team Leader' ? 'bg-[#dae2ff] text-[#003d9b]' : 'bg-[#d4e6e5] text-[#0c56d0]'
+                        agent.role === 'Agent' ? 'bg-[#dae2ff] text-[#003d9b]' : 'bg-[#d4e6e5] text-[#0c56d0]'
                       }`}>
                         {agent.role}
                       </span>

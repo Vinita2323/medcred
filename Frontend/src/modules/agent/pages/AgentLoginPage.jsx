@@ -47,7 +47,7 @@ export default function AgentLoginPage() {
         mobileNumber: '8000000000',
         email: 'sanjay.tl@medcred.in',
         password: 'agent',
-        role: 'Team Leader',
+        role: 'Agent',
         agentId: 'MC-8822',
         referralCode: 'LEADER80',
         reportingManager: 'Rajesh Kumar',

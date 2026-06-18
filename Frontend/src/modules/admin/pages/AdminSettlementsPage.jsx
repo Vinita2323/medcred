@@ -9,10 +9,22 @@ export default function AdminSettlementsPage() {
     // We add fake pending/paid earnings to the agents for demo purposes
     const raw = localStorage.getItem('medcred_agents');
     let data = raw ? JSON.parse(raw) : [];
+    
+    if (data.filter(a => a.status === 'Approved').length === 0) {
+      const dummyAgents = [
+        { agentId: 'MC-10023', fullName: 'Rajesh Kumar', mobileNumber: '9876543210', email: 'rajesh@example.com', role: 'Super Agent', status: 'Approved', pendingEarnings: 12500, paidEarnings: 45000 },
+        { agentId: 'MC-20045', fullName: 'Priya Sharma', mobileNumber: '9876543211', email: 'priya@example.com', role: 'Agent', status: 'Approved', pendingEarnings: 8200, paidEarnings: 21000 },
+        { agentId: 'MC-30067', fullName: 'Amit Patel', mobileNumber: '9876543212', email: 'amit@example.com', role: 'Field Agent', status: 'Approved', pendingEarnings: 3400, paidEarnings: 12000 },
+        { agentId: 'MC-40089', fullName: 'Neha Singh', mobileNumber: '9876543213', email: 'neha@example.com', role: 'Field Agent', status: 'Approved', pendingEarnings: 0, paidEarnings: 8500 }
+      ];
+      data = [...data, ...dummyAgents];
+      localStorage.setItem('medcred_agents', JSON.stringify(data));
+    }
+
     data = data.filter(a => a.status === 'Approved').map(a => ({
       ...a,
-      pendingEarnings: a.pendingEarnings || Math.floor(Math.random() * 15000),
-      paidEarnings: a.paidEarnings || Math.floor(Math.random() * 50000)
+      pendingEarnings: a.pendingEarnings !== undefined ? a.pendingEarnings : Math.floor(Math.random() * 15000),
+      paidEarnings: a.paidEarnings !== undefined ? a.paidEarnings : Math.floor(Math.random() * 50000)
     }));
     setAgents(data);
   }, []);

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Lottie from 'lottie-react';
 import membershipActivAnim from '../../../assets/Lotties/membershipActiv.json';
-import { PLANS, saveMembership, getMembership } from '../utils/storage';
+import { getPlatformPlans, saveMembership, getMembership } from '../utils/storage';
 
 const METHODS = [
   { id: 'upi',     icon: 'smartphone',          label: 'UPI',         desc: 'Pay via any UPI app' },
@@ -16,7 +16,8 @@ export default function PaymentPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const planId = location.state?.planId || 'family';
-  const plan = PLANS[planId];
+  const plans = getPlatformPlans();
+  const plan = plans[planId];
   const finalPrice = location.state?.price || plan.price;
   const agentDetail = location.state?.agentDetail || null;
   const referralCode = location.state?.referralCode || null;

@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { PLANS, saveMembership } from '../utils/storage';
-
-const planOrder = ['individual', 'family', 'premium'];
+import { getPlatformPlans, saveMembership } from '../utils/storage';
 
 const planIcons = { individual: 'person', family: 'group', premium: 'workspace_premium' };
 const planGradients = {
@@ -12,9 +10,12 @@ const planGradients = {
 };
 
 export default function MembershipPlansPage() {
+  const PLANS = getPlatformPlans();
+  const planOrder = Object.keys(PLANS).filter(k => !PLANS[k].isHidden);
+
   const navigate = useNavigate();
   const location = useLocation();
-  const [selected, setSelected] = useState('family');
+  const [selected, setSelected] = useState(planOrder.includes('family') ? 'family' : planOrder[0]);
   const fromRenew = location.state?.renew;
 
   const [isReferralModalOpen, setIsReferralModalOpen] = useState(false);
@@ -111,11 +112,11 @@ export default function MembershipPlansPage() {
                 )}
 
                 {/* Card header gradient */}
-                <div className={`bg-gradient-to-br ${planGradients[planId]} p-3.5 text-white ${plan.popular ? 'pt-6' : ''}`}>
+                <div className={`bg-gradient-to-br ${planGradients[planId] || 'from-[#424242] to-[#212121]'} p-3.5 text-white ${plan.popular ? 'pt-6' : ''}`}>
                   <div className="flex justify-between items-start">
                     <div>
                       <div className="flex items-center gap-1.5 mb-0.5">
-                        <span className="material-symbols-outlined text-white/80 text-lg">{planIcons[planId]}</span>
+                        <span className="material-symbols-outlined text-white/80 text-lg">{planIcons[planId] || 'card_membership'}</span>
                         <span className="text-[10px] font-bold uppercase tracking-widest opacity-80">{plan.name}</span>
                       </div>
                       <p className="text-2xl font-black mt-0.5">₹{plan.price.toLocaleString()}</p>

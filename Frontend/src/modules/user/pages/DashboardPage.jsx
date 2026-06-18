@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import BottomNavBar from '../components/Navigation/BottomNavBar';
-import { getMembership, hasMembership, getMembershipDaysRemaining, getDaysActive, isLoanEligible, getDaysUntilLoanEligible, PLANS } from '../utils/storage';
+import { getMembership, hasMembership, getMembershipDaysRemaining, getDaysActive, isLoanEligible, getDaysUntilLoanEligible, getPlatformPlans } from '../utils/storage';
 import imgBP from '../../../assets/Machine/Bloodpressure.webp';
 import imgGlucometer from '../../../assets/Machine/Glucometer.webp';
 import imgThermometer from '../../../assets/Machine/thermometer.jpg';
@@ -11,6 +11,7 @@ import imgMassager from '../../../assets/Machine/Bodymassager.jpg';
 
 export default function DashboardPage() {
   const navigate = useNavigate();
+  const PLANS = getPlatformPlans();
   const membership = getMembership();
   const active = hasMembership();
   const daysLeft = getMembershipDaysRemaining();

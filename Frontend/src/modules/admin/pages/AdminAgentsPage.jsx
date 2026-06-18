@@ -4,7 +4,7 @@ const TABS = ['Pending Approval', 'Active Agents', 'Blocked'];
 
 const ROLE_COLORS = {
   'Super Agent':  'bg-purple-100 text-purple-700',
-  'Team Leader':  'bg-blue-100 text-blue-700',
+  'Agent':  'bg-blue-100 text-blue-700',
   'Field Agent':  'bg-[#dae2ff] text-[#003d9b]',
   'Admin':        'bg-yellow-100 text-yellow-700',
 };
@@ -46,7 +46,7 @@ export default function AdminAgentsPage() {
       a.mobileNumber === approvingAgent.mobileNumber
         ? { ...a, status: 'Approved', role: assignedRole, reportingManager: assignedManager,
             agentId: randomId, referralCode: randomRef,
-            commissionRate: assignedRole === 'Super Agent' ? 1.0 : assignedRole === 'Team Leader' ? 1.5 : 2.5,
+            commissionRate: assignedRole === 'Super Agent' ? 1.0 : assignedRole === 'Agent' ? 1.5 : 2.5,
             rank: 'Bronze', salesCount: 0, earnings: 0,
             joiningDate: new Date().toLocaleDateString('en-IN') }
         : a
@@ -72,7 +72,7 @@ export default function AdminAgentsPage() {
   const promote = (agent, newRole) => {
     saveAgents(agents.map(a =>
       a.mobileNumber === agent.mobileNumber
-        ? { ...a, role: newRole, commissionRate: newRole === 'Super Agent' ? 1.0 : newRole === 'Team Leader' ? 1.5 : 2.5 }
+        ? { ...a, role: newRole, commissionRate: newRole === 'Super Agent' ? 1.0 : newRole === 'Agent' ? 1.5 : 2.5 }
         : a
     ));
   };
@@ -93,8 +93,8 @@ export default function AdminAgentsPage() {
   };
 
   const getPotentialManagers = (role) => {
-    if (role === 'Team Leader') return agents.filter(a => a.role === 'Super Agent' && a.status === 'Approved');
-    if (role === 'Field Agent')  return agents.filter(a => a.role === 'Team Leader' && a.status === 'Approved');
+    if (role === 'Agent') return agents.filter(a => a.role === 'Super Agent' && a.status === 'Approved');
+    if (role === 'Field Agent')  return agents.filter(a => a.role === 'Agent' && a.status === 'Approved');
     return [];
   };
 
@@ -153,7 +153,7 @@ export default function AdminAgentsPage() {
               <h4 className="font-extrabold text-[#003d9b]">{plan} Plan</h4>
               {[
                 { role: 'Field Agent',   val: commissions[plan].fieldAgent },
-                { role: 'Team Leader',   val: commissions[plan].teamLeader },
+                { role: 'Agent',   val: commissions[plan].teamLeader },
                 { role: 'Super Agent',   val: commissions[plan].superAgent },
               ].map(r => (
                 <div key={r.role} className="flex justify-between text-xs">
@@ -256,8 +256,8 @@ export default function AdminAgentsPage() {
                       )}
                       {activeTab === 'Active Agents' && (
                         <>
-                          {agent.role === 'Field Agent' && <button onClick={() => promote(agent, 'Team Leader')} className="bg-[#f0f4ff] hover:bg-[#dae2ff] text-[#003d9b] px-2.5 py-1.5 rounded-lg text-xs font-bold cursor-pointer">→ Team Leader</button>}
-                          {agent.role === 'Team Leader' && <button onClick={() => promote(agent, 'Super Agent')} className="bg-purple-50 hover:bg-purple-100 text-purple-700 px-2.5 py-1.5 rounded-lg text-xs font-bold cursor-pointer">→ Super Agent</button>}
+                          {agent.role === 'Field Agent' && <button onClick={() => promote(agent, 'Agent')} className="bg-[#f0f4ff] hover:bg-[#dae2ff] text-[#003d9b] px-2.5 py-1.5 rounded-lg text-xs font-bold cursor-pointer">→ Agent</button>}
+                          {agent.role === 'Agent' && <button onClick={() => promote(agent, 'Super Agent')} className="bg-purple-50 hover:bg-purple-100 text-purple-700 px-2.5 py-1.5 rounded-lg text-xs font-bold cursor-pointer">→ Super Agent</button>}
                           <button onClick={() => blockToggle(agent)} className="border border-red-200 text-red-600 hover:bg-red-50 px-2.5 py-1.5 rounded-lg text-xs font-bold cursor-pointer">Block</button>
                         </>
                       )}
@@ -295,7 +295,7 @@ export default function AdminAgentsPage() {
                 className="w-full bg-[#f5f8ff] border border-[#c3c6d6]/40 rounded-xl px-3 py-3 text-sm focus:outline-none cursor-pointer"
               >
                 <option>Super Agent</option>
-                <option>Team Leader</option>
+                <option>Agent</option>
                 <option>Field Agent</option>
               </select>
             </div>
@@ -333,7 +333,7 @@ export default function AdminAgentsPage() {
             </div>
             {[
               { label: 'Field Agent Commission (%)', val: editFa, setter: setEfa },
-              { label: 'Team Leader Override (%)',   val: editTl, setter: setEtl },
+              { label: 'Agent Override (%)',   val: editTl, setter: setEtl },
               { label: 'Super Agent Override (%)',   val: editSa, setter: setEsa },
             ].map((f,i)=>(
               <div key={i} className="space-y-1">

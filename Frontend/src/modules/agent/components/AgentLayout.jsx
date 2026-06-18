@@ -34,7 +34,7 @@ export default function AgentLayout() {
       { label: 'Customer Directory', icon: 'group', route: '/agent/customers' },
     ];
 
-    if (currentUser.role === 'Super Agent' || currentUser.role === 'Team Leader') {
+    if (currentUser.role === 'Super Agent' || currentUser.role === 'Agent') {
       baseItems.push({ label: 'Team Management', icon: 'partner_exchange', route: '/agent/team' });
     }
 
