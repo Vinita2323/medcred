@@ -19,7 +19,13 @@ export default function PaymentPage() {
   const location = useLocation();
   const planId = location.state?.planId || 'family';
   const planObjId = location.state?.planObjId || null;
-  const plan = PLANS[planId] || { name: 'Health Plan', price: 999, validity: '1 Year', members: 1, coverage: '2L' };
+  const plan = {
+    name: location.state?.planName || (PLANS[planId]?.name || 'Health Plan'),
+    price: location.state?.price || (PLANS[planId]?.price || 999),
+    validity: location.state?.validity || (PLANS[planId]?.validity || '1 Year'),
+    members: location.state?.members || (PLANS[planId]?.members || 1),
+    coverage: location.state?.coverage || (PLANS[planId]?.coverage || '2L')
+  };
   const finalPrice = location.state?.price || plan.price;
   const agentDetail = location.state?.agentDetail || null;
   const referralCode = location.state?.referralCode || null;

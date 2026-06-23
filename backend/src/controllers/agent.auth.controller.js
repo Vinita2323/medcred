@@ -219,7 +219,7 @@ const agentRegister = async (req, res) => {
     let suggManager = '';
     let commissionRate = 2.5;
     
-    if (role === 'Team Leader') {
+    if (role === 'Agent') {
       suggManager = 'Rajesh Kumar';
       commissionRate = 1.5;
     } else if (role === 'Field Agent') {

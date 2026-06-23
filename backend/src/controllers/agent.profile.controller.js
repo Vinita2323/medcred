@@ -58,17 +58,17 @@ export const getDashboardStats = async (req, res) => {
     // Role based stats
     let subordinateStats = null;
     if (agent.role === 'Super Agent') {
-      const teamLeaders = await Agent.countDocuments({ role: 'Team Leader', reportingManagerId: agent._id });
+      const agents = await Agent.countDocuments({ role: 'Agent', reportingManagerId: agent._id });
       const fieldAgents = await Agent.countDocuments({ role: 'Field Agent', reportingManagerId: { $in: await Agent.find({ reportingManagerId: agent._id }).distinct('_id') } });
-      subordinateStats = { teamLeaders, fieldAgents };
-    } else if (agent.role === 'Team Leader') {
+      subordinateStats = { agents, fieldAgents };
+    } else if (agent.role === 'Agent') {
       const fieldAgents = await Agent.countDocuments({ role: 'Field Agent', reportingManagerId: agent._id });
       subordinateStats = { fieldAgents };
     } else if (agent.role === 'Admin') {
       const pendingAgents = await Agent.countDocuments({ status: 'Pending Approval' });
       const approvedAgents = await Agent.countDocuments({ status: 'Approved' });
-      const activeTeamLeaders = await Agent.countDocuments({ role: 'Team Leader', status: 'Approved' });
-      subordinateStats = { pendingAgents, approvedAgents, activeTeamLeaders };
+      const activeAgents = await Agent.countDocuments({ role: 'Agent', status: 'Approved' });
+      subordinateStats = { pendingAgents, approvedAgents, activeAgents };
     }
 
     res.status(200).json({

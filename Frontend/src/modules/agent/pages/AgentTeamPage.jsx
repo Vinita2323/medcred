@@ -4,7 +4,7 @@ import { ENDPOINTS, STORAGE_KEYS } from '../../../services/types';
 
 export default function AgentTeamPage() {
   const [currentUser, setCurrentUser] = useState(null);
-  const [teamLeaders, setTeamLeaders] = useState([]);
+  const [agents, setAgents] = useState([]);
   const [fieldAgents, setFieldAgents] = useState([]);
   const [selectedLeaderId, setSelectedLeaderId] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
@@ -25,7 +25,7 @@ export default function AgentTeamPage() {
       setIsLoading(true);
       const res = await api.get(ENDPOINTS.AGENT_TEAM);
       if (res.data?.success) {
-        setTeamLeaders(res.data.data.teamLeaders || []);
+        setAgents(res.data.data.agents || []);
         setFieldAgents(res.data.data.fieldAgents || []);
       }
     } catch (error) {
@@ -51,22 +51,22 @@ export default function AgentTeamPage() {
   const getFilteredAgents = () => {
     let result = [];
     if (currentUser.role === 'Super Agent') {
-      if (roleFilter === 'Team Leader') {
-        result = [...teamLeaders];
+      if (roleFilter === 'Agent') {
+        result = [...agents];
       } else if (roleFilter === 'Field Agent') {
         result = [...fieldAgents];
       } else {
-        result = [...teamLeaders, ...fieldAgents];
+        result = [...agents, ...fieldAgents];
       }
 
       if (selectedLeaderId !== 'All') {
-        // Find team leader name
-        const leader = teamLeaders.find(t => t.agentId === selectedLeaderId);
+        // Find agent name
+        const leader = agents.find(t => t.agentId === selectedLeaderId);
         if (leader) {
           result = result.filter(a => a.agentId === selectedLeaderId || a.reportingManagerName === leader.fullName);
         }
       }
-    } else if (currentUser.role === 'Team Leader') {
+    } else if (currentUser.role === 'Agent') {
       result = [...fieldAgents];
     }
 
@@ -102,7 +102,7 @@ export default function AgentTeamPage() {
           <h2 className="text-xl md:text-2xl font-bold">Team Performance &amp; Network</h2>
           <p className="text-xs opacity-90 max-w-xl">
             {currentUser.role === 'Super Agent' 
-              ? `Managing ${teamLeaders.length} Team Leaders and ${fieldAgents.length} Field Agents in your downline.` 
+              ? `Managing ${agents.length} Agents and ${fieldAgents.length} Field Agents in your downline.` 
               : `Managing ${fieldAgents.length} Field Agents reporting directly to you.`}
           </p>
         </div>
@@ -113,14 +113,14 @@ export default function AgentTeamPage() {
         <div className="bg-white p-4 rounded-xl border border-[#c3c6d6]/20 shadow-sm">
           <p className="text-xs text-[#516161] font-semibold">Total Downline Members</p>
           <p className="text-2xl font-extrabold text-[#003d9b] mt-1">
-            {currentUser.role === 'Super Agent' ? teamLeaders.length + fieldAgents.length : fieldAgents.length}
+            {currentUser.role === 'Super Agent' ? agents.length + fieldAgents.length : fieldAgents.length}
           </p>
         </div>
         <div className="bg-white p-4 rounded-xl border border-[#c3c6d6]/20 shadow-sm">
           <p className="text-xs text-[#516161] font-semibold">Active Subscriptions</p>
           <p className="text-2xl font-extrabold text-[#003d9b] mt-1">
             {currentUser.role === 'Super Agent' 
-              ? (teamLeaders.length * 15) + (fieldAgents.length * 6) 
+              ? (agents.length * 15) + (fieldAgents.length * 6) 
               : fieldAgents.length * 8}
           </p>
         </div>
@@ -162,14 +162,14 @@ export default function AgentTeamPage() {
                   onChange={(e) => setSelectedLeaderId(e.target.value)}
                 >
                   <option value="All">All Teams</option>
-                  {teamLeaders.map(tl => (
+                  {agents.map(tl => (
                     <option key={tl.agentId} value={tl.agentId}>{tl.fullName}'s Team</option>
                   ))}
                 </select>
 
                 {/* Role Filter */}
                 <div className="flex gap-1 bg-[#f3f3fd] p-1 rounded-xl">
-                  {['All', 'Team Leader', 'Field Agent'].map(role => (
+                  {['All', 'Agent', 'Field Agent'].map(role => (
                     <button
                       key={role}
                       onClick={() => setRoleFilter(role)}
@@ -216,7 +216,7 @@ export default function AgentTeamPage() {
                     </td>
                     <td className="px-6 py-4">
                       <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                        agent.role === 'Team Leader' ? 'bg-[#dae2ff] text-[#003d9b]' : 'bg-[#d4e6e5] text-[#0c56d0]'
+                        agent.role === 'Agent' ? 'bg-[#dae2ff] text-[#003d9b]' : 'bg-[#d4e6e5] text-[#0c56d0]'
                       }`}>
                         {agent.role}
                       </span>

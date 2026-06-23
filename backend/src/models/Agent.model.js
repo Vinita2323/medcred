@@ -37,7 +37,7 @@ const agentSchema = new mongoose.Schema(
     // ── Role & Hierarchy ───────────────────────────────────────
     role: {
       type: String,
-      enum: ['Admin', 'Super Agent', 'Team Leader', 'Field Agent'],
+      enum: ['Admin', 'Super Agent', 'Agent', 'Field Agent'],
       default: 'Field Agent',
     },
     reportingManagerId: {

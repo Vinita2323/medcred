@@ -34,10 +34,16 @@ export default function AgentLayout() {
       { label: 'Register Customer', icon: 'person_add', route: '/agent/register-customer' },
       { label: 'Apply Loan', icon: 'payments', route: '/agent/apply-loan' },
       { label: 'Customer Directory', icon: 'group', route: '/agent/customers' },
-      { label: 'Team Management', icon: 'partner_exchange', route: '/agent/team' },
+    ];
+
+    if (currentUser.role === 'Super Agent' || currentUser.role === 'Agent') {
+      baseItems.push({ label: 'Team Management', icon: 'partner_exchange', route: '/agent/team' });
+    }
+
+    baseItems.push(
       { label: 'Agent Wallet', icon: 'account_balance_wallet', route: '/agent/wallet' },
       { label: 'Agent Profile', icon: 'account_circle', route: '/agent/profile' }
-    ];
+    );
 
     return baseItems;
   };
