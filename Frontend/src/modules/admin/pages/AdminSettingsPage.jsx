@@ -9,11 +9,9 @@ export default function AdminSettingsPage() {
     loanWaitDays: 30
   });
 
-  const [plans, setPlans] = useState({
-    individual: { price: 999, validity: '1 Year' },
-    family: { price: 2499, validity: '1 Year' },
-    premium: { price: 4999, validity: '1 Year' }
-  });
+  const [plans, setPlans] = useState({});
+  const [isCreatingPlan, setIsCreatingPlan] = useState(false);
+  const [newPlan, setNewPlan] = useState({ name: '', price: '', validity: '1 Year', maxMembers: 1, coverageAmount: '' });
 
   const [adminProfile, setAdminProfile] = useState({ name: '', email: '' });
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
@@ -38,13 +36,19 @@ export default function AdminSettingsPage() {
           });
 
           // Map the prices and validities
-          const updatedPlansState = { ...plans };
+          const newPlansState = {};
           fetchedPlans.forEach(p => {
-            if (updatedPlansState[p.planId]) {
-              updatedPlansState[p.planId] = { price: p.price, validity: p.validity };
-            }
+            newPlansState[p.planId] = {
+              _id: p._id,
+              name: p.name,
+              price: p.price,
+              validity: p.validity,
+              maxMembers: p.maxMembers,
+              coverageAmount: p.coverageAmount,
+              isActive: p.isActive
+            };
           });
-          setPlans(updatedPlansState);
+          setPlans(newPlansState);
         }
       }
     } catch (err) {
@@ -103,6 +107,36 @@ export default function AdminSettingsPage() {
       alert('Failed to save platform settings.');
     } finally {
       setIsSavingSettings(false);
+    }
+  };
+
+  const handleCreatePlan = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await api.post(ENDPOINTS.ADMIN_PLAN_CREATE, newPlan);
+      if (res.data?.success) {
+        alert('Plan created successfully!');
+        setIsCreatingPlan(false);
+        setNewPlan({ name: '', price: '', validity: '1 Year', maxMembers: 1, coverageAmount: '' });
+        fetchPlatformSettings();
+      }
+    } catch (err) {
+      console.error('Error creating plan:', err);
+      alert('Failed to create plan.');
+    }
+  };
+
+  const handleDeletePlan = async (planId) => {
+    if (!window.confirm('Are you sure you want to delete this plan?')) return;
+    try {
+      const res = await api.delete(ENDPOINTS.ADMIN_PLAN_DELETE(planId));
+      if (res.data?.success) {
+        alert('Plan deleted successfully!');
+        fetchPlatformSettings();
+      }
+    } catch (err) {
+      console.error('Error deleting plan:', err);
+      alert('Failed to delete plan.');
     }
   };
 
@@ -200,34 +234,95 @@ export default function AdminSettingsPage() {
 
         {/* Membership Plan Pricing */}
         <div className="bg-white border border-[#c3c6d6]/20 rounded-2xl p-6 shadow-sm space-y-4">
-          <h3 className="font-extrabold text-[#191b23] text-sm flex items-center gap-2">
-            <span className="material-symbols-outlined text-[#003d9b]">card_membership</span>
-            Membership Plan Pricing
-          </h3>
-          <p className="text-xs text-[#516161] mb-4">Configure the cost and validity of healthcare cards sold to users.</p>
+          <div className="flex justify-between items-center">
+            <div>
+              <h3 className="font-extrabold text-[#191b23] text-sm flex items-center gap-2">
+                <span className="material-symbols-outlined text-[#003d9b]">card_membership</span>
+                Membership Plan Pricing
+              </h3>
+              <p className="text-xs text-[#516161] mt-1">Configure the cost and validity of healthcare cards sold to users.</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsCreatingPlan(true)}
+              className="bg-[#003d9b] hover:bg-[#0052cc] text-white px-4 py-2 rounded-xl font-bold text-xs transition-all flex items-center gap-2 shadow-sm"
+            >
+              <span className="material-symbols-outlined text-[16px]">add</span>
+              Add New Plan
+            </button>
+          </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {['individual', 'family', 'premium'].map((p) => (
-              <div key={p} className="border border-[#c3c6d6]/30 p-4 rounded-xl space-y-3 bg-[#faf8ff]">
-                <h4 className="font-extrabold text-[#003d9b] capitalize">{p} Plan</h4>
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-[#737685] uppercase">Price (₹)</label>
-                  <input
-                    type="number"
-                    value={plans[p].price}
-                    onChange={e => setPlans({ ...plans, [p]: { ...plans[p], price: Number(e.target.value) } })}
-                    className="w-full bg-white border border-[#c3c6d6]/40 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#003d9b] font-bold"
-                  />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
+            {Object.keys(plans).map((planId) => (
+              <div key={planId} className="border border-[#c3c6d6]/30 p-5 rounded-xl space-y-4 bg-[#faf8ff] relative shadow-sm">
+                
+                <div className="flex justify-between items-start">
+                  <h4 className="font-extrabold text-[#003d9b] text-base capitalize">{plans[planId].name}</h4>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setPlans({ ...plans, [planId]: { ...plans[planId], isActive: !plans[planId].isActive } })}
+                      className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition-colors cursor-pointer ${plans[planId].isActive ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'}`}
+                    >
+                      {plans[planId].isActive ? 'Visible' : 'Hidden'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeletePlan(planId)}
+                      className="text-[#737685] hover:text-red-500 transition-colors cursor-pointer"
+                      title="Delete Plan"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">delete</span>
+                    </button>
+                  </div>
                 </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-[#737685] uppercase">Validity</label>
-                  <input
-                    type="text"
-                    value={plans[p].validity}
-                    onChange={e => setPlans({ ...plans, [p]: { ...plans[p], validity: e.target.value } })}
-                    className="w-full bg-white border border-[#c3c6d6]/40 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#003d9b]"
-                  />
+
+                <div className="space-y-3">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-[#737685] uppercase">Price (₹)</label>
+                    <input
+                      type="number"
+                      value={plans[planId].price}
+                      onChange={e => setPlans({ ...plans, [planId]: { ...plans[planId], price: Number(e.target.value) } })}
+                      className="w-full bg-white border border-[#c3c6d6]/40 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#003d9b] font-bold"
+                    />
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-[#737685] uppercase">Validity</label>
+                      <input
+                        type="text"
+                        value={plans[planId].validity}
+                        onChange={e => setPlans({ ...plans, [planId]: { ...plans[planId], validity: e.target.value } })}
+                        className="w-full bg-white border border-[#c3c6d6]/40 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#003d9b]"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-[#737685] uppercase">Members</label>
+                      <input
+                        type="number"
+                        value={plans[planId].maxMembers}
+                        onChange={e => setPlans({ ...plans, [planId]: { ...plans[planId], maxMembers: Number(e.target.value) } })}
+                        className="w-full bg-white border border-[#c3c6d6]/40 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#003d9b]"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-[#737685] uppercase">Coverage</label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#737685] text-sm">₹</span>
+                      <input
+                        type="number"
+                        value={plans[planId].coverageAmount}
+                        onChange={e => setPlans({ ...plans, [planId]: { ...plans[planId], coverageAmount: Number(e.target.value) } })}
+                        className="w-full bg-white border border-[#c3c6d6]/40 rounded-lg pl-7 pr-3 py-2 text-sm focus:outline-none focus:border-[#003d9b]"
+                      />
+                    </div>
+                  </div>
                 </div>
+
               </div>
             ))}
           </div>
@@ -244,6 +339,93 @@ export default function AdminSettingsPage() {
         </div>
 
       </form>
+
+      {/* Create Plan Modal */}
+      {isCreatingPlan && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+          <form onSubmit={handleCreatePlan} className="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 space-y-6 animate-fade-in" onClick={e => e.stopPropagation()}>
+            <h3 className="font-extrabold text-[#003d9b] text-lg border-b border-[#c3c6d6]/20 pb-3">
+              Create New Plan
+            </h3>
+
+            <div className="space-y-4 text-sm">
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-[#516161]">Plan Name</label>
+                <input 
+                  type="text" 
+                  required
+                  placeholder="e.g. Student Plan"
+                  value={newPlan.name} 
+                  onChange={(e) => setNewPlan({ ...newPlan, name: e.target.value })} 
+                  className="w-full bg-[#f3f3fd] border border-[#c3c6d6]/40 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#003d9b] font-bold"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-[#516161]">Price (₹)</label>
+                  <input 
+                    type="number" 
+                    required
+                    value={newPlan.price} 
+                    onChange={(e) => setNewPlan({ ...newPlan, price: e.target.value })} 
+                    className="w-full bg-[#f3f3fd] border border-[#c3c6d6]/40 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#003d9b] font-bold"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-[#516161]">Validity</label>
+                  <input 
+                    type="text" 
+                    required
+                    placeholder="e.g. 1 Year"
+                    value={newPlan.validity} 
+                    onChange={(e) => setNewPlan({ ...newPlan, validity: e.target.value })} 
+                    className="w-full bg-[#f3f3fd] border border-[#c3c6d6]/40 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#003d9b] font-bold"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-[#516161]">Max Members</label>
+                  <input 
+                    type="number" 
+                    required
+                    min="1"
+                    value={newPlan.maxMembers} 
+                    onChange={(e) => setNewPlan({ ...newPlan, maxMembers: e.target.value })} 
+                    className="w-full bg-[#f3f3fd] border border-[#c3c6d6]/40 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#003d9b] font-bold"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-[#516161]">Coverage (₹)</label>
+                  <input 
+                    type="number" 
+                    required
+                    value={newPlan.coverageAmount} 
+                    onChange={(e) => setNewPlan({ ...newPlan, coverageAmount: e.target.value })} 
+                    className="w-full bg-[#f3f3fd] border border-[#c3c6d6]/40 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#003d9b] font-bold"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3 justify-end pt-3">
+              <button
+                type="button"
+                onClick={() => setIsCreatingPlan(false)}
+                className="text-[#003d9b] font-bold text-xs hover:bg-[#f3f3fd] px-4 py-2.5 rounded-xl cursor-pointer transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="bg-[#003d9b] text-white font-bold text-xs hover:bg-[#0052cc] px-6 py-2.5 rounded-xl cursor-pointer transition-colors shadow-md"
+              >
+                Create Plan
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 }

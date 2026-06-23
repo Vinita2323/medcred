@@ -87,7 +87,11 @@ export default function MembershipPlansPage() {
         price: finalPrice, 
         discount: isCodeApplied ? 200 : 0,
         agentDetail: sourceType === 'agent' ? agentDetail : null,
-        referralCode: isCodeApplied ? referralCode : null
+        referralCode: isCodeApplied ? referralCode : null,
+        planName: selectedPlan.name,
+        validity: selectedPlan.validity,
+        coverage: `₹${(selectedPlan.coverageAmount / 100000).toFixed(1)}L`,
+        members: selectedPlan.maxMembers
       } 
     });
   };

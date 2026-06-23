@@ -214,7 +214,7 @@ export default function SupportPage() {
           <img 
             alt="Consultation Support Background" 
             className="w-full h-full object-cover opacity-20 absolute inset-0"
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuAupaUjWjUc9Hy3gOtW6iCQV1-nK6kOM1eWaUqGDieca3vXSyrO8VdiLz-GnQ8wiJnoyxbqxvRHsir87vwamiFGjAEBoT5GJX03BLZXdzCYM_HUOeOc_ULx8bt-cBAkBJO3a3Jv6RS7kesFNy1hW8VE6nWib0YLdHrWllxlc8UTPfotjpHscIaf1LkTvClrE8XwFDUoF5ij_U94o2P_Zphou7pHa1Hmj4Jfo0eE9xZSzDz_hxsT_mZhmGdZEZADPKpFMrU-CZcyScil"
+            src="/FinalLogo.png"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-primary/95 to-transparent flex flex-col justify-center p-5 text-white">
             <h4 className="font-bold text-sm">Need a Specialist?</h4>

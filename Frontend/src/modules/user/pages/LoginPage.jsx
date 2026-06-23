@@ -84,7 +84,7 @@ export default function LoginPage() {
               <img 
                 alt="Healthcare Fintech Professional" 
                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuCBP1HJBDSAGwEbyhasDzI2xXvrYsE4UABr6-H0DJbJaSU07l6_c4W7rj22MI5WffCSjkzePbrSd_xcKvNxtFL_kUqayZaQPfD1w1-Ezv9La3ZnQIF_d-YFSNoxnBHzhTbnqNFr6_UdJ1aUI0puyOBpvAlYtoWbxXA36SKmqghoY-7A2MVJzby_qL_NhECl8a-ZpV4atmPmiosCAmEQEqnt8q_mX7A6mPHkAnsbkcEyvvfezcVB16LB0FQC_MSTWxpybIe5fRswVLCF"
+                src="/FinalLogo.png"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-primary/40 to-transparent"></div>
               <div className="absolute bottom-6 left-6 right-6 bg-white/70 backdrop-blur-md p-4 rounded-xl border border-white/20">
