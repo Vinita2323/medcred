@@ -101,6 +101,12 @@ export const ENDPOINTS = {
   PLAN_BY_ID: (id) => `/plans/${id}`,
   ADMIN_UPDATE_SETTINGS: '/plans/settings',
 
+  // PLANS
+  PUBLIC_PLANS: '/plans',
+  ADMIN_PLANS_UPDATE: '/plans/settings',
+  ADMIN_PLAN_CREATE: '/plans',
+  ADMIN_PLAN_DELETE: (id) => `/plans/${id}`,
+
   // HOSPITALS
   HOSPITALS: '/hospitals',
 

@@ -6,7 +6,7 @@ const TABS = ['Pending Approval', 'Active Agents', 'Blocked'];
 
 const ROLE_COLORS = {
   'Super Agent':  'bg-purple-100 text-purple-700',
-  'Team Leader':  'bg-blue-100 text-blue-700',
+  'Agent':  'bg-blue-100 text-blue-700',
   'Field Agent':  'bg-[#dae2ff] text-[#003d9b]',
   'Admin':        'bg-yellow-100 text-yellow-700',
 };
@@ -33,12 +33,12 @@ export default function AdminAgentsPage() {
   // Search
   const [search, setSearch] = useState('');
 
-  // Commission rates (local display only, admin can update separately)
-  const [commissions] = useState({
-    Basic:   { fieldAgent: 2.5, teamLeader: 1.5, superAgent: 1.0 },
-    Premium: { fieldAgent: 3.0, teamLeader: 1.8, superAgent: 1.2 },
-    Elite:   { fieldAgent: 4.5, teamLeader: 2.5, superAgent: 1.5 },
-  });
+  // Commission Engine State
+  const [commissions, setCommissions] = useState({});
+  const [editingPlan, setEditingPlan] = useState(null);
+  const [editFa, setEditFa] = useState(0);
+  const [editTl, setEditTl] = useState(0);
+  const [editSa, setEditSa] = useState(0);
 
   // ── Fetch all agents ───────────────────────────────────────────
   const fetchAgents = useCallback(async () => {
@@ -57,9 +57,30 @@ export default function AdminAgentsPage() {
     }
   }, []);
 
+  const fetchPlans = useCallback(async () => {
+    try {
+      const res = await api.get(ENDPOINTS.PLANS);
+      if (res.data?.success) {
+        const comms = {};
+        res.data.data.forEach(p => {
+          comms[p.name] = {
+            id: p.planId,
+            fieldAgent: p.fieldAgentCommissionPct || 2.0,
+            agent: p.agentCommissionPct || 1.0,
+            superAgent: p.superAgentCommissionPct || 0.5,
+          };
+        });
+        setCommissions(comms);
+      }
+    } catch (err) {
+      console.error('Error fetching plans:', err);
+    }
+  }, []);
+
   useEffect(() => {
     fetchAgents();
-  }, [fetchAgents]);
+    fetchPlans();
+  }, [fetchAgents, fetchPlans]);
 
   // Auto-clear success message after 4 seconds
   useEffect(() => {
@@ -87,10 +108,41 @@ export default function AdminAgentsPage() {
     return arr;
   };
 
+  // ── Commission Edit ───────────────────────────────────────────
+  const startEditCommission = (planName) => {
+    setEditingPlan(planName);
+    setEditFa(commissions[planName].fieldAgent);
+    setEditTl(commissions[planName].agent);
+    setEditSa(commissions[planName].superAgent);
+  };
+
+  const saveCommissionConfig = async () => {
+    try {
+      const planId = commissions[editingPlan].id;
+      const plansUpdate = {
+        [planId]: {
+          fieldAgentCommissionPct: parseFloat(editFa),
+          agentCommissionPct: parseFloat(editTl),
+          superAgentCommissionPct: parseFloat(editSa),
+        }
+      };
+
+      const res = await api.patch(ENDPOINTS.ADMIN_PLANS_UPDATE, { plans: plansUpdate });
+      if (res.data?.success) {
+        setSuccessMsg(`Commission rates updated for ${editingPlan} plan!`);
+        fetchPlans();
+        setEditingPlan(null);
+      }
+    } catch (error) {
+      console.error('Error updating commission rates:', error);
+      setError('Failed to update commission rates');
+    }
+  };
+
   // ── Get potential managers for dropdown ───────────────────────
   const getPotentialManagers = (role) => {
-    if (role === 'Team Leader') return active.filter(a => a.role === 'Super Agent');
-    if (role === 'Field Agent')  return active.filter(a => a.role === 'Team Leader');
+    if (role === 'Agent') return active.filter(a => a.role === 'Super Agent');
+    if (role === 'Field Agent')  return active.filter(a => a.role === 'Agent');
     return [];
   };
 
@@ -233,26 +285,41 @@ export default function AdminAgentsPage() {
         ))}
       </div>
 
-      {/* Commission Reference */}
-      <div className="bg-white border border-[#c3c6d6]/20 rounded-2xl p-5 shadow-sm">
-        <h3 className="font-extrabold text-[#191b23] mb-4 flex items-center gap-2">
-          <span className="material-symbols-outlined text-[#003d9b] text-[20px]">settings_suggest</span>
-          Commission Rates Reference
+      {/* Commission Configuration Engine */}
+      <div className="bg-white border border-[#c3c6d6]/20 rounded-2xl p-6 shadow-sm space-y-4">
+        <h3 className="font-extrabold text-[#191b23] text-sm flex items-center gap-2">
+          <span className="material-symbols-outlined text-[#003d9b]">settings_suggest</span>
+          Commission Configuration Engine
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {Object.keys(commissions).map(plan => (
-            <div key={plan} className="border border-[#c3c6d6]/30 rounded-xl p-4 space-y-2">
-              <h4 className="font-extrabold text-[#003d9b]">{plan} Plan</h4>
-              {[
-                { role: 'Field Agent',  val: commissions[plan].fieldAgent },
-                { role: 'Team Leader',  val: commissions[plan].teamLeader },
-                { role: 'Super Agent',  val: commissions[plan].superAgent },
-              ].map(r => (
-                <div key={r.role} className="flex justify-between text-xs">
-                  <span className="text-[#516161] font-semibold">{r.role}</span>
-                  <span className="font-extrabold text-[#191b23]">{r.val}%</span>
+        <p className="text-xs text-[#516161] mb-4">Configure commission percentages for Field Agents, Agents, and Super Agents for each plan.</p>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {Object.keys(commissions).map((planName) => (
+            <div key={planName} className="border border-[#c3c6d6]/30 p-5 rounded-xl space-y-4 bg-white shadow-sm hover:shadow-md transition-shadow">
+              <h4 className="font-extrabold text-[#003d9b] text-base capitalize">{planName} Plan</h4>
+              
+              <div className="space-y-2 text-sm mt-4">
+                <div className="flex justify-between items-center">
+                  <span className="font-bold text-[#516161] text-xs">Field Agent</span>
+                  <span className="font-extrabold text-[#191b23]">{commissions[planName].fieldAgent}%</span>
                 </div>
-              ))}
+                <div className="flex justify-between items-center">
+                  <span className="font-bold text-[#516161] text-xs">Agent</span>
+                  <span className="font-extrabold text-[#191b23]">{commissions[planName].agent}%</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="font-bold text-[#516161] text-xs">Super Agent</span>
+                  <span className="font-extrabold text-[#191b23]">{commissions[planName].superAgent}%</span>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => startEditCommission(planName)}
+                className="w-full mt-4 bg-[#f3f3fd] hover:bg-[#dae2ff] text-[#003d9b] py-2.5 rounded-lg font-bold text-xs transition-colors cursor-pointer"
+              >
+                Modify Rates
+              </button>
             </div>
           ))}
         </div>
@@ -373,9 +440,9 @@ export default function AdminAgentsPage() {
                         {activeTab === 'Active Agents' && (
                           <>
                             {agent.role === 'Field Agent' && (
-                              <button onClick={() => promote(agent, 'Team Leader')} disabled={actionLoading} className="bg-[#f0f4ff] hover:bg-[#dae2ff] text-[#003d9b] px-2.5 py-1.5 rounded-lg text-xs font-bold cursor-pointer disabled:opacity-60">→ Team Leader</button>
+                              <button onClick={() => promote(agent, 'Agent')} disabled={actionLoading} className="bg-[#f0f4ff] hover:bg-[#dae2ff] text-[#003d9b] px-2.5 py-1.5 rounded-lg text-xs font-bold cursor-pointer disabled:opacity-60">→ Agent</button>
                             )}
-                            {agent.role === 'Team Leader' && (
+                            {agent.role === 'Agent' && (
                               <button onClick={() => promote(agent, 'Super Agent')} disabled={actionLoading} className="bg-purple-50 hover:bg-purple-100 text-purple-700 px-2.5 py-1.5 rounded-lg text-xs font-bold cursor-pointer disabled:opacity-60">→ Super Agent</button>
                             )}
                             <button onClick={() => blockToggle(agent)} disabled={actionLoading} className="border border-red-200 text-red-600 hover:bg-red-50 px-2.5 py-1.5 rounded-lg text-xs font-bold cursor-pointer disabled:opacity-60">Block</button>
@@ -432,7 +499,7 @@ export default function AdminAgentsPage() {
                 className="w-full bg-[#f5f8ff] border border-[#c3c6d6]/40 rounded-xl px-3 py-3 text-sm focus:outline-none cursor-pointer"
               >
                 <option>Super Agent</option>
-                <option>Team Leader</option>
+                <option>Agent</option>
                 <option>Field Agent</option>
               </select>
             </div>
@@ -455,15 +522,15 @@ export default function AdminAgentsPage() {
 
             {assignedRole !== 'Super Agent' && getPotentialManagers(assignedRole).length === 0 && (
               <p className="text-xs text-[#737685] bg-[#f5f8ff] p-3 rounded-xl">
-                ℹ️ No {assignedRole === 'Field Agent' ? 'Team Leaders' : 'Super Agents'} available yet. Agent will have no reporting manager.
+                ℹ️ No {assignedRole === 'Field Agent' ? 'Agents' : 'Super Agents'} available yet. Agent will have no reporting manager.
               </p>
             )}
 
             <div className="bg-[#f0f4ff] rounded-xl p-3 text-xs text-[#434654] space-y-1">
               <p className="font-bold text-[#003d9b]">Auto-generated on approval:</p>
               <p>🪪 Agent ID: <span className="font-mono font-bold">MC-XXXXX</span> (unique)</p>
-              <p>🔗 Referral Code: <span className="font-mono font-bold">{assignedRole === 'Super Agent' ? 'SA' : assignedRole === 'Team Leader' ? 'TL' : 'FIELD'}XX</span></p>
-              <p>💰 Commission Rate: <span className="font-bold">{assignedRole === 'Super Agent' ? '1.0%' : assignedRole === 'Team Leader' ? '1.5%' : '2.5%'}</span></p>
+              <p>🔗 Referral Code: <span className="font-mono font-bold">{assignedRole === 'Super Agent' ? 'SA' : assignedRole === 'Agent' ? 'TL' : 'FIELD'}XX</span></p>
+              <p>💰 Commission Rate: <span className="font-bold">{assignedRole === 'Super Agent' ? '1.0%' : assignedRole === 'Agent' ? '1.5%' : '2.5%'}</span></p>
             </div>
 
             <div className="flex gap-3 pt-2">
@@ -486,6 +553,67 @@ export default function AdminAgentsPage() {
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {/* Edit Commission Modal */}
+      {editingPlan && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 space-y-6 animate-fade-in" onClick={e => e.stopPropagation()}>
+            <h3 className="font-extrabold text-[#003d9b] text-lg border-b border-[#c3c6d6]/20 pb-3 capitalize">
+              Configure {editingPlan} Rates
+            </h3>
+
+            <div className="space-y-4 text-sm">
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-[#516161]">Field Agent (%)</label>
+                <input 
+                  type="number" 
+                  step="0.1"
+                  value={editFa} 
+                  onChange={(e) => setEditFa(e.target.value)} 
+                  className="w-full bg-[#f3f3fd] border border-[#c3c6d6]/40 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#003d9b] font-bold"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-[#516161]">Agent (%)</label>
+                <input 
+                  type="number" 
+                  step="0.1"
+                  value={editTl} 
+                  onChange={(e) => setEditTl(e.target.value)} 
+                  className="w-full bg-[#f3f3fd] border border-[#c3c6d6]/40 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#003d9b] font-bold"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-[#516161]">Super Agent (%)</label>
+                <input 
+                  type="number" 
+                  step="0.1"
+                  value={editSa} 
+                  onChange={(e) => setEditSa(e.target.value)} 
+                  className="w-full bg-[#f3f3fd] border border-[#c3c6d6]/40 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#003d9b] font-bold"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 justify-end pt-3">
+              <button
+                type="button"
+                onClick={() => setEditingPlan(null)}
+                className="text-[#003d9b] font-bold text-xs hover:bg-[#f3f3fd] px-4 py-2.5 rounded-xl cursor-pointer transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={saveCommissionConfig}
+                className="bg-[#003d9b] text-white font-bold text-xs hover:bg-[#0052cc] px-6 py-2.5 rounded-xl cursor-pointer transition-colors shadow-md"
+              >
+                Save Rates
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

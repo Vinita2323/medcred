@@ -6,7 +6,6 @@ const planSchema = new mongoose.Schema(
       type: String,
       required: true,
       unique: true,
-      enum: ['individual', 'family', 'premium'],
     },
     name: {
       type: String,
@@ -60,6 +59,18 @@ const planSchema = new mongoose.Schema(
     agentCommission: {
       type: Number,
       default: 200,
+    },
+    fieldAgentCommissionPct: {
+      type: Number,
+      default: 2.0,
+    },
+    agentCommissionPct: {
+      type: Number,
+      default: 1.0,
+    },
+    superAgentCommissionPct: {
+      type: Number,
+      default: 0.5,
     },
     isActive: {
       type: Boolean,

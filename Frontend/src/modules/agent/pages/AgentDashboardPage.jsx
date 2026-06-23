@@ -28,7 +28,7 @@ export default function AgentDashboardPage() {
           setStats([
             { label: 'Active Roster', value: approvedCount.toString(), icon: 'group', color: 'text-[#003d9b]', bg: 'bg-[#dae2ff]', route: '/agent/admin' },
             { label: 'Pending Approvals', value: pendingCount.toString(), icon: 'how_to_reg', color: 'text-[#7b2600]', bg: 'bg-[#ffdbcf]', route: '/agent/admin' },
-            { label: 'Active Teams', value: (agent.subordinateStats?.activeTeamLeaders || 0).toString(), icon: 'partner_exchange', color: 'text-[#0c56d0]', bg: 'bg-[#d4e6e5]', route: '/agent/admin' },
+            { label: 'Active Teams', value: (agent.subordinateStats?.activeAgents || 0).toString(), icon: 'partner_exchange', color: 'text-[#0c56d0]', bg: 'bg-[#d4e6e5]', route: '/agent/admin' },
             { label: 'Dynamic Plans', value: '3 Active', icon: 'payments', color: 'text-green-700', bg: 'bg-green-100', route: '/agent/admin' },
           ]);
 
@@ -39,11 +39,11 @@ export default function AgentDashboardPage() {
             { label: 'Admin Settings', icon: 'admin_panel_settings', route: '/agent/profile' },
           ]);
         } else if (agent.role === 'Super Agent') {
-          const tls = agent.subordinateStats?.teamLeaders || 0;
+          const tls = agent.subordinateStats?.agents || 0;
           const fas = agent.subordinateStats?.fieldAgents || 0;
 
           setStats([
-            { label: 'Team Leaders', value: tls.toString(), icon: 'partner_exchange', color: 'text-[#003d9b]', bg: 'bg-[#dae2ff]', route: '/agent/team' },
+            { label: 'Agents', value: tls.toString(), icon: 'partner_exchange', color: 'text-[#003d9b]', bg: 'bg-[#dae2ff]', route: '/agent/team' },
             { label: 'Field Agents', value: fas.toString(), icon: 'badge', color: 'text-[#0c56d0]', bg: 'bg-[#d4e6e5]', route: '/agent/team' },
             { label: 'Network Sales', value: agent.salesCount.toString(), icon: 'payments', color: 'text-[#7b2600]', bg: 'bg-[#ffdbcf]' },
             { label: 'Overriding Earnings', value: `₹${(agent.earnings || 0).toLocaleString('en-IN')}`, icon: 'account_balance_wallet', color: 'text-green-700', bg: 'bg-green-100', route: '/agent/wallet' },
@@ -55,7 +55,7 @@ export default function AgentDashboardPage() {
             { label: 'Wallet Payouts', icon: 'account_balance', route: '/agent/wallet' },
             { label: 'Support Desk', icon: 'support_agent', route: '/agent/profile' },
           ]);
-        } else if (agent.role === 'Team Leader') {
+        } else if (agent.role === 'Agent') {
           const fas = agent.subordinateStats?.fieldAgents || 0;
 
           setStats([
@@ -180,11 +180,11 @@ export default function AgentDashboardPage() {
             </>
           )}
 
-          {(currentUser.role === 'Super Agent' || currentUser.role === 'Team Leader') && (
+          {(currentUser.role === 'Super Agent' || currentUser.role === 'Agent') && (
             <>
               <div className="flex justify-between items-center">
                 <h3 className="text-base md:text-lg font-bold text-[#191b23]">
-                  {currentUser.role === 'Super Agent' ? 'My Team Leaders' : 'My Field Agents'}
+                  {currentUser.role === 'Super Agent' ? 'My Agents' : 'My Field Agents'}
                 </h3>
                 <button onClick={() => navigate('/agent/team')} className="text-xs font-bold text-[#0052cc] hover:underline cursor-pointer">View Network</button>
               </div>

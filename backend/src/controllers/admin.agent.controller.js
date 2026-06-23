@@ -17,7 +17,7 @@ const generateAgentId = async () => {
 const generateReferralCode = async (role) => {
   const prefix =
     role === 'Super Agent' ? 'SA' :
-    role === 'Team Leader' ? 'TL' : 'FIELD';
+    role === 'Agent' ? 'TL' : 'FIELD';
   let code;
   let isUnique = false;
   while (!isUnique) {
@@ -32,8 +32,15 @@ const generateReferralCode = async (role) => {
 // ── Helper: Commission rate by role ──────────────────────────────
 const getCommissionRate = (role) => {
   if (role === 'Super Agent') return 1.0;
-  if (role === 'Team Leader') return 1.5;
+  if (role === 'Agent') return 1.5;
   return 2.5; // Field Agent
+};
+
+// ── Helper: Initial rank by role ───────────────────────────────
+const getInitialRank = (role) => {
+  if (role === 'Super Agent') return 'Platinum';
+  if (role === 'Agent') return 'Gold';
+  return 'Bronze'; // Field Agent
 };
 
 // ─────────────────────────────────────────────────────────────────
@@ -114,7 +121,7 @@ export const approveAgent = async (req, res) => {
     agent.joiningDate = new Date();
     agent.approvedBy = req.user._id;
     agent.approvedAt = new Date();
-    agent.rank = 'Bronze';
+    agent.rank = getInitialRank(role);
     agent.salesCount = 0;
     agent.earnings = 0;
 
@@ -189,7 +196,7 @@ export const updateAgentStatus = async (req, res) => {
 export const promoteAgent = async (req, res) => {
   try {
     const { newRole, reportingManagerId, reportingManagerName } = req.body;
-    const validRoles = ['Field Agent', 'Team Leader', 'Super Agent'];
+    const validRoles = ['Field Agent', 'Agent', 'Super Agent'];
 
     if (!newRole || !validRoles.includes(newRole)) {
       return res.status(400).json({ success: false, message: 'Valid newRole is required.' });
@@ -206,6 +213,7 @@ export const promoteAgent = async (req, res) => {
 
     agent.role = newRole;
     agent.commissionRate = getCommissionRate(newRole);
+    agent.rank = getInitialRank(newRole);
     if (reportingManagerId) agent.reportingManagerId = reportingManagerId;
     if (reportingManagerName) agent.reportingManagerName = reportingManagerName;
 

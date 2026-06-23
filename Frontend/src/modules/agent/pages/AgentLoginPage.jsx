@@ -79,7 +79,7 @@ export default function AgentLoginPage() {
         <img 
           alt="Hospital Backdrop" 
           className="w-full h-full object-cover opacity-10 grayscale" 
-          src="https://lh3.googleusercontent.com/aida-public/AB6AXuDpQ9GADqPal6Mh8yEiwvACUh8dJiF45In7fwc9WedOQYR0yWzMflJAA_Blf7fn7MSsMeYhNZce4wtKu_AqttLP4otgPc3DMkMcAf_kFH_gHPTFpOXxM4Fl-kT5vFAKAlsXzhdJ99UwWBU8b1E9cxGq_hCMbAj7945LiZFzXsAPW4BavbkIxk8aBhRiV_iIs-5XaGqoj8rDd7QtRY5NeeBylig0eAaUZqGfWghKT4IKx1895Rt1cgRSKfiuvLcpaIPbGLBgBnctiXGF"
+          src="/FinalLogo.png"
         />
         <div className="absolute inset-0 bg-gradient-to-tr from-[#faf8ff] via-[#faf8ff]/80 to-[#dae2ff]/20"></div>
       </div>

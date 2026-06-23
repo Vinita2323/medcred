@@ -116,7 +116,7 @@ export default function AgentProfilePage() {
           <div className="flex justify-between border-b border-[#faf8ff] pb-2 md:border-none col-span-1 md:col-span-2">
             <span className="text-[#516161]">Onboarding Network Level</span>
             <span className="font-semibold text-xs text-[#003d9b] bg-[#dae2ff] px-2.5 py-0.5 rounded-full">
-              {currentUser.role === 'Super Agent' ? 'Level 1 Network Coordinator' : currentUser.role === 'Team Leader' ? 'Level 2 Squad Lead' : 'Level 3 Field Representative'}
+              {currentUser.role === 'Super Agent' ? 'Level 1 Network Coordinator' : currentUser.role === 'Agent' ? 'Level 2 Squad Lead' : 'Level 3 Field Representative'}
             </span>
           </div>
         </div>

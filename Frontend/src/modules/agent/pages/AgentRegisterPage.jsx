@@ -66,7 +66,7 @@ export default function AgentRegisterPage() {
         mobileNumber: '8000000000',
         email: 'sanjay.tl@medcred.in',
         password: 'agent',
-        role: 'Team Leader',
+        role: 'Agent',
         agentId: 'MC-8822',
         referralCode: 'LEADER80',
         reportingManager: 'Rajesh Kumar',
@@ -318,7 +318,7 @@ export default function AgentRegisterPage() {
                       required
                     >
                       <option value="Super Agent">Super Agent</option>
-                      <option value="Team Leader">Team Leader</option>
+                      <option value="Agent">Agent</option>
                       <option value="Field Agent">Field Agent</option>
                     </select>
                   </div>
