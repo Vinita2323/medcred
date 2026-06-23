@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import api from '../../../services/api';
+import { ENDPOINTS, SERVER_URL } from '../../../services/types';
 
 const TABS = ['All Claims', 'Pending Review', 'Approved', 'Rejected'];
 
@@ -11,7 +13,12 @@ const STATUS_META = {
   'Completed':            { color: 'bg-teal-100 text-teal-700',     icon: 'done_all' },
 };
 
-const LIMITS = { Hospital: 200000, 'Home Treatment': 80000 };
+const LIMITS = {
+  medical_services: 200000,
+  emergency:        200000,
+  diagnostic:        80000,
+  pharmacy:          50000,
+};
 
 export default function AdminClaimsPage() {
   const [claims, setClaims]       = useState([]);
@@ -21,36 +28,67 @@ export default function AdminClaimsPage() {
   const [search, setSearch]       = useState('');
 
   useEffect(() => {
-    const raw = localStorage.getItem('medcred_claims');
-    setClaims(raw ? JSON.parse(raw) : []);
+    fetchClaims();
   }, []);
+
+  const fetchClaims = async () => {
+    try {
+      const res = await api.get(ENDPOINTS.ADMIN_CLAIMS);
+      if (res.data?.success) {
+        // Map backend fields to frontend shape
+        const mapped = res.data.data.map(c => ({
+          ...c,
+          id: c.claimId,
+          userName: c.userId?.fullName || 'Unknown',
+          type: c.claimType,
+          amount: c.claimAmount,
+          submittedAt: new Date(c.submittedAt).toLocaleDateString('en-IN'),
+          status: c.status.charAt(0).toUpperCase() + c.status.slice(1),
+        }));
+        setClaims(mapped);
+      }
+    } catch (err) {
+      console.error('Failed to fetch claims', err);
+    }
+  };
 
   const save = (updated) => {
     setClaims(updated);
-    localStorage.setItem('medcred_claims', JSON.stringify(updated));
   };
 
-  const approveClaim = (id) => {
-    const updated = claims.map(c => c.id === id ? { ...c, status: 'Approved' } : c);
-    save(updated);
-    setReview(null);
+  const approveClaim = async (id) => {
+    try {
+      const claim = claims.find(c => c.id === id);
+      await api.patch(ENDPOINTS.ADMIN_CLAIM_UPDATE(claim._id), { status: 'approved' });
+      const updated = claims.map(c => c.id === id ? { ...c, status: 'Approved' } : c);
+      save(updated);
+      setReview(null);
+    } catch (err) {
+      alert('Failed to approve claim');
+    }
   };
 
-  const rejectClaim = (id) => {
+  const rejectClaim = async (id) => {
     if (!rejectReason.trim()) { alert('Please provide a rejection reason.'); return; }
-    const updated = claims.map(c => c.id === id ? { ...c, status: 'Rejected', rejectReason } : c);
-    save(updated);
-    setReview(null);
-    setReason('');
+    try {
+      const claim = claims.find(c => c.id === id);
+      await api.patch(ENDPOINTS.ADMIN_CLAIM_UPDATE(claim._id), { status: 'rejected', rejectionReason: rejectReason });
+      const updated = claims.map(c => c.id === id ? { ...c, status: 'Rejected', rejectReason } : c);
+      save(updated);
+      setReview(null);
+      setReason('');
+    } catch (err) {
+      alert('Failed to reject claim');
+    }
   };
 
   const filtered = claims.filter(c => {
     const q = search.toLowerCase();
-    const matchQ  = !q || c.id.toLowerCase().includes(q) || c.userName.toLowerCase().includes(q);
+    const matchQ  = !q || (c.id || '').toLowerCase().includes(q) || (c.userName || '').toLowerCase().includes(q);
     const matchTab =
       activeTab === 'All Claims'     ? true :
-      activeTab === 'Pending Review' ? ['Submitted','Under Review','Verification Pending'].includes(c.status) :
-      activeTab === 'Approved'       ? ['Approved','Completed'].includes(c.status) :
+      activeTab === 'Pending Review' ? c.status === 'Pending' :
+      activeTab === 'Approved'       ? c.status === 'Approved' :
       activeTab === 'Rejected'       ? c.status === 'Rejected' : true;
     return matchQ && matchTab;
   });
@@ -73,10 +111,10 @@ export default function AdminClaimsPage() {
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: 'Total Claims',   value: claims.length,                                                    color:'text-[#003d9b]',  bg:'bg-[#dae2ff]',  icon:'description' },
-          { label: 'Pending Review', value: claims.filter(c=>['Submitted','Under Review','Verification Pending'].includes(c.status)).length, color:'text-orange-700',bg:'bg-orange-100',icon:'hourglass_empty' },
-          { label: 'Approved',       value: claims.filter(c=>['Approved','Completed'].includes(c.status)).length,   color:'text-green-700',  bg:'bg-green-100',  icon:'check_circle' },
-          { label: 'Rejected',       value: claims.filter(c=>c.status==='Rejected').length,                    color:'text-red-700',    bg:'bg-red-100',    icon:'cancel' },
+          { label: 'Total Claims',   value: claims.length,                                              color:'text-[#003d9b]',  bg:'bg-[#dae2ff]',  icon:'description' },
+          { label: 'Pending Review', value: claims.filter(c=>c.status==='Pending').length,              color:'text-orange-700',bg:'bg-orange-100',icon:'hourglass_empty' },
+          { label: 'Approved',       value: claims.filter(c=>c.status==='Approved').length,             color:'text-green-700',  bg:'bg-green-100',  icon:'check_circle' },
+          { label: 'Rejected',       value: claims.filter(c=>c.status==='Rejected').length,             color:'text-red-700',    bg:'bg-red-100',    icon:'cancel' },
         ].map((s,i)=>(
           <div key={i} className="bg-white rounded-xl border border-[#c3c6d6]/20 p-4 shadow-sm flex items-center gap-3">
             <div className={`w-10 h-10 rounded-full ${s.bg} ${s.color} flex items-center justify-center shrink-0`}>
@@ -215,10 +253,20 @@ export default function AdminClaimsPage() {
                 <p className="text-xs font-bold text-[#516161] uppercase tracking-wider mb-2">Submitted Documents</p>
                 <div className="flex flex-wrap gap-2">
                   {(reviewClaim.documents || []).map((doc, i) => (
-                    <div key={i} className="flex items-center gap-1.5 bg-[#f0f4ff] border border-[#dae2ff] rounded-lg px-3 py-1.5">
-                      <span className="material-symbols-outlined text-[#003d9b] text-[14px]">description</span>
-                      <span className="text-xs font-semibold text-[#003d9b]">{doc}</span>
-                    </div>
+                    <a 
+                      key={i} 
+                      href={`${SERVER_URL}${doc.url}`}
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1.5 bg-[#f0f4ff] border border-[#dae2ff] rounded-lg px-3 py-1.5 hover:bg-[#dae2ff] transition-colors"
+                    >
+                      <span className="material-symbols-outlined text-[#003d9b] text-[14px]">
+                        {doc.filename?.match(/\.(jpg|jpeg|png)$/i) ? 'image' : 'description'}
+                      </span>
+                      <span className="text-xs font-semibold text-[#003d9b] max-w-[200px] truncate">
+                        {doc.filename || 'Document'}
+                      </span>
+                    </a>
                   ))}
                 </div>
               </div>
@@ -234,7 +282,7 @@ export default function AdminClaimsPage() {
               )}
 
               {/* Rejection reason (only show if not already approved/rejected) */}
-              {['Submitted','Under Review','Verification Pending'].includes(reviewClaim.status) && (
+              {reviewClaim.status === 'Pending' && (
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-[#516161] uppercase tracking-wider">Rejection Reason (if rejecting)</label>
                   <textarea
@@ -253,7 +301,7 @@ export default function AdminClaimsPage() {
               <button onClick={()=>{setReview(null);setReason('');}} className="flex-1 border border-[#c3c6d6]/40 text-[#434654] hover:bg-[#f5f8ff] py-2.5 rounded-xl text-xs font-bold cursor-pointer">
                 Close
               </button>
-              {['Submitted','Under Review','Verification Pending'].includes(reviewClaim.status) && (
+              {reviewClaim.status === 'Pending' && (
                 <>
                   <button
                     onClick={() => rejectClaim(reviewClaim.id)}

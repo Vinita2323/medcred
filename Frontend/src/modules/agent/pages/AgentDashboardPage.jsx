@@ -1,94 +1,97 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api from '../../../services/api';
+import { ENDPOINTS } from '../../../services/types';
 
 export default function AgentDashboardPage() {
   const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState(null);
-  const [agents, setAgents] = useState([]);
   const [stats, setStats] = useState([]);
   const [quickActions, setQuickActions] = useState([]);
 
   useEffect(() => {
-    // Get current logged-in agent session
-    const userJson = localStorage.getItem('currentUser');
-    if (userJson) {
-      const userObj = JSON.parse(userJson);
-      setCurrentUser(userObj);
-
-      // Load agents list to aggregate dynamic stats
-      const agentsJson = localStorage.getItem('medcred_agents');
-      const allAgents = agentsJson ? JSON.parse(agentsJson) : [];
-      setAgents(allAgents);
-
-      // Customize stats and quick actions based on designation
-      if (userObj.role === 'Admin') {
-        const pendingCount = allAgents.filter(a => a.status === 'Pending Approval').length;
-        const approvedCount = allAgents.filter(a => a.status === 'Approved').length;
-
-        setStats([
-          { label: 'Active Roster', value: approvedCount.toString(), icon: 'group', color: 'text-[#003d9b]', bg: 'bg-[#dae2ff]', route: '/agent/admin' },
-          { label: 'Pending Approvals', value: pendingCount.toString(), icon: 'how_to_reg', color: 'text-[#7b2600]', bg: 'bg-[#ffdbcf]', route: '/agent/admin' },
-          { label: 'Active Teams', value: allAgents.filter(a => a.role === 'Team Leader').length.toString(), icon: 'partner_exchange', color: 'text-[#0c56d0]', bg: 'bg-[#d4e6e5]', route: '/agent/admin' },
-          { label: 'Dynamic Plans', value: '3 Active', icon: 'payments', color: 'text-green-700', bg: 'bg-green-100', route: '/agent/admin' },
-        ]);
-
-        setQuickActions([
-          { label: 'Review Approvals', icon: 'how_to_reg', route: '/agent/admin' },
-          { label: 'Commission Engine', icon: 'account_balance_wallet', route: '/agent/admin' },
-          { label: 'Manage Roster', icon: 'badge', route: '/agent/admin' },
-          { label: 'Admin Settings', icon: 'admin_panel_settings', route: '/agent/profile' },
-        ]);
-      } else if (userObj.role === 'Super Agent') {
-        const tls = allAgents.filter(a => a.role === 'Team Leader' && a.reportingManager === userObj.fullName);
-        const fas = allAgents.filter(a => a.role === 'Field Agent' && tls.map(t => t.fullName).includes(a.reportingManager));
-
-        setStats([
-          { label: 'Team Leaders', value: tls.length.toString(), icon: 'partner_exchange', color: 'text-[#003d9b]', bg: 'bg-[#dae2ff]', route: '/agent/team' },
-          { label: 'Field Agents', value: fas.length.toString(), icon: 'badge', color: 'text-[#0c56d0]', bg: 'bg-[#d4e6e5]', route: '/agent/team' },
-          { label: 'Network Sales', value: '₹8.4L', icon: 'payments', color: 'text-[#7b2600]', bg: 'bg-[#ffdbcf]' },
-          { label: 'Overriding Earnings', value: `₹${userObj.earnings.toLocaleString('en-IN')}`, icon: 'account_balance_wallet', color: 'text-green-700', bg: 'bg-green-100', route: '/agent/wallet' },
-        ]);
-
-        setQuickActions([
-          { label: 'Manage Team', icon: 'group', route: '/agent/team' },
-          { label: 'Network Performance', icon: 'insights', route: '/agent/team' },
-          { label: 'Wallet Payouts', icon: 'account_balance', route: '/agent/wallet' },
-          { label: 'Support Desk', icon: 'support_agent', route: '/agent/profile' },
-        ]);
-      } else if (userObj.role === 'Team Leader') {
-        const fas = allAgents.filter(a => a.role === 'Field Agent' && a.reportingManager === userObj.fullName);
-
-        setStats([
-          { label: 'Field Agents Managed', value: fas.length.toString(), icon: 'badge', color: 'text-[#003d9b]', bg: 'bg-[#dae2ff]', route: '/agent/team' },
-          { label: 'Active Leads', value: (fas.length * 8).toString(), icon: 'group', color: 'text-[#0c56d0]', bg: 'bg-[#d4e6e5]', route: '/agent/team' },
-          { label: 'Team Revenue', value: '₹2.1L', icon: 'payments', color: 'text-[#7b2600]', bg: 'bg-[#ffdbcf]' },
-          { label: 'My Override', value: `₹${userObj.earnings.toLocaleString('en-IN')}`, icon: 'account_balance_wallet', color: 'text-green-700', bg: 'bg-green-100', route: '/agent/wallet' },
-        ]);
-
-        setQuickActions([
-          { label: 'My Agents', icon: 'group', route: '/agent/team' },
-          { label: 'Commission Wallet', icon: 'account_balance_wallet', route: '/agent/wallet' },
-          { label: 'Apply Loan', icon: 'payments', route: '/agent/apply-loan' },
-          { label: 'Support Desk', icon: 'support_agent', route: '/agent/profile' },
-        ]);
-      } else {
-        // Field Agent
-        setStats([
-          { label: 'Onboarded Clients', value: userObj.salesCount.toString(), icon: 'group', color: 'text-[#003d9b]', bg: 'bg-[#dae2ff]', route: '/agent/customers' },
-          { label: 'Subscriptions Sold', value: userObj.salesCount.toString(), icon: 'verified_user', color: 'text-[#0c56d0]', bg: 'bg-[#d4e6e5]', route: '/agent/customers' },
-          { label: 'Total Revenue', value: `₹${(userObj.salesCount * 50000).toLocaleString('en-IN')}`, icon: 'payments', color: 'text-[#7b2600]', bg: 'bg-[#ffdbcf]' },
-          { label: 'Wallet Earnings', value: `₹${userObj.earnings.toLocaleString('en-IN')}`, icon: 'account_balance_wallet', color: 'text-green-700', bg: 'bg-green-100', route: '/agent/wallet' },
-        ]);
-
-        setQuickActions([
-          { label: 'Onboard Customer', icon: 'person_add', route: '/agent/register-customer' },
-          { label: 'Apply Loan', icon: 'payments', route: '/agent/apply-loan' },
-          { label: 'Customer Directory', icon: 'group', route: '/agent/customers' },
-          { label: 'My Wallet', icon: 'account_balance_wallet', route: '/agent/wallet' },
-        ]);
-      }
-    }
+    fetchDashboardStats();
   }, []);
+
+  const fetchDashboardStats = async () => {
+    try {
+      const res = await api.get(ENDPOINTS.AGENT_DASHBOARD);
+      if (res.data?.success) {
+        const agent = res.data.data;
+        setCurrentUser(agent);
+
+        // Customize stats and quick actions based on designation
+        if (agent.role === 'Admin') {
+          const pendingCount = agent.subordinateStats?.pendingAgents || 0;
+          const approvedCount = agent.subordinateStats?.approvedAgents || 0;
+
+          setStats([
+            { label: 'Active Roster', value: approvedCount.toString(), icon: 'group', color: 'text-[#003d9b]', bg: 'bg-[#dae2ff]', route: '/agent/admin' },
+            { label: 'Pending Approvals', value: pendingCount.toString(), icon: 'how_to_reg', color: 'text-[#7b2600]', bg: 'bg-[#ffdbcf]', route: '/agent/admin' },
+            { label: 'Active Teams', value: (agent.subordinateStats?.activeTeamLeaders || 0).toString(), icon: 'partner_exchange', color: 'text-[#0c56d0]', bg: 'bg-[#d4e6e5]', route: '/agent/admin' },
+            { label: 'Dynamic Plans', value: '3 Active', icon: 'payments', color: 'text-green-700', bg: 'bg-green-100', route: '/agent/admin' },
+          ]);
+
+          setQuickActions([
+            { label: 'Review Approvals', icon: 'how_to_reg', route: '/agent/admin' },
+            { label: 'Commission Engine', icon: 'account_balance_wallet', route: '/agent/admin' },
+            { label: 'Manage Roster', icon: 'badge', route: '/agent/admin' },
+            { label: 'Admin Settings', icon: 'admin_panel_settings', route: '/agent/profile' },
+          ]);
+        } else if (agent.role === 'Super Agent') {
+          const tls = agent.subordinateStats?.teamLeaders || 0;
+          const fas = agent.subordinateStats?.fieldAgents || 0;
+
+          setStats([
+            { label: 'Team Leaders', value: tls.toString(), icon: 'partner_exchange', color: 'text-[#003d9b]', bg: 'bg-[#dae2ff]', route: '/agent/team' },
+            { label: 'Field Agents', value: fas.toString(), icon: 'badge', color: 'text-[#0c56d0]', bg: 'bg-[#d4e6e5]', route: '/agent/team' },
+            { label: 'Network Sales', value: agent.salesCount.toString(), icon: 'payments', color: 'text-[#7b2600]', bg: 'bg-[#ffdbcf]' },
+            { label: 'Overriding Earnings', value: `₹${(agent.earnings || 0).toLocaleString('en-IN')}`, icon: 'account_balance_wallet', color: 'text-green-700', bg: 'bg-green-100', route: '/agent/wallet' },
+          ]);
+
+          setQuickActions([
+            { label: 'Manage Team', icon: 'group', route: '/agent/team' },
+            { label: 'Network Performance', icon: 'insights', route: '/agent/team' },
+            { label: 'Wallet Payouts', icon: 'account_balance', route: '/agent/wallet' },
+            { label: 'Support Desk', icon: 'support_agent', route: '/agent/profile' },
+          ]);
+        } else if (agent.role === 'Team Leader') {
+          const fas = agent.subordinateStats?.fieldAgents || 0;
+
+          setStats([
+            { label: 'Field Agents Managed', value: fas.toString(), icon: 'badge', color: 'text-[#003d9b]', bg: 'bg-[#dae2ff]', route: '/agent/team' },
+            { label: 'Active Leads', value: (fas * 8).toString(), icon: 'group', color: 'text-[#0c56d0]', bg: 'bg-[#d4e6e5]', route: '/agent/team' },
+            { label: 'Team Revenue', value: `₹${(agent.salesCount * 5000).toLocaleString('en-IN')}`, icon: 'payments', color: 'text-[#7b2600]', bg: 'bg-[#ffdbcf]' },
+            { label: 'My Override', value: `₹${(agent.earnings || 0).toLocaleString('en-IN')}`, icon: 'account_balance_wallet', color: 'text-green-700', bg: 'bg-green-100', route: '/agent/wallet' },
+          ]);
+
+          setQuickActions([
+            { label: 'My Agents', icon: 'group', route: '/agent/team' },
+            { label: 'Commission Wallet', icon: 'account_balance_wallet', route: '/agent/wallet' },
+            { label: 'Apply Loan', icon: 'payments', route: '/agent/apply-loan' },
+            { label: 'Support Desk', icon: 'support_agent', route: '/agent/profile' },
+          ]);
+        } else {
+          // Field Agent
+          setStats([
+            { label: 'Onboarded Clients', value: agent.totalRegistrations.toString(), icon: 'group', color: 'text-[#003d9b]', bg: 'bg-[#dae2ff]', route: '/agent/customers' },
+            { label: 'Subscriptions Sold', value: agent.salesCount.toString(), icon: 'verified_user', color: 'text-[#0c56d0]', bg: 'bg-[#d4e6e5]', route: '/agent/customers' },
+            { label: 'Total Revenue', value: `₹${(agent.salesCount * 50000).toLocaleString('en-IN')}`, icon: 'payments', color: 'text-[#7b2600]', bg: 'bg-[#ffdbcf]' },
+            { label: 'Wallet Earnings', value: `₹${(agent.earnings || 0).toLocaleString('en-IN')}`, icon: 'account_balance_wallet', color: 'text-green-700', bg: 'bg-green-100', route: '/agent/wallet' },
+          ]);
+
+          setQuickActions([
+            { label: 'Onboard Customer', icon: 'person_add', route: '/agent/register-customer' },
+            { label: 'Apply Loan', icon: 'payments', route: '/agent/apply-loan' },
+            { label: 'Customer Directory', icon: 'group', route: '/agent/customers' },
+            { label: 'My Wallet', icon: 'account_balance_wallet', route: '/agent/wallet' },
+          ]);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch dashboard stats', err);
+    }
+  };
 
   if (!currentUser) {
     return (
@@ -97,24 +100,6 @@ export default function AgentDashboardPage() {
       </div>
     );
   }
-
-  // Fetch pending registrations for Admin list
-  const pendingRegistrations = agents.filter(a => a.status === 'Pending Approval');
-  
-  // Fetch team list for Super Agent / Team Leader
-  const getSubordinateAgents = () => {
-    if (currentUser.role === 'Super Agent') {
-      const tls = agents.filter(a => a.role === 'Team Leader' && a.reportingManager === currentUser.fullName);
-      return tls;
-    }
-    if (currentUser.role === 'Team Leader') {
-      const fas = agents.filter(a => a.role === 'Field Agent' && a.reportingManager === currentUser.fullName);
-      return fas;
-    }
-    return [];
-  };
-
-  const subordinateList = getSubordinateAgents();
 
   const mockActivities = [
     { title: 'New Customer Onboarded', desc: 'Amit Patel registered Priya Mehta successfully.', time: '10 mins ago', icon: 'person_add', bg: 'bg-[#dae2ff]', text: 'text-[#003d9b]' },
@@ -188,28 +173,9 @@ export default function AgentDashboardPage() {
                 <h3 className="text-base md:text-lg font-bold text-[#191b23]">Pending Approvals</h3>
                 <button onClick={() => navigate('/agent/admin')} className="text-xs font-bold text-[#0052cc] hover:underline cursor-pointer">View Queue</button>
               </div>
-              <div className="space-y-3">
-                {pendingRegistrations.length > 0 ? (
-                  pendingRegistrations.slice(0, 3).map((agent, idx) => (
-                    <div key={idx} className="bg-white border border-[#c3c6d6]/30 p-4 rounded-xl flex items-center justify-between shadow-sm hover:shadow-md transition-shadow">
-                      <div>
-                        <h4 className="font-bold text-[#191b23]">{agent.fullName}</h4>
-                        <p className="text-xs text-[#516161] mt-0.5">{agent.mobileNumber} • {agent.email}</p>
-                      </div>
-                      <button 
-                        onClick={() => navigate('/agent/admin')}
-                        className="bg-[#003d9b] text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-[#0052cc] transition-colors cursor-pointer"
-                      >
-                        Review
-                      </button>
-                    </div>
-                  ))
-                ) : (
-                  <div className="bg-white border border-[#c3c6d6]/30 p-6 rounded-xl text-center text-sm text-[#516161]">
-                    <span className="material-symbols-outlined text-green-600 text-3xl mb-1">check_circle</span>
-                    <p>No pending registrations to approve.</p>
-                  </div>
-                )}
+              <div className="bg-white border border-[#c3c6d6]/30 p-6 rounded-xl text-center text-sm text-[#516161]">
+                <span className="material-symbols-outlined text-green-600 text-3xl mb-1">check_circle</span>
+                <p>Check the admin panel to view pending registrations.</p>
               </div>
             </>
           )}
@@ -222,28 +188,9 @@ export default function AgentDashboardPage() {
                 </h3>
                 <button onClick={() => navigate('/agent/team')} className="text-xs font-bold text-[#0052cc] hover:underline cursor-pointer">View Network</button>
               </div>
-              <div className="space-y-3">
-                {subordinateList.length > 0 ? (
-                  subordinateList.slice(0, 3).map((agent, idx) => (
-                    <div key={idx} className="bg-white border border-[#c3c6d6]/30 p-4 rounded-xl flex items-center justify-between shadow-sm hover:shadow-md transition-shadow">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-[#dae2ff] text-[#003d9b] font-bold flex items-center justify-center">
-                          {agent.fullName.charAt(0)}
-                        </div>
-                        <div>
-                          <h4 className="font-bold text-[#191b23]">{agent.fullName}</h4>
-                          <p className="text-xs text-[#516161] mt-0.5">Rank: {agent.rank} • Sales: {agent.salesCount || 10}</p>
-                        </div>
-                      </div>
-                      <span className="text-xs font-bold text-[#003d9b]">{agent.commissionRate}% override</span>
-                    </div>
-                  ))
-                ) : (
-                  <div className="bg-white border border-[#c3c6d6]/30 p-6 rounded-xl text-center text-sm text-[#516161]">
-                    <span className="material-symbols-outlined text-2xl mb-1">group_off</span>
-                    <p>No subordinate partners registered yet.</p>
-                  </div>
-                )}
+              <div className="bg-white border border-[#c3c6d6]/30 p-6 rounded-xl text-center text-sm text-[#516161]">
+                <span className="material-symbols-outlined text-[#003d9b] text-3xl mb-1">group</span>
+                <p>View your team network in the network page.</p>
               </div>
             </>
           )}

@@ -1,28 +1,30 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-
-const MOCK_ORDERS = [
-  {
-    id: 'ORD-1092-BPM',
-    date: '06 Jun 2026',
-    status: 'Processing',
-    total: '₹1,575',
-    items: [
-      {
-        label: 'BP Monitor',
-        qty: 1,
-        price: '₹1,575',
-        img: '/src/assets/Machine/BP Monitor.png'
-      }
-    ],
-    delivery: 'Expected by 09 Jun 2026'
-  }
-];
+import api from '../../../services/api';
+import { ENDPOINTS } from '../../../services/types';
 
 export default function OrdersPage() {
   const navigate = useNavigate();
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [trackingOrder, setTrackingOrder] = useState(null);
   const [invoiceOrder, setInvoiceOrder] = useState(null);
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        const res = await api.get(ENDPOINTS.MY_ORDERS);
+        if (res.data.success) {
+          setOrders(res.data.data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch orders:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchOrders();
+  }, []);
 
   return (
     <div className="flex-grow flex flex-col bg-[#F8FAFF] min-h-screen font-body-md pb-20">
@@ -34,56 +36,70 @@ export default function OrdersPage() {
       </header>
 
       <main className="flex-grow overflow-y-auto p-4 space-y-4">
-        {MOCK_ORDERS.length === 0 ? (
+        {loading ? (
+          <div className="flex justify-center py-10">
+            <span className="material-symbols-outlined animate-spin text-primary text-3xl">progress_activity</span>
+          </div>
+        ) : orders.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-64 opacity-60">
             <span className="material-symbols-outlined text-6xl mb-4">shopping_bag</span>
             <p className="font-bold">No orders found</p>
             <p className="text-xs">Looks like you haven't bought anything yet.</p>
           </div>
         ) : (
-          MOCK_ORDERS.map((order) => (
-            <div key={order.id} className="bg-white rounded-2xl border border-outline-variant p-4 shadow-sm space-y-4">
+          orders.map((order) => (
+            <div key={order._id} className="bg-white rounded-2xl border border-outline-variant p-4 shadow-sm space-y-4">
               <div className="flex justify-between items-start border-b border-outline-variant/30 pb-3">
                 <div>
                   <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Order ID</p>
-                  <p className="font-mono text-sm font-bold text-on-surface">{order.id}</p>
-                  <p className="text-[10px] text-on-surface-variant mt-1">Placed on {order.date}</p>
+                  <p className="font-mono text-sm font-bold text-on-surface">{order.orderId}</p>
+                  <p className="text-[10px] text-on-surface-variant mt-1">Placed on {new Date(order.createdAt).toLocaleDateString()}</p>
                 </div>
-                <div className="bg-tertiary/10 text-tertiary font-bold text-[10px] uppercase tracking-wider px-2 py-1 rounded-full border border-tertiary/20">
-                  {order.status}
+                <div className={`font-bold text-[10px] uppercase tracking-wider px-2 py-1 rounded-full border ${order.paymentStatus === 'success' ? 'bg-[#0A9E58]/10 text-[#0A9E58] border-[#0A9E58]/20' : 'bg-tertiary/10 text-tertiary border-tertiary/20'}`}>
+                  {order.paymentStatus}
                 </div>
               </div>
 
               <div className="space-y-3">
-                {order.items.map((item, idx) => (
-                  <div key={idx} className="flex gap-4 items-center">
+                <div className="flex gap-4 items-center">
+                  {order.orderType === 'medical_equipment' && order.productId?.imageUrl ? (
                     <div className="w-16 h-16 rounded-xl bg-surface-container-lowest border border-outline-variant/50 p-1 flex items-center justify-center shrink-0">
-                      <img src={item.img} alt={item.label} className="w-full h-full object-contain" />
+                      <img src={order.productId.imageUrl} alt={order.productName} className="w-full h-full object-contain" />
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-bold text-on-surface text-sm truncate">{item.label}</p>
-                      <p className="text-[11px] text-on-surface-variant mt-0.5">Qty: {item.qty}</p>
+                  ) : (
+                    <div className="w-16 h-16 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+                      <span className="material-symbols-outlined text-primary text-2xl">
+                        {order.orderType === 'membership_card' ? 'badge' : 'medical_services'}
+                      </span>
                     </div>
-                    <p className="font-black text-primary">{item.price}</p>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-on-surface text-sm truncate">{order.productName || order.planName || 'Order Item'}</p>
+                    <p className="text-[11px] text-on-surface-variant mt-0.5">Qty: 1</p>
                   </div>
-                ))}
-              </div>
-
-              <div className="bg-surface-container-low rounded-xl p-3 flex items-center gap-3 mt-2">
-                <span className="material-symbols-outlined text-primary text-xl">local_shipping</span>
-                <div>
-                  <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Delivery Estimate</p>
-                  <p className="font-bold text-xs">{order.delivery}</p>
+                  <p className="font-black text-primary">₹{order.finalAmount?.toLocaleString('en-IN')}</p>
                 </div>
               </div>
 
+              {order.orderType === 'medical_equipment' && order.estimatedDelivery && (
+                <div className="bg-surface-container-low rounded-xl p-3 flex items-center gap-3 mt-2">
+                  <span className="material-symbols-outlined text-primary text-xl">local_shipping</span>
+                  <div>
+                    <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Delivery Estimate</p>
+                    <p className="font-bold text-xs">{new Date(order.estimatedDelivery).toLocaleDateString()}</p>
+                  </div>
+                </div>
+              )}
+
               <div className="flex gap-2 pt-2 border-t border-outline-variant/30">
-                <button 
-                  onClick={() => setTrackingOrder(order)}
-                  className="flex-1 py-2 rounded-xl border border-primary text-primary text-xs font-bold hover:bg-primary/5 transition-colors cursor-pointer"
-                >
-                  Track Order
-                </button>
+                {order.orderType === 'medical_equipment' && (
+                  <button 
+                    onClick={() => setTrackingOrder(order)}
+                    className="flex-1 py-2 rounded-xl border border-primary text-primary text-xs font-bold hover:bg-primary/5 transition-colors cursor-pointer"
+                  >
+                    Track Order
+                  </button>
+                )}
                 <button 
                   onClick={() => setInvoiceOrder(order)}
                   className="flex-1 py-2 rounded-xl bg-primary text-white text-xs font-bold hover:opacity-90 transition-colors cursor-pointer shadow-sm"
@@ -103,7 +119,7 @@ export default function OrdersPage() {
             <div className="flex justify-between items-center mb-6">
               <div>
                 <h3 className="font-bold text-lg text-on-surface">Track Order</h3>
-                <p className="text-xs text-on-surface-variant font-mono">{trackingOrder.id}</p>
+                <p className="text-xs text-on-surface-variant font-mono">{trackingOrder.orderId}</p>
               </div>
               <button
                 onClick={() => setTrackingOrder(null)}
@@ -126,7 +142,7 @@ export default function OrdersPage() {
                 <div>
                   <p className="font-bold text-sm text-on-surface">Order Placed</p>
                   <p className="text-xs text-on-surface-variant">We have received your order.</p>
-                  <p className="text-[10px] text-on-surface-variant mt-1 font-mono">06 Jun, 10:24 AM</p>
+                  <p className="text-[10px] text-on-surface-variant mt-1 font-mono">{new Date(trackingOrder.createdAt).toLocaleString()}</p>
                 </div>
               </div>
 
@@ -138,7 +154,6 @@ export default function OrdersPage() {
                 <div>
                   <p className="font-bold text-sm text-primary">Processing</p>
                   <p className="text-xs text-on-surface-variant">Your item is being packed and prepared for dispatch.</p>
-                  <p className="text-[10px] text-on-surface-variant mt-1 font-mono">06 Jun, 11:15 AM</p>
                 </div>
               </div>
 
@@ -158,7 +173,7 @@ export default function OrdersPage() {
                 </div>
                 <div>
                   <p className="font-bold text-sm text-on-surface">Delivered</p>
-                  <p className="text-xs text-on-surface-variant">{trackingOrder.delivery}</p>
+                  <p className="text-xs text-on-surface-variant">Expected by {new Date(trackingOrder.estimatedDelivery).toLocaleDateString()}</p>
                 </div>
               </div>
             </div>
@@ -200,42 +215,44 @@ export default function OrdersPage() {
                   </div>
                   <div className="text-right">
                     <p className="text-[9px] text-on-surface-variant uppercase font-bold tracking-wider mb-1">Order Details</p>
-                    <p className="font-mono font-bold text-on-surface mb-0.5">{invoiceOrder.id}</p>
-                    <p className="text-on-surface-variant font-mono">{invoiceOrder.date}</p>
+                    <p className="font-mono font-bold text-on-surface mb-0.5">{invoiceOrder.orderId}</p>
+                    <p className="text-on-surface-variant font-mono">{new Date(invoiceOrder.createdAt).toLocaleDateString()}</p>
                   </div>
                 </div>
 
                 <div className="space-y-3 mb-4">
-                  {invoiceOrder.items.map((item, idx) => (
-                    <div key={idx} className="flex justify-between items-start">
-                      <div className="pr-4">
-                        <p className="font-bold text-sm text-on-surface leading-tight">{item.label}</p>
-                        <p className="text-[10px] text-on-surface-variant mt-0.5">Qty: {item.qty} × {item.price}</p>
-                      </div>
-                      <p className="font-black text-on-surface whitespace-nowrap">{item.price}</p>
+                  <div className="flex justify-between items-start">
+                    <div className="pr-4">
+                      <p className="font-bold text-sm text-on-surface leading-tight">{invoiceOrder.productName || invoiceOrder.planName || 'Item'}</p>
+                      <p className="text-[10px] text-on-surface-variant mt-0.5">Qty: 1 × ₹{invoiceOrder.baseAmount?.toLocaleString()}</p>
                     </div>
-                  ))}
+                    <p className="font-black text-on-surface whitespace-nowrap">₹{invoiceOrder.baseAmount?.toLocaleString()}</p>
+                  </div>
                 </div>
 
                 <div className="border-t border-outline-variant/30 pt-4 space-y-2 text-xs">
                   <div className="flex justify-between text-on-surface-variant">
                     <span>Subtotal</span>
-                    <span className="font-bold text-on-surface">₹1,500</span>
+                    <span className="font-bold text-on-surface">₹{invoiceOrder.baseAmount?.toLocaleString()}</span>
                   </div>
-                  <div className="flex justify-between text-on-surface-variant">
-                    <span>GST (5%)</span>
-                    <span className="font-bold text-on-surface">₹75</span>
-                  </div>
-                  <div className="flex justify-between text-on-surface-variant">
-                    <span>Shipping</span>
-                    <span className="font-bold text-[#0A9E58]">FREE</span>
-                  </div>
+                  {invoiceOrder.discountAmount > 0 && (
+                    <div className="flex justify-between text-on-surface-variant">
+                      <span>Discount</span>
+                      <span className="font-bold text-[#0A9E58]">-₹{invoiceOrder.discountAmount?.toLocaleString()}</span>
+                    </div>
+                  )}
+                  {invoiceOrder.orderType === 'medical_equipment' && (
+                    <div className="flex justify-between text-on-surface-variant">
+                      <span>Shipping</span>
+                      <span className="font-bold text-[#0A9E58]">FREE</span>
+                    </div>
+                  )}
                 </div>
               </div>
 
               <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant/50 p-4 shadow-sm flex justify-between items-center">
                 <span className="font-bold text-sm text-on-surface uppercase tracking-wider">Total Amount</span>
-                <span className="font-black text-xl text-primary">{invoiceOrder.total}</span>
+                <span className="font-black text-xl text-primary">₹{invoiceOrder.finalAmount?.toLocaleString()}</span>
               </div>
             </div>
 

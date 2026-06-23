@@ -1,21 +1,47 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { STORAGE_KEYS, ENDPOINTS } from '../../../services/types';
+import api from '../../../services/api';
 
 export default function AgentProfilePage() {
   const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState(null);
 
+  const [isLoading, setIsLoading] = useState(true);
+
   useEffect(() => {
-    const userJson = localStorage.getItem('currentUser');
-    if (userJson) {
-      setCurrentUser(JSON.parse(userJson));
-    }
+    fetchAgentProfile();
   }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem('currentUser');
-    alert('Logged out from Agent Portal.');
-    navigate('/agent/login');
+  const fetchAgentProfile = async () => {
+    try {
+      setIsLoading(true);
+      const response = await api.get(ENDPOINTS.AGENT_PROFILE);
+      if (response.data.success) {
+        setCurrentUser(response.data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching agent profile:', error);
+      const userJson = localStorage.getItem(STORAGE_KEYS.USER_DATA);
+      if (userJson) {
+        setCurrentUser(JSON.parse(userJson));
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await api.post(ENDPOINTS.AUTH_LOGOUT);
+    } catch (error) {
+      console.error('Logout failed:', error);
+    } finally {
+      localStorage.removeItem(STORAGE_KEYS.USER_DATA);
+      localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+      localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+      navigate('/agent/login');
+    }
   };
 
   if (!currentUser) {

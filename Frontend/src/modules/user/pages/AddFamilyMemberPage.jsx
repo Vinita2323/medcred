@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { addFamilyMember, getAgeFromDob } from '../utils/storage';
+import api from '../../../services/api';
+import { ENDPOINTS } from '../../../services/types';
 
 export default function AddFamilyMemberPage() {
   const navigate = useNavigate();
@@ -12,6 +13,10 @@ export default function AddFamilyMemberPage() {
     consent: false
   });
   const [profilePic, setProfilePic] = useState(null);
+  const [profileFile, setProfileFile] = useState(null);
+  const [aadhaarFrontFile, setAadhaarFrontFile] = useState(null);
+  const [aadhaarBackFile, setAadhaarBackFile] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -33,6 +38,7 @@ export default function AddFamilyMemberPage() {
 
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
+      setProfileFile(e.target.files[0]);
       const reader = new FileReader();
       reader.onload = (event) => {
         setProfilePic(event.target.result);
@@ -41,25 +47,56 @@ export default function AddFamilyMemberPage() {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleAadhaarFrontChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      setAadhaarFrontFile(e.target.files[0]);
+    }
+  };
+
+  const handleAadhaarBackChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      setAadhaarBackFile(e.target.files[0]);
+    }
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.consent) {
       alert("Please check the authorization box to verify Aadhaar details.");
       return;
     }
-    // Save to localStorage
-    addFamilyMember({
-      name: formData.name,
-      relationship: formData.relationship,
-      dob: formData.dob,
-      age: getAgeFromDob(formData.dob),
-      aadhaar: formData.aadhaar,
-      bloodGroup: '',
-      gender: '',
-      image: profilePic || null,
-    });
-    alert(`${formData.name} has been added successfully! Verification is in progress.`);
-    navigate('/family');
+    
+    setLoading(true);
+    const data = new FormData();
+    data.append('name', formData.name);
+    data.append('relationship', formData.relationship);
+    data.append('dob', formData.dob);
+    data.append('aadhaarNumber', formData.aadhaar);
+    data.append('consent', formData.consent);
+    if (profileFile) {
+      data.append('profilePhoto', profileFile);
+    }
+    if (aadhaarFrontFile) {
+      data.append('aadhaarFront', aadhaarFrontFile);
+    }
+    if (aadhaarBackFile) {
+      data.append('aadhaarBack', aadhaarBackFile);
+    }
+
+    try {
+      const res = await api.post(ENDPOINTS.FAMILY_ADD, data, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      if (res.data.success) {
+        alert(`${formData.name} has been added successfully! Verification is in progress.`);
+        navigate('/family');
+      }
+    } catch (err) {
+      console.error('Failed to add member:', err);
+      alert(err.response?.data?.message || 'Failed to add family member. Ensure you have an active Family or Premium plan.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -176,6 +213,43 @@ export default function AddFamilyMemberPage() {
               </div>
             </div>
 
+            {/* Aadhaar Document Uploads */}
+            <div className="grid grid-cols-2 gap-3 mt-2">
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-on-surface-variant px-1">Aadhaar Front</label>
+                <div className="relative w-full h-12 bg-white border border-outline-variant border-dashed rounded-lg flex items-center justify-center overflow-hidden hover:bg-surface-container-low transition-colors">
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    onChange={handleAadhaarFrontChange}
+                    required
+                  />
+                  <div className="flex flex-col items-center justify-center pointer-events-none">
+                    <span className="material-symbols-outlined text-primary text-xl leading-none">front_hand</span>
+                    <span className="text-[9px] font-bold text-primary max-w-full truncate px-1">{aadhaarFrontFile ? aadhaarFrontFile.name : 'Upload Front'}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-on-surface-variant px-1">Aadhaar Back</label>
+                <div className="relative w-full h-12 bg-white border border-outline-variant border-dashed rounded-lg flex items-center justify-center overflow-hidden hover:bg-surface-container-low transition-colors">
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    onChange={handleAadhaarBackChange}
+                    required
+                  />
+                  <div className="flex flex-col items-center justify-center pointer-events-none">
+                    <span className="material-symbols-outlined text-primary text-xl leading-none">flip_to_back</span>
+                    <span className="text-[9px] font-bold text-primary max-w-full truncate px-1">{aadhaarBackFile ? aadhaarBackFile.name : 'Upload Back'}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* Aadhaar Consent */}
             <div className="flex gap-3 p-4 bg-surface-container-low rounded-xl border border-outline-variant/30 mt-2">
               <input 
@@ -197,10 +271,15 @@ export default function AddFamilyMemberPage() {
           <div className="pt-2">
             <button 
               type="submit"
-              className="w-full h-12 bg-primary text-white rounded-xl text-sm font-semibold flex items-center justify-center gap-2 shadow-md hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer"
+              disabled={loading}
+              className={`w-full h-12 text-white rounded-xl text-sm font-semibold flex items-center justify-center gap-2 shadow-md transition-all ${loading ? 'bg-outline-variant cursor-not-allowed' : 'bg-primary hover:opacity-90 active:scale-[0.98] cursor-pointer'}`}
             >
-              <span className="material-symbols-outlined text-lg">verified_user</span>
-              Verify Member
+              {loading ? (
+                 <span className="material-symbols-outlined animate-spin text-lg">sync</span>
+              ) : (
+                 <span className="material-symbols-outlined text-lg">verified_user</span>
+              )}
+              {loading ? 'Verifying...' : 'Verify Member'}
             </button>
             <p className="text-center mt-3 text-[10px] text-outline font-semibold tracking-wide">Securely encrypted by MedCred Vault</p>
           </div>

@@ -1,24 +1,53 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api from '../../../services/api';
+import { ENDPOINTS, SERVER_URL } from '../../../services/types';
 
 export default function AgentCustomersPage() {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('All');
+  const [customers, setCustomers] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const customers = [
-    { name: 'Arjun Mehta', id: 'MC-88219', relation: 'Self', age: '32 Years', status: 'Approved', limit: '₹5,0,000', commission: '₹4,500', photo: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB5hPVSJVnDBeM_NU087CySc1Nj5JvsQumfiId7OJct49Qa77heLrFpiB7mj1ju2IDHI7keh9EIMKh7escMxoAAIkpZgceUPIECby_M8SvJoj4B-oZDrF749Dr0ocU1cIiWWL-pi7TS0ERiElEdVsXIMC7J27_GSeOc8SJ6U_ia4fwifb1YgB2FuLP9annHcDHXsjwbFeOFx1_gHuJ2l8k8P-OUbE00BppwZf28afD52_WGG_Dr4W9N6zzNmZxQqu2cWBHERgwSCrVL' },
-    { name: 'Priya Mehta', id: 'MC-88220', relation: 'Spouse', age: '30 Years', status: 'Approved', limit: '₹3,0,000', commission: '₹2,700', photo: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDKzpUBEs6q65rb5FuihZ4BcbkUZxrlLKjtU70Den4RgiicBIoE8OFnuHFaq0OWKiRKFq_xqbJnsj4k1uaQAJl53r2wMglpc_8ORni3N0aiQoLmp0oJfzkwca8uCeJrn8_m8dtGutdpckbcD9sUnr8_w9XOLXIeXfm80XTfgQ8AHP4yrHTW_X_rwfEBxFjHrNRLaY_4595EJd5wv6MYYEr34LFvb0T4JF3g-fV4RtMOncytABGaiKpLSCQVhbPMDlcLfHw9kyBY2gqJ' },
-    { name: 'Kabir Mehta', id: 'MC-Pending', relation: 'Son', age: '4 Years', status: 'Pending', limit: '—', commission: '₹5,000 (Pending)', photo: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAhb0OIZiIExbXKGFMjW3BeHdb6QnL15jEuvmCkyecro3XwiW_ZaD3VjcS2a8epvQdSwOrtDHefPyxrBqTmy1PYtyjfiNYxQAgMtBhfc2U3ApBjrx61Jo3-6l8-xKmTnmMz4URqCTOELr8oSj1W9E7GuF5yzN2lndekjEKit6c4P-waj5ACZZPZNnkb7AU2-LjMUL0JLG9Shdhg9jUPsJBY64bZjJQN-ugOAttJXMbHblLiUb7qQtQ5rkvooQxKWzA0Fttt8ZLMsd_G' },
-    { name: 'Amit Sharma', id: 'MC-88241', relation: 'Self', age: '45 Years', status: 'Approved', limit: '₹7,50,000', commission: '₹6,750', photo: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBiKJW2DwicGwVFGEPOIuISr_9oRHJdfzm4rKhqJ8nVaIDcploG0BYyeMGoNAHUPKksq5Seq0DEyclaijLPj_Q3HmGahdT4enf-WDdO4GZWvYwIc5-8HlpiedNT1OOe6nZ9j94jfvnmgajZKVmIkX8VNrCa694IsyaoXn8aKfwd-HkrUIQgoZ_eXH6WqiZgPbehBVZcUpJYypFavSnrVrSQw0-oGzyPrjnKJCPAyoFymsQsHkiHUf3j-ARLfpoAsPMZMownl1vB0Nc9' },
-    { name: 'Ritu Sharma', id: 'MC-Pending', relation: 'Spouse', age: '42 Years', status: 'Pending', limit: '—', commission: '₹5,000 (Pending)', photo: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCfGafFkI5X5GjnTKk_KGP31CI1eYIoGqf_xX3fvKphsWFQCh273kJSmgrUddVGWwWRXRsgpqLlFfASJCEra9a_LpluOPdonlNEY8Cg_1NZTc-KG4kbm1RiB3PBNYTozG_lRVxPKeSTCnpA1rrDrrSwCvuMyUqJ4f0R5LcchZNEpgT5X7yjk5hMXkTECRVYdt52x0j7TLW1hrHv7IpsJXPfvbello8M9C7XCauV7i2QM9bYRNgDh-oB3bb0ksTa5dHpCwRlzI1ZvhSg' }
-  ];
+  useEffect(() => {
+    fetchCustomers();
+  }, []);
+
+  const fetchCustomers = async () => {
+    try {
+      setIsLoading(true);
+      const res = await api.get(ENDPOINTS.AGENT_CUSTOMERS);
+      if (res.data?.success) {
+        setCustomers(res.data.data.map(user => ({
+          name: user.fullName,
+          id: user.userId || 'Pending ID',
+          relation: 'Self', // Backend currently doesn't store relation for primary
+          age: user.mobile, // Fallback since age requires calculation
+          status: user.kycStatus === 'Approved' ? 'Approved' : 'Pending',
+          limit: user.planId ? 'Allocated' : '—',
+          commission: user.planId ? 'Earned' : 'Pending',
+          photo: user.profilePhoto 
+            ? `${SERVER_URL}/uploads/${user.profilePhoto}` 
+            : 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png' // Default user placeholder
+        })));
+      }
+    } catch (error) {
+      console.error('Error fetching customers:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const filteredCustomers = customers.filter(c => {
     const matchesSearch = c.name.toLowerCase().includes(searchTerm.toLowerCase()) || c.id.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesTab = activeTab === 'All' || c.status === activeTab;
     return matchesSearch && matchesTab;
   });
+
+  if (isLoading) {
+    return <div className="flex justify-center items-center h-64 text-[#516161]">Loading customers...</div>;
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">

@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import api from '../../../services/api';
+import { ENDPOINTS, STORAGE_KEYS } from '../../../services/types';
 
 export default function AgentLoginPage() {
   const navigate = useNavigate();
@@ -8,137 +10,45 @@ export default function AgentLoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
 
-  useEffect(() => {
-    const initialAgents = [
-      {
-        fullName: 'System Administrator',
-        mobileNumber: '1000000000',
-        email: 'admin@medcred.in',
-        password: 'admin',
-        role: 'Admin',
-        agentId: 'ADMIN-001',
-        referralCode: 'ADMIN10',
-        reportingManager: '',
-        commissionRate: 0,
-        rank: 'Platinum',
-        salesCount: 50,
-        earnings: 125000,
-        status: 'Approved',
-        joiningDate: 'January 10, 2023'
-      },
-      {
-        fullName: 'Rajesh Kumar',
-        mobileNumber: '91111966732',
-        email: 'rajesh.super@medcred.in',
-        password: '1234abc',
-        role: 'Super Agent',
-        agentId: 'MC-9921',
-        referralCode: 'SUPER90',
-        reportingManager: 'System Administrator',
-        commissionRate: 1.0,
-        rank: 'Platinum',
-        salesCount: 42,
-        earnings: 55200,
-        status: 'Approved',
-        joiningDate: 'March 14, 2023'
-      },
-      {
-        fullName: 'Sanjay Dutt',
-        mobileNumber: '8000000000',
-        email: 'sanjay.tl@medcred.in',
-        password: 'agent',
-        role: 'Team Leader',
-        agentId: 'MC-8822',
-        referralCode: 'LEADER80',
-        reportingManager: 'Rajesh Kumar',
-        commissionRate: 1.5,
-        rank: 'Gold',
-        salesCount: 18,
-        earnings: 18450,
-        status: 'Approved',
-        joiningDate: 'June 01, 2023'
-      },
-      {
-        fullName: 'Amit Patel',
-        mobileNumber: '7000000000',
-        email: 'amit.field@medcred.in',
-        password: 'agent',
-        role: 'Field Agent',
-        agentId: 'MC-7733',
-        referralCode: 'FIELD70',
-        reportingManager: 'Sanjay Dutt',
-        commissionRate: 2.5,
-        rank: 'Silver',
-        salesCount: 8,
-        earnings: 8400,
-        status: 'Approved',
-        joiningDate: 'August 12, 2023'
-      }
-    ];
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
-    const existing = localStorage.getItem('medcred_agents');
-    if (!existing) {
-      localStorage.setItem('medcred_agents', JSON.stringify(initialAgents));
-    } else {
-      const list = JSON.parse(existing);
-      const hasCustom = list.find(a => a.mobileNumber === '91111966732');
-      if (!hasCustom) {
-        const updatedList = list.map(a => {
-          if (a.fullName === 'Rajesh Kumar') {
-            return {
-              ...a,
-              mobileNumber: '91111966732',
-              password: '1234abc'
-            };
-          }
-          return a;
-        });
-        localStorage.setItem('medcred_agents', JSON.stringify(updatedList));
-      }
-    }
-  }, []);
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Check in database
-    const agentsJson = localStorage.getItem('medcred_agents');
-    if (agentsJson) {
-      const agentsList = JSON.parse(agentsJson);
-      let matched = agentsList.find(a => a.mobileNumber === mobile && a.password === password);
-      
-      if (!matched) {
-        // Bypassing login validation: dynamically log in as a mock Super Agent session with entered credentials
-        matched = {
-          fullName: 'Rajesh Kumar',
-          mobileNumber: mobile || '91111966732',
-          email: 'rajesh.super@medcred.in',
-          password: password || '1234abc',
-          role: 'Super Agent',
-          agentId: 'MC-9921',
-          referralCode: 'SUPER90',
-          reportingManager: 'System Administrator',
-          commissionRate: 1.0,
-          rank: 'Platinum',
-          salesCount: 42,
-          earnings: 55200,
-          status: 'Approved',
-          joiningDate: 'March 14, 2023'
-        };
-      }
+    setErrorMsg('');
+    if (!mobile || !password) {
+      setErrorMsg('Please fill in all fields.');
+      return;
+    }
 
-      if (matched.status === 'Pending Approval') {
-        alert('Access Denied: Your registration is currently pending administrator approval.');
-        return;
-      }
-      if (matched.status === 'Rejected') {
-        alert('Access Denied: Your application has been rejected by the administrator.');
-        return;
-      }
+    try {
+      setLoading(true);
+      const res = await api.post(ENDPOINTS.AGENT_LOGIN, { mobileNumber: mobile.trim(), password });
 
-      // Set current session
-      localStorage.setItem('currentUser', JSON.stringify(matched));
-      navigate('/agent/dashboard');
+      if (res.data.success) {
+        const { accessToken, refreshToken, agent } = res.data.data;
+        
+        // Status checks are handled by backend, but if it passes backend let's verify locally just in case
+        if (agent.status === 'Pending' || agent.status === 'Pending Approval') {
+          setErrorMsg('Access Denied: Your registration is currently pending administrator approval.');
+          setLoading(false);
+          return;
+        }
+        if (agent.status === 'Rejected') {
+          setErrorMsg('Access Denied: Your application has been rejected by the administrator.');
+          setLoading(false);
+          return;
+        }
+
+        localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, accessToken);
+        localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
+        localStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(agent));
+
+        navigate('/agent/dashboard');
+      }
+    } catch (error) {
+      setErrorMsg(error.response?.data?.message || 'Login failed. Please check credentials.');
+      setLoading(false);
     }
   };
 
@@ -246,15 +156,28 @@ export default function AgentLoginPage() {
                   />
                   <span className="ml-2 text-[#434654] group-hover:text-[#003d9b] transition-colors select-none">Remember me</span>
                 </label>
-                <a className="font-semibold text-[#0052cc] hover:text-[#003d9b] transition-colors" href="#forgot">Forgot Password?</a>
+                <Link className="font-semibold text-[#0052cc] hover:text-[#003d9b] transition-colors" to="/agent/forgot-password">Forgot Password?</Link>
               </div>
+
+              {errorMsg && (
+                <div className="bg-red-50 border border-red-200 text-red-600 text-xs font-bold p-3 rounded-lg flex items-center gap-2">
+                  <span className="material-symbols-outlined text-sm">error</span>
+                  {errorMsg}
+                </div>
+              )}
 
               {/* Primary CTA */}
               <button 
-                className="w-full bg-[#003d9b] text-white py-3 rounded-lg font-bold shadow-md hover:bg-[#0052cc] active:scale-[0.98] transition-all duration-200"
+                className="w-full bg-[#003d9b] text-white py-3 rounded-lg font-bold shadow-md hover:bg-[#0052cc] active:scale-[0.98] transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed flex justify-center items-center gap-2"
                 type="submit"
+                disabled={loading}
               >
-                Login
+                {loading ? (
+                  <>
+                    <span className="material-symbols-outlined animate-spin text-sm">progress_activity</span>
+                    Logging in...
+                  </>
+                ) : 'Login'}
               </button>
 
               {/* Divider */}

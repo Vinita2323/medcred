@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api from '../../../services/api';
+import { ENDPOINTS, STORAGE_KEYS } from '../../../services/types';
 
 export default function AdminLoginPage() {
   const navigate = useNavigate();
@@ -9,25 +11,32 @@ export default function AdminLoginPage() {
   const [error, setError]       = useState('');
   const [showPwd, setShowPwd]   = useState(false);
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
-    setLoading(true);
+    
+    if (!email || !password) {
+      setError('Please fill in all fields.');
+      return;
+    }
 
-    setTimeout(() => {
-      if (email === 'admin@medcred.in' && password === 'Admin@123') {
-        localStorage.setItem('adminUser', JSON.stringify({
-          name: 'Super Admin',
-          email: 'admin@medcred.in',
-          role: 'Super Admin',
-          loginAt: new Date().toISOString(),
-        }));
+    try {
+      setLoading(true);
+      const res = await api.post(ENDPOINTS.ADMIN_LOGIN, { email, password });
+
+      if (res.data.success) {
+        const { accessToken, refreshToken, admin } = res.data.data;
+        
+        localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, accessToken);
+        localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
+        localStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(admin));
+
         navigate('/admin/dashboard');
-      } else {
-        setError('Invalid credentials. Use admin@medcred.in / Admin@123');
-        setLoading(false);
       }
-    }, 1200);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Login failed. Please check credentials.');
+      setLoading(false);
+    }
   };
 
   return (

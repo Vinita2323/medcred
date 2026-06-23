@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import api from '../../../services/api';
+import { ENDPOINTS } from '../../../services/types';
 
 export default function AgentRegisterPage() {
   const navigate = useNavigate();
@@ -19,6 +21,11 @@ export default function AgentRegisterPage() {
   const [profilePreview, setProfilePreview] = useState(null);
   const [frontPreview, setFrontPreview] = useState(null);
   const [backPreview, setBackPreview] = useState(null);
+
+  // Actual Files
+  const [profileFile, setProfileFile] = useState(null);
+  const [frontFile, setFrontFile] = useState(null);
+  const [backFile, setBackFile] = useState(null);
 
   useEffect(() => {
     const initialAgents = [
@@ -110,9 +117,10 @@ export default function AgentRegisterPage() {
     }
   }, []);
 
-  const handleImageChange = (e, setPreview) => {
+  const handleImageChange = (e, setPreview, setFile) => {
     const file = e.target.files[0];
     if (file) {
+      setFile(file);
       const reader = new FileReader();
       reader.onload = (event) => {
         setPreview(event.target.result);
@@ -131,70 +139,48 @@ export default function AgentRegisterPage() {
     setStep(targetStep);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!aadhaarNumber) {
       alert('Please enter your Aadhaar number.');
       return;
     }
-    if (!profilePreview || !frontPreview || !backPreview) {
+    if (!profileFile || !frontFile || !backFile) {
       alert('Please upload all required identity documents.');
       return;
     }
 
-    setIsSubmitting(true);
+    try {
+      setIsSubmitting(true);
 
-    setTimeout(() => {
-      // Fetch agents db
-      const agentsJson = localStorage.getItem('medcred_agents');
-      const agentsList = agentsJson ? JSON.parse(agentsJson) : [];
+      const formData = new FormData();
+      formData.append('fullName', fullName);
+      formData.append('mobileNumber', mobileNumber);
+      formData.append('email', email);
+      formData.append('password', password);
+      formData.append('referralCodeUsed', referralCode);
+      formData.append('aadhaarNumber', aadhaarNumber);
+      formData.append('role', role);
 
-      // Duplicate check
-      const duplicate = agentsList.find(a => a.mobileNumber === mobileNumber);
-      if (duplicate) {
-        alert('This mobile number is already registered under an agent account.');
-        setIsSubmitting(false);
-        return;
+      formData.append('profilePic', profileFile);
+      formData.append('aadhaarFront', frontFile);
+      formData.append('aadhaarBack', backFile);
+
+      const res = await api.post(ENDPOINTS.AGENT_REGISTER, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      if (res.data.success) {
+        alert('Registration submitted successfully! Your status is currently "Pending Approval". The administrator will review and assign your manager & designation.');
+        navigate('/agent/login');
       }
-
-      // Check if code matches a Team Leader or Super Agent
-      let suggestedRole = role; 
-      let suggManager = '';
-
-      if (suggestedRole === 'Team Leader') {
-        suggManager = 'Rajesh Kumar';
-      } else if (suggestedRole === 'Field Agent') {
-        suggManager = 'Sanjay Dutt';
-      } else if (suggestedRole === 'Super Agent') {
-        suggManager = 'System Administrator';
-      }
-
-      const newAgent = {
-        fullName,
-        mobileNumber,
-        email,
-        password,
-        referralCodeUsed: referralCode,
-        aadhaarNumber,
-        status: 'Pending Approval',
-        role: suggestedRole,
-        reportingManager: suggManager,
-        agentId: 'MC-PENDING',
-        referralCode: '',
-        commissionRate: suggestedRole === 'Super Agent' ? 1.0 : suggestedRole === 'Team Leader' ? 1.5 : 2.5,
-        rank: 'Bronze',
-        salesCount: 0,
-        earnings: 0,
-        joiningDate: ''
-      };
-
-      const updatedList = [...agentsList, newAgent];
-      localStorage.setItem('medcred_agents', JSON.stringify(updatedList));
-
+    } catch (error) {
+      alert(error.response?.data?.message || 'Registration failed. Please try again.');
+    } finally {
       setIsSubmitting(false);
-      alert('Registration submitted successfully! Your status is currently "Pending Approval". The administrator will review and assign your manager & designation.');
-      navigate('/agent/login');
-    }, 1500);
+    }
   };
 
   return (
@@ -369,7 +355,7 @@ export default function AgentRegisterPage() {
                   <div className="flex flex-col items-center gap-2">
                     <span className="text-[10px] font-semibold text-[#516161]">Profile Pic</span>
                     <label className="w-full aspect-square border-2 border-dashed border-[#c3c6d6] rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-[#003d9b] hover:bg-[#003d9b]/5 transition-all overflow-hidden relative group">
-                      <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageChange(e, setProfilePreview)} required />
+                      <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageChange(e, setProfilePreview, setProfileFile)} required />
                       {!profilePreview ? (
                         <span className="material-symbols-outlined text-[#737685] text-2xl group-hover:scale-110 transition-transform">account_circle</span>
                       ) : (
@@ -382,7 +368,7 @@ export default function AgentRegisterPage() {
                   <div className="flex flex-col items-center gap-2">
                     <span className="text-[10px] font-semibold text-[#516161]">Aadhaar Front</span>
                     <label className="w-full aspect-square border-2 border-dashed border-[#c3c6d6] rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-[#003d9b] hover:bg-[#003d9b]/5 transition-all overflow-hidden relative group">
-                      <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageChange(e, setFrontPreview)} required />
+                      <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageChange(e, setFrontPreview, setFrontFile)} required />
                       {!frontPreview ? (
                         <span className="material-symbols-outlined text-[#737685] text-2xl group-hover:scale-110 transition-transform">badge</span>
                       ) : (
@@ -395,7 +381,7 @@ export default function AgentRegisterPage() {
                   <div className="flex flex-col items-center gap-2">
                     <span className="text-[10px] font-semibold text-[#516161]">Aadhaar Back</span>
                     <label className="w-full aspect-square border-2 border-dashed border-[#c3c6d6] rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-[#003d9b] hover:bg-[#003d9b]/5 transition-all overflow-hidden relative group">
-                      <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageChange(e, setBackPreview)} required />
+                      <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageChange(e, setBackPreview, setBackFile)} required />
                       {!backPreview ? (
                         <span className="material-symbols-outlined text-[#737685] text-2xl group-hover:scale-110 transition-transform">credit_card</span>
                       ) : (

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation, Navigate } from 'react-router-dom';
+import { STORAGE_KEYS } from '../../../services/types';
 
 const menuGroups = [
   {
@@ -57,16 +58,18 @@ export default function AdminLayout() {
   const [adminUser, setAdminUser]   = useState(null);
 
   useEffect(() => {
-    const raw = localStorage.getItem('adminUser');
+    const raw = localStorage.getItem(STORAGE_KEYS.USER_DATA);
     if (raw) setAdminUser(JSON.parse(raw));
   }, []);
 
-  if (!localStorage.getItem('adminUser')) {
+  if (!localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN)) {
     return <Navigate to="/admin/login" replace />;
   }
 
   const handleLogout = () => {
-    localStorage.removeItem('adminUser');
+    localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+    localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+    localStorage.removeItem(STORAGE_KEYS.USER_DATA);
     navigate('/admin/login');
   };
 

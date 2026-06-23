@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api from '../../../services/api';
+import { ENDPOINTS } from '../../../services/types';
 
 export default function ForgotPasswordPage() {
   const navigate = useNavigate();
@@ -29,6 +31,48 @@ export default function ForgotPasswordPage() {
   };
   const handleOtpKey = (e, idx) => {
     if (e.key === 'Backspace' && !otp[idx] && idx > 0) inputRefs.current[idx - 1]?.focus();
+  };
+
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+
+  const handleSendOtp = async () => {
+    if (mobile.length < 10) { setErrorMsg('Enter valid 10-digit mobile number'); return; }
+    setErrorMsg('');
+    try {
+      setLoading(true);
+      await api.post(ENDPOINTS.USER_FORGOT_PASSWORD, { mobile });
+      setStep('otp');
+      setTimer(30);
+    } catch (error) {
+      setErrorMsg(error.response?.data?.message || 'Failed to send OTP.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (password.length < 6) { setErrorMsg('Password must be at least 6 characters'); return; }
+    if (password !== confirmPassword) { setErrorMsg('Passwords do not match'); return; }
+    
+    setErrorMsg('');
+    const otpCode = otp.join('');
+    
+    try {
+      setLoading(true);
+      const payload = {
+        mobile,
+        otp: otpCode,
+        newPassword: password,
+        confirmPassword: confirmPassword
+      };
+      await api.post(ENDPOINTS.USER_RESET_PASSWORD, payload);
+      setStep('success');
+    } catch (error) {
+      setErrorMsg(error.response?.data?.message || 'Failed to reset password. Check OTP.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const stepContent = {
@@ -92,6 +136,14 @@ export default function ForgotPasswordPage() {
               ))}
             </div>
 
+            {/* Error Message */}
+            {errorMsg && (
+              <div className="bg-error/10 border border-error/20 text-error text-xs font-bold p-3 rounded-lg flex items-center gap-2">
+                <span className="material-symbols-outlined text-sm">error</span>
+                {errorMsg}
+              </div>
+            )}
+
             {/* Step: Mobile */}
             {step === 'mobile' && (
               <div className="space-y-4">
@@ -101,17 +153,18 @@ export default function ForgotPasswordPage() {
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-on-surface-variant border-r border-outline-variant pr-3 font-semibold">+91</span>
                     <input
                       type="tel" maxLength={10} value={mobile}
-                      onChange={e => setMobile(e.target.value.replace(/\D/g,''))}
+                      onChange={e => { setMobile(e.target.value.replace(/\D/g,'')); setErrorMsg(''); }}
                       placeholder="98765 43210"
                       className="w-full h-13 pl-16 pr-4 border border-outline-variant rounded-2xl text-base font-semibold focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all py-4"
                     />
                   </div>
                 </div>
                 <button
-                  onClick={() => { if (mobile.length < 10) { alert('Enter valid 10-digit mobile number'); return; } setStep('otp'); setTimer(30); }}
-                  className="w-full py-4 bg-primary text-white font-black rounded-2xl shadow-lg hover:opacity-90 cursor-pointer transition-all active:scale-[0.98]"
+                  onClick={handleSendOtp}
+                  disabled={loading}
+                  className="w-full py-4 bg-primary text-white font-black rounded-2xl shadow-lg hover:opacity-90 cursor-pointer transition-all active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
                 >
-                  Send OTP
+                  {loading ? 'Sending...' : 'Send OTP'}
                 </button>
               </div>
             )}
@@ -137,12 +190,12 @@ export default function ForgotPasswordPage() {
                     {timer > 0 ? (
                       <span className="text-outline font-semibold">Resend in {timer}s</span>
                     ) : (
-                      <button onClick={() => setTimer(30)} className="text-primary font-bold cursor-pointer hover:underline">Resend OTP</button>
+                      <button onClick={handleSendOtp} disabled={loading} className="text-primary font-bold cursor-pointer hover:underline">Resend OTP</button>
                     )}
                   </p>
                 </div>
                 <button
-                  onClick={() => { if (otp.join('').length < 6) { alert('Enter complete 6-digit OTP'); return; } setStep('newpass'); }}
+                  onClick={() => { if (otp.join('').length < 6) { setErrorMsg('Enter complete 6-digit OTP'); return; } setErrorMsg(''); setStep('newpass'); }}
                   className="w-full py-4 bg-primary text-white font-black rounded-2xl shadow-lg hover:opacity-90 cursor-pointer transition-all active:scale-[0.98]"
                 >
                   Verify OTP
@@ -185,14 +238,11 @@ export default function ForgotPasswordPage() {
                   </div>
                 )}
                 <button
-                  onClick={() => {
-                    if (password.length < 6) { alert('Password must be at least 6 characters'); return; }
-                    if (password !== confirmPassword) { alert('Passwords do not match'); return; }
-                    setStep('success');
-                  }}
-                  className="w-full py-4 bg-primary text-white font-black rounded-2xl shadow-lg hover:opacity-90 cursor-pointer transition-all active:scale-[0.98]"
+                  onClick={handleResetPassword}
+                  disabled={loading}
+                  className="w-full py-4 bg-primary text-white font-black rounded-2xl shadow-lg hover:opacity-90 cursor-pointer transition-all active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
                 >
-                  Update Password
+                  {loading ? 'Updating...' : 'Update Password'}
                 </button>
               </div>
             )}

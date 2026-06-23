@@ -1,22 +1,54 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getUser, saveKyc, updateKycStatus } from '../utils/storage';
+import api from '../../../services/api';
+import { ENDPOINTS } from '../../../services/types';
 
 export default function KycPage() {
   const navigate = useNavigate();
-  const user = getUser();
   const fileRef = useRef(null);
-
-  const [photo, setPhoto] = useState(user?.profilePic || null);
+  const [photo, setPhoto] = useState(null);
+  const [photoFile, setPhotoFile] = useState(null); // Actual File object
+  const [aadhaarFront, setAadhaarFront] = useState(null);
+  const [aadhaarFrontFile, setAadhaarFrontFile] = useState(null);
+  const [aadhaarBack, setAadhaarBack] = useState(null);
+  const [aadhaarBackFile, setAadhaarBackFile] = useState(null);
+  
   const [form, setForm] = useState({
-    aadhaar: user?.aadhaar || '',
-    name: user?.name || '',
-    dob: user?.dob || '',
-    address: user?.address || '',
+    aadhaar: '',
+    name: '',
+    dob: '',
+    address: '',
     pan: '',
   });
   const [submitted, setSubmitted] = useState(false);
-  const [step, setStep] = useState('form'); // form | verifying | done
+  const [step, setStep] = useState('loading'); // loading | form | verifying | done | pending | rejected
+  const [rejectionReason, setRejectionReason] = useState('');
+
+  // Fetch initial KYC status
+  useEffect(() => {
+    const checkStatus = async () => {
+      try {
+        const res = await api.get(ENDPOINTS.KYC_STATUS);
+        if (res.data?.success) {
+          const status = res.data.data.status;
+          if (status === 'verified') setStep('done');
+          else if (status === 'pending') setStep('pending');
+          else if (status === 'rejected') {
+            setStep('rejected');
+            setRejectionReason(res.data.data.rejectionReason);
+          } else {
+            setStep('form');
+          }
+        } else {
+          setStep('form');
+        }
+      } catch (err) {
+        console.error('Failed to get KYC status', err);
+        setStep('form');
+      }
+    };
+    checkStatus();
+  }, []);
 
   const formatAadhaar = (val) => {
     let clean = val.replace(/\s+/g, '').replace(/[^0-9]/g, '');
@@ -36,24 +68,64 @@ export default function KycPage() {
   const handlePhoto = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    setPhotoFile(file); // Store file for FormData
     const reader = new FileReader();
     reader.onload = (ev) => setPhoto(ev.target.result);
     reader.readAsDataURL(file);
   };
 
-  const handleSubmit = (e) => {
+  const handleAadhaarFront = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAadhaarFrontFile(file);
+    const reader = new FileReader();
+    reader.onload = (ev) => setAadhaarFront(ev.target.result);
+    reader.readAsDataURL(file);
+  };
+
+  const handleAadhaarBack = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAadhaarBackFile(file);
+    const reader = new FileReader();
+    reader.onload = (ev) => setAadhaarBack(ev.target.result);
+    reader.readAsDataURL(file);
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.aadhaar || !form.name || !form.dob || !form.address) {
       alert('Please fill all required fields.');
       return;
     }
     setStep('verifying');
-    saveKyc({ ...form, photo });
-    // Simulate verification — auto-verify after 2.5s for demo
-    setTimeout(() => {
-      updateKycStatus('verified');
-      setStep('done');
-    }, 2500);
+
+    try {
+      const formData = new FormData();
+      formData.append('aadhaarNumber', form.aadhaar.replace(/\s/g, ''));
+      formData.append('name', form.name);
+      formData.append('dob', form.dob);
+      formData.append('address', form.address);
+      if (form.pan) formData.append('pan', form.pan);
+      if (photoFile) formData.append('photo', photoFile);
+      if (aadhaarFrontFile) formData.append('aadhaarFront', aadhaarFrontFile);
+      if (aadhaarBackFile) formData.append('aadhaarBack', aadhaarBackFile);
+
+      const res = await api.post(ENDPOINTS.KYC_SUBMIT, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      if (res.data?.success) {
+        setStep('pending');
+      } else {
+        alert(res.data?.message || 'Failed to submit KYC');
+        setStep('form');
+      }
+    } catch (err) {
+      console.error('KYC submission error', err);
+      alert('Error submitting KYC');
+      setStep('form');
+    }
   };
 
   return (
@@ -68,7 +140,15 @@ export default function KycPage() {
 
       <main className="flex-grow overflow-y-auto px-4 py-6 max-w-md mx-auto w-full">
 
-        {/* Verifying overlay */}
+        {/* Loading state */}
+        {step === 'loading' && (
+          <div className="flex flex-col items-center justify-center py-20 gap-4">
+            <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+            <p className="text-on-surface-variant font-medium text-sm">Checking KYC Status...</p>
+          </div>
+        )}
+
+        {/* Verifying overlay (uploading) */}
         {step === 'verifying' && (
           <div className="fixed inset-0 z-50 bg-white/90 backdrop-blur-sm flex flex-col items-center justify-center gap-4 animate-fade-in">
             <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center animate-pulse-ring">
@@ -86,10 +166,10 @@ export default function KycPage() {
               <span className="material-symbols-outlined text-tertiary text-5xl animate-bounce" style={{ fontVariationSettings: "'FILL' 1" }}>verified_user</span>
             </div>
             <h2 className="text-2xl font-black text-on-surface">KYC Verified!</h2>
-            <p className="text-sm text-on-surface-variant max-w-[280px]">Your identity has been successfully verified. Now choose a healthcare plan to activate your MedCred account.</p>
+            <p className="text-sm text-on-surface-variant max-w-[280px]">Your identity has been successfully verified by an Admin. You have full access to MedCred.</p>
             <div className="flex items-center gap-2 bg-tertiary/10 px-4 py-2 rounded-full">
               <span className="material-symbols-outlined text-tertiary text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-              <span className="text-xs font-bold text-tertiary">Aadhaar Verified · Identity Confirmed</span>
+              <span className="text-xs font-bold text-tertiary">Identity Confirmed</span>
             </div>
             <button
               onClick={() => navigate('/dashboard')}
@@ -97,6 +177,50 @@ export default function KycPage() {
             >
               <span>Go to Dashboard</span>
               <span className="material-symbols-outlined">arrow_forward</span>
+            </button>
+          </div>
+        )}
+
+        {/* Pending state */}
+        {step === 'pending' && (
+          <div className="flex flex-col items-center text-center py-8 animate-scale-up gap-4">
+            <div className="w-24 h-24 rounded-full bg-secondary/10 flex items-center justify-center">
+              <span className="material-symbols-outlined text-secondary text-5xl" style={{ fontVariationSettings: "'FILL' 1" }}>pending_actions</span>
+            </div>
+            <h2 className="text-2xl font-black text-on-surface">Under Review</h2>
+            <p className="text-sm text-on-surface-variant max-w-[280px]">Your KYC documents have been submitted and are currently under review by our team.</p>
+            <div className="flex items-center gap-2 bg-secondary/10 px-4 py-2 rounded-full">
+              <span className="material-symbols-outlined text-secondary text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>schedule</span>
+              <span className="text-xs font-bold text-secondary">Awaiting Approval</span>
+            </div>
+            <button
+              onClick={() => navigate('/dashboard')}
+              className="mt-4 w-full h-13 bg-surface-container text-on-surface font-bold rounded-2xl flex items-center justify-center gap-2 hover:bg-surface-container-high transition-all cursor-pointer py-4"
+            >
+              <span>Return to Dashboard</span>
+            </button>
+          </div>
+        )}
+
+        {/* Rejected state */}
+        {step === 'rejected' && (
+          <div className="flex flex-col items-center text-center py-8 animate-scale-up gap-4">
+            <div className="w-24 h-24 rounded-full bg-error/10 flex items-center justify-center">
+              <span className="material-symbols-outlined text-error text-5xl" style={{ fontVariationSettings: "'FILL' 1" }}>error</span>
+            </div>
+            <h2 className="text-2xl font-black text-on-surface text-error">KYC Rejected</h2>
+            <p className="text-sm text-on-surface-variant max-w-[280px]">Your previous KYC submission was rejected.</p>
+            {rejectionReason && (
+              <div className="bg-error/10 p-3 rounded-lg text-error text-xs font-medium w-full text-left border border-error/20">
+                <strong>Reason:</strong> {rejectionReason}
+              </div>
+            )}
+            <button
+              onClick={() => { setStep('form'); setForm({ aadhaar: '', name: '', dob: '', address: '', pan: '' }); }}
+              className="mt-4 w-full h-13 bg-primary text-white font-bold rounded-2xl flex items-center justify-center gap-2 shadow-lg hover:opacity-90 active:scale-95 transition-all cursor-pointer py-4"
+            >
+              <span>Resubmit KYC</span>
+              <span className="material-symbols-outlined">refresh</span>
             </button>
           </div>
         )}
@@ -171,6 +295,39 @@ export default function KycPage() {
                     maxLength={14} value={form.aadhaar} onChange={handleChange} required
                     className="w-full h-12 pl-12 pr-4 bg-surface-container-low border border-outline-variant rounded-2xl text-sm font-mono tracking-widest focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                   />
+                </div>
+              </div>
+
+              {/* Aadhaar Photos */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Aadhaar Front *</label>
+                  <label className="w-full h-24 bg-surface-container-low border border-dashed border-outline-variant rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-all overflow-hidden relative">
+                    {aadhaarFront ? (
+                      <img src={aadhaarFront} alt="Aadhaar Front" className="w-full h-full object-cover" />
+                    ) : (
+                      <>
+                        <span className="material-symbols-outlined text-primary/50 text-2xl">front_hand</span>
+                        <span className="text-[10px] text-on-surface-variant mt-1 font-semibold">Upload Front</span>
+                      </>
+                    )}
+                    <input type="file" accept="image/*" className="hidden" onChange={handleAadhaarFront} required />
+                  </label>
+                </div>
+                
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Aadhaar Back *</label>
+                  <label className="w-full h-24 bg-surface-container-low border border-dashed border-outline-variant rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-all overflow-hidden relative">
+                    {aadhaarBack ? (
+                      <img src={aadhaarBack} alt="Aadhaar Back" className="w-full h-full object-cover" />
+                    ) : (
+                      <>
+                        <span className="material-symbols-outlined text-primary/50 text-2xl">flip_to_back</span>
+                        <span className="text-[10px] text-on-surface-variant mt-1 font-semibold">Upload Back</span>
+                      </>
+                    )}
+                    <input type="file" accept="image/*" className="hidden" onChange={handleAadhaarBack} required />
+                  </label>
                 </div>
               </div>
 

@@ -2,8 +2,25 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import BottomNavBar from '../components/Navigation/BottomNavBar';
 import { getUser, updateUser, getFamilyMembers, clearUser, formatDobDisplay, getAgeFromDob, isLoggedIn } from '../utils/storage';
+import api from '../../../services/api';
+import { ENDPOINTS, SERVER_URL } from '../../../services/types';
 
 const DEFAULT_AVATAR = null;
+
+const calculateBMI = (height, weight) => {
+  if (!height || !weight) return "Not Set";
+  let hInCm = parseFloat(height);
+  if (height.includes("'")) {
+    const parts = height.split("'");
+    const feet = parseFloat(parts[0]) || 0;
+    const inches = parseFloat(parts[1]?.replace('"', '')) || 0;
+    hInCm = (feet * 12 + inches) * 2.54;
+  }
+  const wInKg = parseFloat(weight);
+  if (isNaN(hInCm) || isNaN(wInKg) || hInCm <= 0 || wInKg <= 0) return "Not Set";
+  const hInM = hInCm / 100;
+  return (wInKg / (hInM * hInM)).toFixed(1);
+};
 
 export default function ProfilePage() {
   const navigate = useNavigate();
@@ -11,14 +28,22 @@ export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
-  // Live data from localStorage
+  // Live data from localStorage and API
   const [user, setUser] = useState(null);
+  const [card, setCard] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [familyMembers, setFamilyMembers] = useState([]);
 
   // Temp edit fields
   const [tempName, setTempName] = useState('');
   const [tempEmail, setTempEmail] = useState('');
   const [tempPhone, setTempPhone] = useState('');
+  const [tempAddress, setTempAddress] = useState('');
+  const [tempOccupation, setTempOccupation] = useState('');
+  const [tempIncome, setTempIncome] = useState('');
+
+  // File upload ref
+  const fileInputRef = React.useRef(null);
 
   // Health edit fields
   const [isHealthEditing, setIsHealthEditing] = useState(false);
@@ -33,11 +58,46 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (isLoggedIn()) {
-      const stored = getUser();
-      setUser(stored);
-      setFamilyMembers(getFamilyMembers());
+      fetchProfile();
+    } else {
+      setIsLoading(false);
     }
   }, []);
+
+  const fetchProfile = async () => {
+    try {
+      setIsLoading(true);
+      const [profileRes, cardRes, familyRes] = await Promise.all([
+        api.get(ENDPOINTS.USER_PROFILE),
+        api.get(ENDPOINTS.MY_CARD).catch(() => ({ data: { success: false } })),
+        api.get(ENDPOINTS.FAMILY_MEMBERS).catch(() => ({ data: { success: false, data: [] } }))
+      ]);
+
+      if (profileRes.data.success) {
+        const userData = profileRes.data.data;
+        const mappedUser = {
+          ...userData,
+          name: userData.fullName,
+          profilePic: userData.profilePhoto
+        };
+        setUser(mappedUser);
+        updateUser(mappedUser);
+      }
+
+      if (cardRes.data?.success) {
+        setCard(cardRes.data.data);
+      }
+
+      if (familyRes.data?.success) {
+        setFamilyMembers(familyRes.data.data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+      setUser(getUser());
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   if (!isLoggedIn()) {
     return (
@@ -49,7 +109,7 @@ export default function ProfilePage() {
         <p className="text-sm text-on-surface-variant max-w-xs">
           Please log in to view your profile, manage orders, and access your health information.
         </p>
-        <button 
+        <button
           onClick={() => navigate('/login')}
           className="w-full max-w-xs py-3.5 bg-primary text-white font-bold rounded-xl shadow-lg hover:opacity-90 active:scale-95 transition-all mt-4 cursor-pointer"
         >
@@ -60,6 +120,12 @@ export default function ProfilePage() {
     );
   }
 
+  const getImageUrl = (url) => {
+    if (!url) return null;
+    if (url.startsWith('http')) return url;
+    return `${SERVER_URL}${url.startsWith('/') ? '' : '/'}${url}`;
+  };
+
   // Derived display values (fallback to demo if no user registered)
   const profileName = user?.name || 'User Profile';
   const profileEmail = user?.email || 'No email provided';
@@ -67,7 +133,7 @@ export default function ProfilePage() {
   const profileDob = user?.dob ? formatDobDisplay(user.dob) : 'Not provided';
   const profileGender = user?.gender || 'Not provided';
   const profileAddress = user?.address || 'Not provided';
-  const profilePic = user?.profilePic || null;
+  const profilePic = getImageUrl(user?.profilePic);
 
   const toggleSection = (section) => {
     setOpenSection(openSection === section ? null : section);
@@ -77,38 +143,109 @@ export default function ProfilePage() {
     setTempName(profileName);
     setTempEmail(profileEmail);
     setTempPhone(user?.mobile || '');
+    setTempAddress(user?.address || '');
+    setTempOccupation(user?.occupation || '');
+    setTempIncome(user?.annualIncome || user?.income || '');
     setIsEditing(true);
   };
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
     if (!tempName || !tempEmail || !tempPhone) {
-      alert('All fields are required.');
+      alert('Name, Email and Phone are required.');
       return;
     }
-    updateUser({ name: tempName, email: tempEmail, mobile: tempPhone });
-    setUser(getUser());
-    setIsEditing(false);
+    try {
+      const response = await api.patch(ENDPOINTS.USER_PROFILE, {
+        name: tempName,
+        email: tempEmail,
+        mobile: tempPhone,
+        address: tempAddress,
+        occupation: tempOccupation,
+        income: tempIncome
+      });
+      if (response.data.success) {
+        const updatedUser = {
+          ...user,
+          name: response.data.data.fullName,
+          email: response.data.data.email,
+          mobile: response.data.data.mobile,
+          address: response.data.data.address,
+          occupation: response.data.data.occupation,
+          annualIncome: response.data.data.annualIncome,
+          income: response.data.data.annualIncome
+        };
+        setUser(updatedUser);
+        updateUser(updatedUser);
+        setIsEditing(false);
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      alert('Failed to update profile.');
+    }
+  };
+
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const formData = new FormData();
+      formData.append('profilePhoto', file);
+
+      const response = await api.patch(ENDPOINTS.USER_PROFILE, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      if (response.data.success) {
+        const updatedUser = {
+          ...user,
+          profilePic: response.data.data.profilePhoto
+        };
+        setUser(updatedUser);
+        updateUser(updatedUser);
+      }
+    } catch (error) {
+      console.error('Error uploading photo:', error);
+      alert('Failed to upload photo.');
+    }
   };
 
   const handleEditHealthClick = (e) => {
     e.stopPropagation(); // Prevent toggling the accordion
     setTempHealth({
-      height: user?.health?.height || "5'9\"",
-      weight: user?.health?.weight || "72",
-      bloodGroup: user?.health?.bloodGroup || "B+",
-      allergies: user?.health?.allergies || "Penicillin, Dust",
-      chronic: user?.health?.chronic || "None",
-      medications: user?.health?.medications || "None"
+      height: user?.health?.height || "",
+      weight: user?.health?.weight || "",
+      bloodGroup: user?.bloodGroup || user?.health?.bloodGroup || "",
+      allergies: user?.health?.allergies || "",
+      chronic: user?.health?.chronic || "",
+      medications: user?.health?.medications || ""
     });
     setIsHealthEditing(true);
   };
 
-  const handleSaveHealth = (e) => {
+  const handleSaveHealth = async (e) => {
     e.preventDefault();
-    updateUser({ health: tempHealth });
-    setUser(getUser());
-    setIsHealthEditing(false);
+    try {
+      const response = await api.patch(ENDPOINTS.USER_PROFILE, {
+        health: tempHealth,
+        bloodGroup: tempHealth.bloodGroup
+      });
+      if (response.data.success) {
+        const updatedUser = {
+          ...user,
+          health: response.data.data.health
+        };
+        setUser(updatedUser);
+        updateUser(updatedUser);
+        setIsHealthEditing(false);
+      }
+    } catch (error) {
+      console.error('Error updating health info:', error);
+      alert('Failed to update health info.');
+    }
   };
 
   const SectionHeader = ({ icon, title, section }) => (
@@ -154,7 +291,7 @@ export default function ProfilePage() {
         {/* Hero Profile Section */}
         <section className="flex flex-col items-center text-center mt-2">
           <div className="relative inline-block">
-            <div className="w-24 h-24 rounded-full p-1 bg-gradient-to-tr from-primary to-secondary shadow-lg">
+            <div className="w-24 h-24 rounded-full p-1 bg-gradient-to-tr from-primary to-secondary shadow-lg relative cursor-pointer" onClick={() => fileInputRef.current?.click()}>
               {profilePic ? (
                 <img alt={profileName} className="w-full h-full rounded-full border-4 border-surface object-cover" src={profilePic} />
               ) : (
@@ -162,38 +299,65 @@ export default function ProfilePage() {
                   <span className="material-symbols-outlined text-4xl text-primary/50">person</span>
                 </div>
               )}
+              {/* Camera Icon Overlay */}
+              <div className="absolute inset-0 bg-black/30 rounded-full flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                <span className="material-symbols-outlined text-white text-2xl">photo_camera</span>
+              </div>
             </div>
-            <div className="absolute bottom-1 right-1 bg-white rounded-full p-0.5 shadow-md flex items-center justify-center">
+            {/* Hidden file input */}
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              className="hidden" 
+              accept="image/*" 
+              onChange={handlePhotoUpload} 
+            />
+            <div className="absolute bottom-1 right-1 bg-white rounded-full p-0.5 shadow-md flex items-center justify-center pointer-events-none">
               <span className="material-symbols-outlined text-tertiary text-lg font-bold" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
             </div>
           </div>
 
           <div className="mt-3">
             <h2 className="text-xl font-bold text-on-surface">{profileName}</h2>
-            <div className="flex items-center justify-center gap-1 mt-1">
-              <span className="text-tertiary font-bold text-[10px] uppercase tracking-wider">Aadhaar Verified</span>
-              <span className="material-symbols-outlined text-tertiary text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
-            </div>
-          </div>
+            {user?.kycStatus === 'verified' && (
+              <div className="flex items-center justify-center gap-1 mt-1">
+                <span className="text-tertiary font-bold text-[10px] uppercase tracking-wider">Aadhaar Verified</span>
+                <span className="material-symbols-outlined text-tertiary text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
+              </div>
+            )}
 
-          {/* Health Score Banner */}
-          <div className="mt-4 w-full bg-gradient-to-r from-primary/10 to-secondary/10 border border-primary/20 rounded-xl p-3 flex items-center justify-between">
-            <div className="text-left">
-              <p className="text-[9px] text-on-surface-variant uppercase font-bold tracking-wider">MedCred Health Score</p>
-              <p className="text-2xl font-black text-primary mt-0.5">782</p>
-              <p className="text-[10px] text-tertiary font-bold">Excellent</p>
-            </div>
-            <div className="flex flex-col items-end gap-1">
-              <div className="flex items-center gap-1.5 text-[10px] text-on-surface-variant font-semibold">
-                <span className="w-2 h-2 rounded-full bg-tertiary inline-block"></span>
-                +12 this month
+            {user?.kycStatus === 'pending' && (
+              <div className="flex items-center justify-center gap-1 mt-1">
+                <span className="text-secondary font-bold text-[10px] uppercase tracking-wider">KYC Under Review</span>
+                <span className="material-symbols-outlined text-secondary text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>pending_actions</span>
               </div>
-              <div className="flex items-center gap-1.5 text-[10px] text-on-surface-variant font-semibold">
-                <span className="w-2 h-2 rounded-full bg-secondary inline-block"></span>
-                4 Members Covered
+            )}
+
+            {user?.kycStatus === 'rejected' && (
+              <div className="flex flex-col items-center justify-center mt-2">
+                <div className="flex items-center gap-1">
+                  <span className="text-error font-bold text-[10px] uppercase tracking-wider">KYC Rejected</span>
+                  <span className="material-symbols-outlined text-error text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>error</span>
+                </div>
+                <button
+                  onClick={() => navigate('/kyc')}
+                  className="mt-1 bg-error/10 text-error px-3 py-1 rounded-full text-xs font-bold hover:bg-error/20 transition-colors cursor-pointer"
+                >
+                  Resubmit KYC
+                </button>
               </div>
-              <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full mt-1">Platinum Tier</span>
-            </div>
+            )}
+
+            {(!user?.kycStatus || user?.kycStatus === 'not_submitted') && (
+              <div className="mt-2">
+                <button
+                  onClick={() => navigate('/kyc')}
+                  className="bg-primary text-white px-4 py-1.5 rounded-full text-xs font-bold shadow-md hover:bg-primary/90 transition-colors cursor-pointer"
+                >
+                  Complete KYC
+                </button>
+              </div>
+            )}
           </div>
 
 
@@ -215,7 +379,7 @@ export default function ProfilePage() {
                   <InfoRow label="Gender" value={profileGender} />
                   <InfoRow label="Blood Group" value={user?.bloodGroup || '—'} />
                   <InfoRow label="Occupation" value={user?.occupation || '—'} />
-                  <InfoRow label="Annual Income" value={user?.income || '—'} />
+                  <InfoRow label="Annual Income" value={user?.annualIncome ? `₹${user.annualIncome}` : user?.income ? `₹${user.income}` : '—'} />
                 </div>
                 <div className="mt-2.5 pt-2.5 border-t border-outline-variant/20">
                   <p className="text-on-surface-variant font-semibold uppercase tracking-wider text-[8px] mb-0.5">Residential Address</p>
@@ -226,7 +390,7 @@ export default function ProfilePage() {
           </div>
 
           {/* My Orders */}
-          <div 
+          <div
             onClick={() => navigate('/orders')}
             className="bg-surface-container-lowest border border-outline-variant rounded-xl p-4 flex items-center justify-between cursor-pointer hover:bg-surface-container-low transition-colors shadow-sm"
           >
@@ -253,7 +417,7 @@ export default function ProfilePage() {
               </div>
               <div className="flex items-center gap-2">
                 {openSection === 'health' && (
-                  <span 
+                  <span
                     onClick={handleEditHealthClick}
                     className="material-symbols-outlined text-primary bg-primary/10 p-1.5 rounded-full hover:bg-primary/20 transition-colors text-sm"
                   >
@@ -269,10 +433,10 @@ export default function ProfilePage() {
               <div className="p-4 pt-2 border-t border-outline-variant/30">
                 <div className="grid grid-cols-2 gap-3 mb-3">
                   {[
-                    { label: 'Height', value: user?.health?.height || "5'9\"", icon: 'height', color: 'text-primary' },
-                    { label: 'Weight', value: (user?.health?.weight || "72") + " kg", icon: 'monitor_weight', color: 'text-secondary' },
-                    { label: 'Blood Group', value: user?.health?.bloodGroup || "B+", icon: 'bloodtype', color: 'text-error' },
-                    { label: 'BMI', value: '23.4', icon: 'bar_chart', color: 'text-tertiary' },
+                    { label: 'Height', value: user?.health?.height || "Not Set", icon: 'height', color: 'text-primary' },
+                    { label: 'Weight', value: user?.health?.weight ? `${user.health.weight} kg` : "Not Set", icon: 'monitor_weight', color: 'text-secondary' },
+                    { label: 'Blood Group', value: user?.bloodGroup || user?.health?.bloodGroup || "Not Set", icon: 'bloodtype', color: 'text-error' },
+                    { label: 'BMI', value: calculateBMI(user?.health?.height, user?.health?.weight), icon: 'bar_chart', color: 'text-tertiary' },
                   ].map(stat => (
                     <div key={stat.label} className="bg-surface-container-low rounded-xl p-3 flex items-center gap-3">
                       <span className={`material-symbols-outlined text-xl ${stat.color}`}>{stat.icon}</span>
@@ -286,19 +450,19 @@ export default function ProfilePage() {
                 <div className="space-y-2 text-xs">
                   <div className="flex justify-between items-center py-2 border-b border-outline-variant/20">
                     <span className="text-on-surface-variant font-semibold">Allergies</span>
-                    <span className="text-on-surface font-bold text-right">{user?.health?.allergies || "Penicillin, Dust"}</span>
+                    <span className="text-on-surface font-bold text-right">{user?.health?.allergies || "Not Set"}</span>
                   </div>
                   <div className="flex justify-between items-center py-2 border-b border-outline-variant/20">
                     <span className="text-on-surface-variant font-semibold">Chronic Conditions</span>
-                    <span className="text-on-surface font-bold">{user?.health?.chronic || "None"}</span>
+                    <span className="text-on-surface font-bold">{user?.health?.chronic || "Not Set"}</span>
                   </div>
                   <div className="flex justify-between items-center py-2 border-b border-outline-variant/20">
                     <span className="text-on-surface-variant font-semibold">Current Medications</span>
-                    <span className="text-on-surface font-bold">{user?.health?.medications || "None"}</span>
+                    <span className="text-on-surface font-bold">{user?.health?.medications || "Not Set"}</span>
                   </div>
                   <div className="flex justify-between items-center py-2">
                     <span className="text-on-surface-variant font-semibold">Last Checkup</span>
-                    <span className="text-on-surface font-bold">March 2024</span>
+                    <span className="text-on-surface font-bold">Not Set</span>
                   </div>
                 </div>
               </div>
@@ -324,30 +488,26 @@ export default function ProfilePage() {
                 ) : (
                   familyMembers.map(member => (
                     <div
-                      key={member.id}
+                      key={member._id || member.id}
                       className="bg-surface-container-low rounded-xl p-3 cursor-pointer hover:shadow-md transition-all active:scale-[0.99]"
                       onClick={() => navigate('/family')}
                     >
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full border-2 border-primary/20 overflow-hidden bg-surface-container-high flex items-center justify-center shrink-0">
-                          {member.image ? (
-                            <img src={member.image} alt={member.name} className="w-full h-full object-cover" />
-                          ) : (
-                            <span className="material-symbols-outlined text-xl text-primary/50">person</span>
-                          )}
+                          <span className="material-symbols-outlined text-xl text-primary/50">person</span>
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
                             <p className="text-on-surface font-bold text-xs">{member.name}</p>
-                            {member.verified ? (
+                            {member.verificationStatus === 'verified' || member.verified ? (
                               <span className="material-symbols-outlined text-tertiary text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
                             ) : (
-                              <span className="text-[9px] bg-surface-container-highest text-on-surface-variant px-1.5 py-0.5 rounded-full font-bold">Pending</span>
+                              <span className="text-[9px] bg-surface-container-highest text-on-surface-variant px-1.5 py-0.5 rounded-full font-bold capitalize">{member.verificationStatus || 'Pending'}</span>
                             )}
                           </div>
                           <div className="flex items-center gap-2 mt-0.5">
                             <span className="text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded">{member.relationship}</span>
-                            <span className="text-[10px] text-on-surface-variant">{member.age}</span>
+                            <span className="text-[10px] text-on-surface-variant">{member.dob ? getAgeFromDob(member.dob) : member.age}</span>
                           </div>
                         </div>
                         <span className="material-symbols-outlined text-outline text-base">chevron_right</span>
@@ -382,28 +542,30 @@ export default function ProfilePage() {
                   <div className="flex justify-between items-start mb-3">
                     <div>
                       <p className="text-[9px] opacity-70 uppercase font-semibold tracking-wider">Policy Type</p>
-                      <p className="text-sm font-bold">Family Floater Plan</p>
+                      <p className="text-sm font-bold capitalize">{card?.planName || 'No Active Policy'}</p>
                     </div>
                     <span className="material-symbols-outlined text-2xl opacity-80">health_and_safety</span>
                   </div>
-                  <div className="grid grid-cols-2 gap-3 text-xs">
-                    <div>
-                      <p className="opacity-70 text-[9px] uppercase">Sum Insured</p>
-                      <p className="font-bold">₹10,00,000</p>
+                  {card && (
+                    <div className="grid grid-cols-2 gap-3 text-xs">
+                      <div>
+                        <p className="opacity-70 text-[9px] uppercase">Sum Insured</p>
+                        <p className="font-bold">₹{card?.creditLimit?.toLocaleString('en-IN') || '0'}</p>
+                      </div>
+                      <div>
+                        <p className="opacity-70 text-[9px] uppercase">Premium</p>
+                        <p className="font-bold capitalize">{card?.cardType || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="opacity-70 text-[9px] uppercase">Policy No.</p>
+                        <p className="font-mono font-bold">{card?.cardNumber || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="opacity-70 text-[9px] uppercase">Valid Till</p>
+                        <p className="font-bold">{card?.validTill ? new Date(card.validTill).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A'}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="opacity-70 text-[9px] uppercase">Premium</p>
-                      <p className="font-bold">₹18,000 / yr</p>
-                    </div>
-                    <div>
-                      <p className="opacity-70 text-[9px] uppercase">Policy No.</p>
-                      <p className="font-mono font-bold">MC-2024-881923</p>
-                    </div>
-                    <div>
-                      <p className="opacity-70 text-[9px] uppercase">Valid Till</p>
-                      <p className="font-bold">31 Mar 2025</p>
-                    </div>
-                  </div>
+                  )}
                 </div>
                 <button
                   onClick={() => navigate('/insurance')}
@@ -426,12 +588,12 @@ export default function ProfilePage() {
                   className="relative w-full aspect-[1.58/1] rounded-2xl overflow-hidden shadow-lg bg-gradient-to-br from-primary to-secondary p-5 text-white cursor-pointer hover:scale-[1.01] transition-transform"
                 >
                   <div className="flex justify-between items-start">
-                    <div className="font-bold tracking-widest text-xs opacity-90">MEDCRED ELITE</div>
+                    <div className="font-bold tracking-widest text-xs opacity-90 uppercase">{card?.planName || 'MEDCRED ELITE'}</div>
                     <span className="material-symbols-outlined text-2xl">medical_services</span>
                   </div>
                   <div className="mt-8">
                     <p className="text-[9px] opacity-70 uppercase tracking-wider">Card Number</p>
-                    <p className="text-base font-mono tracking-[4px] font-bold">•••• •••• •••• 4892</p>
+                    <p className="text-base font-mono tracking-[4px] font-bold">{card?.cardNumber || '•••• •••• •••• 4892'}</p>
                   </div>
                   <div className="mt-6 flex justify-between items-end">
                     <div>
@@ -440,7 +602,7 @@ export default function ProfilePage() {
                     </div>
                     <div>
                       <p className="text-[8px] opacity-70 uppercase">Valid Thru</p>
-                      <p className="text-xs font-bold">08/28</p>
+                      <p className="text-xs font-bold">{card ? new Date(card.validTill).toLocaleDateString('en-GB', { month: '2-digit', year: '2-digit' }).replace('/', '/') : '08/28'}</p>
                     </div>
                   </div>
                   <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent pointer-events-none"></div>
@@ -448,11 +610,11 @@ export default function ProfilePage() {
                 <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
                   <div className="bg-surface-container-low rounded-lg p-2 text-center">
                     <p className="text-[9px] text-on-surface-variant uppercase font-bold">Type</p>
-                    <p className="font-bold text-on-surface mt-0.5">Platinum</p>
+                    <p className="font-bold text-on-surface mt-0.5 capitalize">{card?.cardType || 'Platinum'}</p>
                   </div>
                   <div className="bg-surface-container-low rounded-lg p-2 text-center">
                     <p className="text-[9px] text-on-surface-variant uppercase font-bold">Credit Limit</p>
-                    <p className="font-bold text-primary mt-0.5">₹50,000</p>
+                    <p className="font-bold text-primary mt-0.5">{card?.creditLimit ? `₹${card.creditLimit.toLocaleString('en-IN')}` : '₹0'}</p>
                   </div>
                   <div className="bg-surface-container-low rounded-lg p-2 text-center">
                     <p className="text-[9px] text-on-surface-variant uppercase font-bold">Status</p>
@@ -468,30 +630,42 @@ export default function ProfilePage() {
             <SectionHeader icon="fingerprint" title="Aadhaar Verification" section="aadhaar" />
             {openSection === 'aadhaar' && (
               <div className="p-4 pt-2 border-t border-outline-variant/30 text-xs">
-                <div className="flex items-center gap-3 bg-tertiary/10 p-3.5 rounded-xl mt-2 mb-3">
-                  <div className="bg-tertiary/20 p-1.5 rounded-full flex items-center justify-center">
-                    <span className="material-symbols-outlined text-tertiary text-base" style={{ fontVariationSettings: "'FILL' 1" }}>verified_user</span>
+                {user?.kycStatus === 'verified' ? (
+                  <div className="flex items-center gap-3 bg-tertiary/10 p-3.5 rounded-xl mt-2 mb-3">
+                    <div className="bg-tertiary/20 p-1.5 rounded-full flex items-center justify-center">
+                      <span className="material-symbols-outlined text-tertiary text-base" style={{ fontVariationSettings: "'FILL' 1" }}>verified_user</span>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-on-surface font-bold text-xs">Status: Fully Verified</p>
+                      <p className="text-on-surface-variant text-[10px] mt-0.5">Your identity was verified via e-KYC.</p>
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <p className="text-on-surface font-bold text-xs">Status: Fully Verified</p>
-                    <p className="text-on-surface-variant text-[10px] mt-0.5">Your identity was verified on Oct 12, 2023 via e-KYC.</p>
+                ) : (
+                  <div className="flex items-center gap-3 bg-error/10 p-3.5 rounded-xl mt-2 mb-3">
+                    <div className="bg-error/20 p-1.5 rounded-full flex items-center justify-center">
+                      <span className="material-symbols-outlined text-error text-base">error</span>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-on-surface font-bold text-xs capitalize">Status: {user?.kycStatus || 'Not Submitted'}</p>
+                      <p className="text-on-surface-variant text-[10px] mt-0.5">Please complete your KYC verification.</p>
+                    </div>
                   </div>
-                </div>
+                )}
+
                 <div className="space-y-2">
                   <div className="flex justify-between items-center py-2 border-b border-outline-variant/30">
                     <span className="text-on-surface-variant">Aadhaar Number</span>
-                    <span className="text-on-surface font-bold">XXXX XXXX 5678</span>
+                    <span className="text-on-surface font-bold font-mono">
+                      {user?.aadhaarNumber ? `XXXX-XXXX-${user.aadhaarNumber.slice(-4)}` : 'Not provided'}
+                    </span>
                   </div>
                   <div className="flex justify-between items-center py-2 border-b border-outline-variant/30">
-                    <span className="text-on-surface-variant">e-KYC Reference</span>
-                    <span className="text-on-surface font-bold">MC-AD-90123-IN</span>
+                    <span className="text-on-surface-variant">PAN Number</span>
+                    <span className="text-on-surface font-bold font-mono">{user?.panNumber || 'Not provided'}</span>
                   </div>
                   <div className="flex justify-between items-center py-2">
-                    <span className="text-on-surface-variant">PAN Linked</span>
-                    <span className="text-tertiary font-bold flex items-center gap-1">
-                      <span className="material-symbols-outlined text-xs" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-                      Yes
-                    </span>
+                    <span className="text-on-surface-variant">Verification Level</span>
+                    <span className="text-on-surface font-bold">Tier 1 (Basic)</span>
                   </div>
                 </div>
               </div>
@@ -589,11 +763,41 @@ export default function ProfilePage() {
               <div className="space-y-1">
                 <label className="text-[10px] font-bold text-on-surface-variant">Phone Number</label>
                 <input
-                  type="text"
+                  type="tel"
                   value={tempPhone}
                   onChange={(e) => setTempPhone(e.target.value)}
                   className="w-full px-3 py-2 bg-surface border border-outline-variant rounded-xl text-xs font-semibold focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
                   required
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-on-surface-variant">Residential Address</label>
+                <input
+                  type="text"
+                  value={tempAddress}
+                  onChange={(e) => setTempAddress(e.target.value)}
+                  className="w-full px-3 py-2 bg-surface border border-outline-variant rounded-xl text-xs font-semibold focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-on-surface-variant">Occupation</label>
+                <input
+                  type="text"
+                  value={tempOccupation}
+                  onChange={(e) => setTempOccupation(e.target.value)}
+                  className="w-full px-3 py-2 bg-surface border border-outline-variant rounded-xl text-xs font-semibold focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-on-surface-variant">Annual Income (₹)</label>
+                <input
+                  type="number"
+                  value={tempIncome}
+                  onChange={(e) => setTempIncome(e.target.value)}
+                  className="w-full px-3 py-2 bg-surface border border-outline-variant rounded-xl text-xs font-semibold focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
                 />
               </div>
 
@@ -639,9 +843,8 @@ export default function ProfilePage() {
                     type="text"
                     value={tempHealth.height}
                     onChange={(e) => setTempHealth({ ...tempHealth, height: e.target.value })}
-                    placeholder="e.g. 5'9&quot;"
+                    placeholder="e.g. 5'9&quot; or 175cm"
                     className="w-full px-3 py-2 bg-surface border border-outline-variant rounded-xl text-xs font-semibold focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-                    required
                   />
                 </div>
                 <div className="space-y-1">
@@ -652,7 +855,6 @@ export default function ProfilePage() {
                     onChange={(e) => setTempHealth({ ...tempHealth, weight: e.target.value })}
                     placeholder="e.g. 72"
                     className="w-full px-3 py-2 bg-surface border border-outline-variant rounded-xl text-xs font-semibold focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-                    required
                   />
                 </div>
               </div>
@@ -664,6 +866,7 @@ export default function ProfilePage() {
                   onChange={(e) => setTempHealth({ ...tempHealth, bloodGroup: e.target.value })}
                   className="w-full px-3 py-2 bg-surface border border-outline-variant rounded-xl text-xs font-semibold focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
                 >
+                  <option value="">Select Blood Group</option>
                   <option value="A+">A+</option>
                   <option value="A-">A-</option>
                   <option value="B+">B+</option>
@@ -739,7 +942,7 @@ export default function ProfilePage() {
               <h3 className="font-black text-xl text-on-surface">Delete Account?</h3>
               <p className="text-xs text-on-surface-variant mt-2">This action cannot be undone. All your personal data, health records, and family details will be permanently removed.</p>
             </div>
-            
+
             <div className="flex gap-3 pt-3">
               <button
                 onClick={() => setIsDeleteModalOpen(false)}

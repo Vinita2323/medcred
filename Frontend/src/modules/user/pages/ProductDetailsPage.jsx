@@ -30,7 +30,7 @@ export default function ProductDetailsPage() {
       <main className="flex-grow overflow-y-auto animate-fade-in">
         {/* Product Image */}
         <div className="w-full bg-surface-container-lowest aspect-[4/3] max-h-[400px] relative border-b border-outline-variant/30 overflow-hidden">
-          <img src={product.img} alt={product.label} className="w-full h-full object-cover" />
+          <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
           <div className="absolute top-4 right-4 bg-[#0A9E58] text-white text-[10px] font-black px-2.5 py-1.5 rounded tracking-wider uppercase shadow-md">
             Best Seller
           </div>
@@ -39,7 +39,7 @@ export default function ProductDetailsPage() {
         {/* Product Info */}
         <div className="p-5 space-y-4 bg-surface">
           <div>
-            <h2 className="text-xl font-black text-on-surface leading-tight">{product.label}</h2>
+            <h2 className="text-xl font-black text-on-surface leading-tight">{product.name}</h2>
             <div className="flex items-center gap-1 mt-1">
               <div className="flex text-[#FFB300]">
                 <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
@@ -53,16 +53,15 @@ export default function ProductDetailsPage() {
           </div>
 
           <div className="flex items-end gap-2">
-            <span className="text-3xl font-black text-primary">₹{(Math.random() * 3000 + 500).toFixed(0)}</span>
-            <span className="text-sm text-on-surface-variant line-through font-semibold pb-1">₹{(Math.random() * 5000 + 4000).toFixed(0)}</span>
-            <span className="text-[10px] font-bold text-tertiary bg-tertiary-container px-2 py-0.5 rounded-full mb-1.5 ml-1">50% OFF</span>
+            <span className="text-3xl font-black text-primary">₹{product.discountedPrice || product.price}</span>
+            {product.discountedPrice && <span className="text-sm text-on-surface-variant line-through font-semibold pb-1">₹{product.price}</span>}
+            {product.discountedPrice && <span className="text-[10px] font-bold text-tertiary bg-tertiary-container px-2 py-0.5 rounded-full mb-1.5 ml-1">{Math.round(((product.price - product.discountedPrice) / product.price) * 100)}% OFF</span>}
           </div>
 
           <div className="border-t border-outline-variant/30 pt-4 mt-2">
             <h3 className="font-bold text-on-surface mb-2">Description</h3>
             <p className="text-sm text-on-surface-variant leading-relaxed">
-              Premium quality {product.label} designed for accurate and fast readings. Ideal for home healthcare use with MedCred guarantee. 
-              Features a highly durable build and comes with a 1-year replacement warranty.
+              {product.description || `Premium quality ${product.name} designed for accurate and fast readings. Ideal for home healthcare use with MedCred guarantee. Features a highly durable build and comes with a 1-year replacement warranty.`}
             </p>
           </div>
 

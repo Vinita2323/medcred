@@ -1,8 +1,13 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import api from '../../../services/api';
+import { ENDPOINTS, STORAGE_KEYS } from '../../../services/types';
 
 export default function AgentWalletPage() {
+  const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState(null);
   const [requestPending, setRequestPending] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [walletStats, setWalletStats] = useState({
     totalEarnings: 0,
     pendingEarnings: 0,
@@ -13,88 +18,69 @@ export default function AgentWalletPage() {
   const [transactions, setTransactions] = useState([]);
 
   useEffect(() => {
-    const userJson = localStorage.getItem('currentUser');
+    const userJson = localStorage.getItem(STORAGE_KEYS.USER_DATA);
     if (userJson) {
-      const user = JSON.parse(userJson);
-      setCurrentUser(user);
-
-      // Customize wallet details based on role and earnings
-      let total = user.earnings;
-      let balance = Math.floor(total * 0.4);
-      let paid = Math.floor(total * 0.6);
-      let pending = Math.floor(total * 0.2);
-
-      if (user.role === 'Admin') {
-        total = 125000;
-        balance = 45000;
-        paid = 80000;
-        pending = 15000;
-      }
-
-      setWalletStats({
-        totalEarnings: total,
-        pendingEarnings: pending,
-        paidEarnings: paid,
-        balance: balance,
-      });
-
-      // Generate dynamic mock list based on role
-      if (user.role === 'Admin') {
-        setTransactions([
-          { id: 'TX-44021', date: 'June 10, 2026', client: 'Basic Plan Sales Pool', details: 'Network Transaction Volume Override', amount: 15000, type: 'credit', status: 'Paid' },
-          { id: 'TX-44018', date: 'June 08, 2026', client: 'Elite Card Activation', details: 'Corporate Channel override', amount: 12000, type: 'credit', status: 'Paid' },
-          { id: 'TX-44011', date: 'June 05, 2026', client: 'Admin Account Withdrawal', details: 'Payout Settlement Approved', amount: 25000, type: 'debit', status: 'Paid' },
-        ]);
-      } else if (user.role === 'Super Agent') {
-        setTransactions([
-          { id: 'TX-99021', date: 'June 10, 2026', client: 'Sanjay Dutt (Team Leader)', details: 'Team Activations Override Commission', amount: 8500, type: 'credit', status: 'Paid' },
-          { id: 'TX-99018', date: 'June 08, 2026', client: 'Amit Patel (Field Agent)', details: 'Field Activations Override Commission', amount: 4500, type: 'credit', status: 'Paid' },
-          { id: 'TX-99014', date: 'June 05, 2026', client: 'Super Agent Withdrawal', details: 'Payout Settlement Approved', amount: 15000, type: 'debit', status: 'Paid' },
-        ]);
-      } else if (user.role === 'Team Leader') {
-        setTransactions([
-          { id: 'TX-88021', date: 'June 10, 2026', client: 'Amit Patel (Field Agent)', details: 'Field Activation Override Commission', amount: 4500, type: 'credit', status: 'Paid' },
-          { id: 'TX-88018', date: 'June 08, 2026', client: 'Sanjay Dutt', details: 'Personal card sale reward', amount: 3750, type: 'credit', status: 'Paid' },
-          { id: 'TX-88014', date: 'June 05, 2026', client: 'Team Leader Withdrawal', details: 'Payout Settlement Approved', amount: 8000, type: 'debit', status: 'Paid' },
-        ]);
-      } else {
-        // Field Agent
-        setTransactions([
-          { id: 'TX-77021', date: 'June 10, 2026', client: 'Arjun Mehta', details: 'Personal Card Activation Commission', amount: 2500, type: 'credit', status: 'Paid' },
-          { id: 'TX-77018', date: 'June 08, 2026', client: 'Amit Sharma', details: 'Personal Card Activation Commission', amount: 2500, type: 'credit', status: 'Paid' },
-          { id: 'TX-77014', date: 'June 05, 2026', client: 'Field Agent Withdrawal', details: 'Payout Settlement Approved', amount: 3000, type: 'debit', status: 'Paid' },
-        ]);
-      }
+      setCurrentUser(JSON.parse(userJson));
     }
+    fetchWalletData();
   }, []);
 
-  const handleRequestPayout = () => {
+  const fetchWalletData = async () => {
+    try {
+      setIsLoading(true);
+      // Fetch wallet stats
+      const walletRes = await api.get(ENDPOINTS.AGENT_WALLET);
+      if (walletRes.data?.success) {
+        const w = walletRes.data.data;
+        setWalletStats({
+          totalEarnings: w.totalEarnings,
+          pendingEarnings: w.pendingCommissions,
+          paidEarnings: w.paidEarnings,
+          balance: w.withdrawableBalance,
+        });
+      }
+
+      // Fetch transactions
+      const txRes = await api.get(ENDPOINTS.AGENT_WALLET_TRANSACTIONS);
+      if (txRes.data?.success) {
+        setTransactions(txRes.data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching wallet data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRequestPayout = async () => {
     if (walletStats.balance <= 0) {
       alert('You have no withdrawable balance left.');
       return;
     }
-    setRequestPending(true);
-    setTimeout(() => {
+    
+    const amountToWithdraw = walletStats.balance;
+    const confirmWithdrawal = window.confirm(`Are you sure you want to request a withdrawal of ₹${amountToWithdraw.toLocaleString('en-IN')}?`);
+    if (!confirmWithdrawal) return;
+
+    try {
+      setRequestPending(true);
+      const res = await api.post(ENDPOINTS.AGENT_WALLET_WITHDRAW, { amount: amountToWithdraw });
+      if (res.data?.success) {
+        alert('Settlement withdrawal request submitted successfully to the administrators.');
+        // Refresh data to show updated balances and new pending transaction
+        fetchWalletData();
+      }
+    } catch (error) {
+      console.error('Error requesting withdrawal:', error);
+      alert(error.response?.data?.message || 'Failed to submit withdrawal request.');
+    } finally {
       setRequestPending(false);
-      setWalletStats(prev => ({
-        ...prev,
-        paidEarnings: prev.paidEarnings + prev.balance,
-        balance: 0,
-      }));
-      
-      const newTx = {
-        id: `TX-${Math.floor(10000 + Math.random() * 90000)}`,
-        date: 'Today',
-        client: 'Self Payout Request',
-        details: 'Wallet Balance Payout Withdrawal Request',
-        amount: walletStats.balance,
-        type: 'debit',
-        status: 'Processing',
-      };
-      setTransactions(prev => [newTx, ...prev]);
-      alert('Settlement withdrawal request of ₹' + walletStats.balance.toLocaleString('en-IN') + ' submitted successfully to the administrators.');
-    }, 1500);
+    }
   };
+
+  if (isLoading) {
+    return <div className="flex justify-center items-center h-64 text-[#516161]">Loading wallet...</div>;
+  }
 
   if (!currentUser) {
     return (

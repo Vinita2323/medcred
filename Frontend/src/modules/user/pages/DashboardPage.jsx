@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import BottomNavBar from '../components/Navigation/BottomNavBar';
-import { getMembership, hasMembership, getMembershipDaysRemaining, getDaysActive, isLoanEligible, getDaysUntilLoanEligible, PLANS } from '../utils/storage';
+import { getMembership, hasMembership, getMembershipDaysRemaining, getDaysActive, isLoanEligible, getDaysUntilLoanEligible, PLANS, getUser } from '../utils/storage';
+import api from '../../../services/api';
+import { ENDPOINTS } from '../../../services/types';
 import imgBP from '../../../assets/Machine/Bloodpressure.webp';
 import imgGlucometer from '../../../assets/Machine/Glucometer.webp';
 import imgThermometer from '../../../assets/Machine/thermometer.jpg';
@@ -11,12 +13,60 @@ import imgMassager from '../../../assets/Machine/Bodymassager.jpg';
 
 export default function DashboardPage() {
   const navigate = useNavigate();
-  const membership = getMembership();
-  const active = hasMembership();
-  const daysLeft = getMembershipDaysRemaining();
-  const loanReady = isLoanEligible();
-  const loanDays = getDaysUntilLoanEligible();
   const [isBenefitsModalOpen, setIsBenefitsModalOpen] = useState(false);
+  const user = getUser();
+  const [card, setCard] = useState(null);
+  const [stats, setStats] = useState({
+    claimsCount: 0,
+    familyCount: 0,
+    walletBalance: 0,
+    loanStatus: 'Waiting'
+  });
+  const [products, setProducts] = useState([]);
+  
+  // Use user.cardId to instantly know if they have a plan to avoid flashing
+  const active = user && user.cardId;
+
+  useEffect(() => {
+    // If user has a card ID, fetch it from backend
+    if (user && user.cardId) {
+      const fetchCard = async () => {
+        try {
+          const res = await api.get(ENDPOINTS.MY_CARD);
+          if (res.data.success) {
+            setCard(res.data.data);
+          }
+        } catch (err) {
+          console.error('Failed to fetch card:', err);
+        }
+      };
+      fetchCard();
+    }
+
+    const fetchStats = async () => {
+      try {
+        const res = await api.get(ENDPOINTS.USER_DASHBOARD_STATS);
+        if (res.data.success) {
+          setStats(res.data.data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch dashboard stats:', err);
+      }
+    };
+    fetchStats();
+
+    const fetchProducts = async () => {
+      try {
+        const res = await api.get(ENDPOINTS.PRODUCTS);
+        if (res.data.success) {
+          setProducts(res.data.data.slice(0, 6)); // Display max 6
+        }
+      } catch (err) {
+        console.error('Failed to fetch products:', err);
+      }
+    };
+    fetchProducts();
+  }, [user?._id, user?.cardId]);
 
   useEffect(() => {
     if (isBenefitsModalOpen) {
@@ -25,6 +75,15 @@ export default function DashboardPage() {
       document.body.classList.remove('overflow-hidden');
     }
   }, [isBenefitsModalOpen]);
+
+  // Calculate dynamic days left
+  let daysLeft = 0;
+  if (card && card.validTill) {
+    const end = new Date(card.validTill);
+    const now = new Date();
+    const diffTime = Math.abs(end - now);
+    daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  }
 
   return (
     <div className="flex-grow flex flex-col bg-surface text-on-surface font-body-md relative pb-20">
@@ -78,8 +137,8 @@ export default function DashboardPage() {
             <div className="flex items-center gap-2">
               <span className="material-symbols-outlined text-tertiary text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
               <div>
-                <p className="text-[10px] text-on-surface-variant font-semibold">{membership?.planName}</p>
-                <p className="text-xs font-bold text-on-surface">{daysLeft} days remaining</p>
+                <p className="text-[10px] text-on-surface-variant font-semibold">{card ? card.planName : "Loading Plan..."}</p>
+                <p className="text-xs font-bold text-on-surface">{card ? `${daysLeft} days remaining` : 'Calculating...'}</p>
               </div>
             </div>
             <span className="membership-active">Active</span>
@@ -98,26 +157,26 @@ export default function DashboardPage() {
                 <img 
                   alt="Card QR Code" 
                   className="w-10 h-10" 
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuAVFKhfs1tM3Gf0ITg4jWdnRQHkrL8HDzZvFtI-B9uGiZ6xrV203DSr_6-NfcQYke-zjjy31uvCI5Jrpmcl7i7ATbS4JTae4bacfbet6Zw1YHRaeZZaNckjfnb2mqMjSSWMMk9em26YAV6gJFrCDnQOlMt6B39DT6Ax4XoKBe5vO5Dg7hWeD2gULy4mCIoRCY106MlvBRPPnswqBYtHWoCSu09-fRTpYXF8FmqmOCQ_lmCi8iK1XUfmB9YU5Sapnk2iI7QpDP8tFLyk"
+                  src={card ? (card.qrCodeUrl || "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=" + card.cardId) : "https://lh3.googleusercontent.com/aida-public/AB6AXuAVFKhfs1tM3Gf0ITg4jWdnRQHkrL8HDzZvFtI-B9uGiZ6xrV203DSr_6-NfcQYke-zjjy31uvCI5Jrpmcl7i7ATbS4JTae4bacfbet6Zw1YHRaeZZaNckjfnb2mqMjSSWMMk9em26YAV6gJFrCDnQOlMt6B39DT6Ax4XoKBe5vO5Dg7hWeD2gULy4mCIoRCY106MlvBRPPnswqBYtHWoCSu09-fRTpYXF8FmqmOCQ_lmCi8iK1XUfmB9YU5Sapnk2iI7QpDP8tFLyk"}
                 />
               </div>
             </div>
             
             <div className="space-y-4">
-              <p className="text-lg tracking-[0.2em] font-mono font-bold">•••• •••• 1234</p>
+              <p className="text-lg tracking-[0.2em] font-mono font-bold">{card ? card.cardNumber : "•••• •••• 1234"}</p>
               <div className="flex justify-between items-end">
                 <div className="flex gap-4">
                   <div>
                     <p className="text-[9px] opacity-70 uppercase font-semibold">Status</p>
-                    <p className="text-xs font-semibold">Active</p>
+                    <p className="text-xs font-semibold capitalize">{card ? card.status : "Active"}</p>
                   </div>
                   <div>
                     <p className="text-[9px] opacity-70 uppercase font-semibold">Type</p>
-                    <p className="text-xs font-semibold">Platinum</p>
+                    <p className="text-xs font-semibold">{card ? card.planName : "Platinum"}</p>
                   </div>
                   <div>
                     <p className="text-[9px] opacity-70 uppercase font-semibold">Valid Till</p>
-                    <p className="text-xs font-semibold">12/28</p>
+                    <p className="text-xs font-semibold">{card ? new Date(card.validTill).toLocaleDateString('en-GB', { month: '2-digit', year: '2-digit' }).replace('/', '/') : "12/28"}</p>
                   </div>
                 </div>
               </div>
@@ -153,22 +212,15 @@ export default function DashboardPage() {
             </button>
           </div>
           <div className="grid grid-cols-3 gap-3">
-            {[
-              { label: 'BP Monitor', img: imgBP },
-              { label: 'Glucometer', img: imgGlucometer },
-              { label: 'Thermometer', img: imgThermometer },
-              { label: 'Weighing Scale', img: imgWeighing },
-              { label: 'Acupressure', img: imgAcupressure },
-              { label: 'Body Massager', img: imgMassager },
-            ].map((item) => (
+            {products.map((item) => (
               <button 
-                key={item.label}
+                key={item.productId}
                 onClick={() => navigate('/product-details', { state: { product: item } })}
                 className="relative overflow-hidden bg-white rounded-xl border border-outline-variant active:scale-95 transition-all group cursor-pointer hover:shadow-md h-24"
               >
-                <img src={item.img} alt={item.label} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                <img src={item.imageUrl} alt={item.name} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent opacity-90"></div>
-                <span className="absolute bottom-2 inset-x-1 text-[10px] text-center font-bold text-white line-clamp-1 drop-shadow-md tracking-wide">{item.label}</span>
+                <span className="absolute bottom-2 inset-x-1 text-[10px] text-center font-bold text-white line-clamp-1 drop-shadow-md tracking-wide">{item.name}</span>
               </button>
             ))}
           </div>
@@ -185,7 +237,7 @@ export default function DashboardPage() {
             </div>
             <div>
               <p className="text-[9px] text-on-surface-variant font-bold uppercase tracking-wider">Claims</p>
-              <p className="text-sm font-black text-primary leading-none mt-0.5">02</p>
+              <p className="text-sm font-black text-primary leading-none mt-0.5">{stats.claimsCount.toString().padStart(2, '0')}</p>
             </div>
           </div>
           
@@ -198,7 +250,7 @@ export default function DashboardPage() {
             </div>
             <div>
               <p className="text-[9px] text-on-surface-variant font-bold uppercase tracking-wider">Family</p>
-              <p className="text-sm font-black text-primary leading-none mt-0.5">04</p>
+              <p className="text-sm font-black text-primary leading-none mt-0.5">{stats.familyCount.toString().padStart(2, '0')}</p>
             </div>
           </div>
 
@@ -211,7 +263,7 @@ export default function DashboardPage() {
             </div>
             <div>
               <p className="text-[9px] text-on-surface-variant font-bold uppercase tracking-wider">Wallet</p>
-              <p className="text-sm font-black text-primary leading-none mt-0.5">₹12.5k</p>
+              <p className="text-sm font-black text-primary leading-none mt-0.5">₹{stats.walletBalance.toLocaleString('en-IN')}</p>
             </div>
           </div>
 
@@ -224,7 +276,33 @@ export default function DashboardPage() {
             </div>
             <div>
               <p className="text-[9px] text-on-surface-variant font-bold uppercase tracking-wider">Status</p>
-              <p className="text-sm font-black text-primary leading-none mt-0.5">Eligible</p>
+              <p className="text-sm font-black text-primary leading-none mt-0.5">{stats.loanStatus}</p>
+            </div>
+          </div>
+
+          <div 
+            onClick={() => navigate('/hospitals')}
+            className="bg-surface-container-low p-2.5 rounded-xl border border-outline-variant hover:shadow-md transition-all cursor-pointer flex items-center gap-2.5"
+          >
+            <div className="w-8 h-8 bg-error/10 rounded-full flex items-center justify-center shrink-0">
+              <span className="material-symbols-outlined text-error text-base">local_hospital</span>
+            </div>
+            <div>
+              <p className="text-[9px] text-on-surface-variant font-bold uppercase tracking-wider">Hospitals</p>
+              <p className="text-sm font-black text-primary leading-none mt-0.5">Network</p>
+            </div>
+          </div>
+
+          <div 
+            onClick={() => navigate('/support')}
+            className="bg-surface-container-low p-2.5 rounded-xl border border-outline-variant hover:shadow-md transition-all cursor-pointer flex items-center gap-2.5"
+          >
+            <div className="w-8 h-8 bg-warning/10 rounded-full flex items-center justify-center shrink-0">
+              <span className="material-symbols-outlined text-warning text-base">support_agent</span>
+            </div>
+            <div>
+              <p className="text-[9px] text-on-surface-variant font-bold uppercase tracking-wider">Support</p>
+              <p className="text-sm font-black text-primary leading-none mt-0.5">Helpdesk</p>
             </div>
           </div>
         </section>
@@ -261,7 +339,7 @@ export default function DashboardPage() {
       </main>
 
       {/* Benefits Modal */}
-      {isBenefitsModalOpen && membership && (
+      {isBenefitsModalOpen && card && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
           <div className="bg-white w-full max-w-sm rounded-3xl p-5 shadow-2xl relative">
             <button 
@@ -275,13 +353,13 @@ export default function DashboardPage() {
               <div className="w-12 h-12 bg-tertiary/10 text-tertiary rounded-full flex items-center justify-center mb-3">
                 <span className="material-symbols-outlined text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
               </div>
-              <h3 className="text-lg font-black text-on-surface">{membership.planName}</h3>
-              <p className="text-xs text-on-surface-variant mt-0.5">Active until {new Date(membership.expiresAt).toLocaleDateString()}</p>
+              <h3 className="text-lg font-black text-on-surface">{card.planName}</h3>
+              <p className="text-xs text-on-surface-variant mt-0.5">Active until {new Date(card.validTill).toLocaleDateString()}</p>
             </div>
 
             <div className="space-y-2 mb-4">
               <h4 className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider mb-2">Included Benefits</h4>
-              {PLANS[membership.planId]?.features.map((feature, idx) => (
+              {PLANS[card.cardType]?.features.map((feature, idx) => (
                 <div key={idx} className="flex items-start gap-2">
                   <span className="material-symbols-outlined text-primary text-base shrink-0 mt-0.5" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
                   <span className="text-xs text-on-surface font-semibold leading-snug">{feature}</span>

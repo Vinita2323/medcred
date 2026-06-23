@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { STORAGE_KEYS, ENDPOINTS } from '../../../services/types';
+import api from '../../../services/api';
 
 export default function AgentLayout() {
   const navigate = useNavigate();
@@ -9,7 +11,7 @@ export default function AgentLayout() {
   const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
-    const userJson = localStorage.getItem('currentUser');
+    const userJson = localStorage.getItem(STORAGE_KEYS.USER_DATA);
     if (userJson) {
       setCurrentUser(JSON.parse(userJson));
     }
@@ -32,25 +34,27 @@ export default function AgentLayout() {
       { label: 'Register Customer', icon: 'person_add', route: '/agent/register-customer' },
       { label: 'Apply Loan', icon: 'payments', route: '/agent/apply-loan' },
       { label: 'Customer Directory', icon: 'group', route: '/agent/customers' },
-    ];
-
-    if (currentUser.role === 'Super Agent' || currentUser.role === 'Team Leader') {
-      baseItems.push({ label: 'Team Management', icon: 'partner_exchange', route: '/agent/team' });
-    }
-
-    baseItems.push(
+      { label: 'Team Management', icon: 'partner_exchange', route: '/agent/team' },
       { label: 'Agent Wallet', icon: 'account_balance_wallet', route: '/agent/wallet' },
       { label: 'Agent Profile', icon: 'account_circle', route: '/agent/profile' }
-    );
+    ];
 
     return baseItems;
   };
 
   const menuItems = getMenuItems();
 
-  const handleLogout = () => {
-    alert('Logged out from Agent Portal.');
-    navigate('/agent/login');
+  const handleLogout = async () => {
+    try {
+      await api.post(ENDPOINTS.AUTH_LOGOUT);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      localStorage.removeItem(STORAGE_KEYS.USER_DATA);
+      localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+      localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+      navigate('/agent/login');
+    }
   };
 
   // Determine header title based on route

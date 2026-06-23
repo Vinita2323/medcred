@@ -1,24 +1,64 @@
-import React, { useState } from 'react';
-
-const INITIAL_TICKETS = [
-  { id: 'TKT-1042', user: 'Arjun Mehta', type: 'User', subject: 'Claim amount not received in bank', status: 'Open', date: '2 hours ago' },
-  { id: 'TKT-1043', user: 'Priya Sharma',type: 'User', subject: 'How to add my mother to family card?', status: 'Open', date: '4 hours ago' },
-  { id: 'TKT-1044', user: 'Suresh Kumar',type: 'Agent',subject: 'Commission for last registration missing', status: 'Pending', date: '1 day ago' },
-  { id: 'TKT-1045', user: 'Rohan Gupta', type: 'User', subject: 'App crashes when uploading documents', status: 'Resolved', date: '2 days ago' },
-];
+import React, { useState, useEffect } from 'react';
+import api from '../../../services/api';
+import { ENDPOINTS } from '../../../services/types';
 
 export default function AdminSupportPage() {
-  const [tickets, setTickets] = useState(INITIAL_TICKETS);
+  const [tickets, setTickets] = useState([]);
   const [selected, setSelected] = useState(null);
   const [reply, setReply] = useState('');
+  const [loading, setLoading] = useState(true);
 
-  const handleReply = (e) => {
+  const fetchTickets = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get(ENDPOINTS.ADMIN_SUPPORT_TICKETS);
+      if (res.data?.success) {
+        // Map backend to frontend schema
+        const mapped = res.data.data.map(t => ({
+          id: t.ticketId,
+          _id: t._id,
+          user: t.userId?.fullName || 'Unknown User',
+          type: 'User', // Since currently tickets are only created by users
+          subject: t.subject,
+          description: t.description,
+          status: t.status.charAt(0).toUpperCase() + t.status.slice(1),
+          date: new Date(t.createdAt).toLocaleDateString('en-IN'),
+          adminNotes: t.adminNotes,
+          resolvedAt: t.resolvedAt ? new Date(t.resolvedAt).toLocaleDateString('en-IN') : null,
+        }));
+        setTickets(mapped);
+      }
+    } catch (err) {
+      console.error('Error fetching tickets', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchTickets();
+  }, []);
+
+  const handleReply = async (e) => {
     e.preventDefault();
     if (!reply.trim()) return;
-    setTickets(tickets.map(t => t.id === selected.id ? { ...t, status: 'Resolved' } : t));
-    setSelected(null);
-    setReply('');
-    alert('Reply sent and ticket resolved!');
+
+    try {
+      const res = await api.patch(ENDPOINTS.ADMIN_SUPPORT_TICKET_UPDATE(selected._id), {
+        status: 'resolved',
+        adminNotes: reply
+      });
+
+      if (res.data?.success) {
+        alert('Reply sent and ticket resolved!');
+        setReply('');
+        setSelected(null);
+        fetchTickets();
+      }
+    } catch (err) {
+      console.error('Error replying to ticket', err);
+      alert('Failed to resolve ticket');
+    }
   };
 
   return (
@@ -69,12 +109,21 @@ export default function AdminSupportPage() {
                 </span>
               </div>
               
-              <div className="flex-grow p-6 overflow-y-auto bg-gray-50">
+              <div className="flex-grow p-6 overflow-y-auto bg-gray-50 space-y-4">
                 <div className="bg-white p-4 rounded-xl shadow-sm border border-[#c3c6d6]/20 max-w-md">
                   <p className="text-xs text-[#516161] mb-2 font-bold">{selected.user}</p>
-                  <p className="text-sm text-[#191b23]">{selected.subject}</p>
+                  <p className="text-sm font-bold text-[#191b23] mb-1">{selected.subject}</p>
+                  <p className="text-sm text-[#191b23]">{selected.description}</p>
                   <p className="text-[10px] text-[#737685] mt-3 text-right">Sent {selected.date}</p>
                 </div>
+                
+                {selected.adminNotes && (
+                  <div className="bg-[#dae2ff] p-4 rounded-xl shadow-sm border border-[#003d9b]/20 max-w-md ml-auto">
+                    <p className="text-xs text-[#003d9b] mb-2 font-bold">Admin Support</p>
+                    <p className="text-sm text-[#191b23]">{selected.adminNotes}</p>
+                    <p className="text-[10px] text-[#003d9b]/70 mt-3 text-right">Resolved {selected.resolvedAt}</p>
+                  </div>
+                )}
               </div>
 
               {selected.status !== 'Resolved' && (

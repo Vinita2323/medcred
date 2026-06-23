@@ -1,15 +1,19 @@
 import React, { useState, useEffect } from 'react';
+import api from '../../../services/api';
+import { ENDPOINTS, SERVER_URL } from '../../../services/types';
 
 const ELIGIBILITY_COLORS = {
-  Eligible:     'bg-green-100 text-green-700',
-  'Not Eligible':'bg-red-100 text-red-700',
-  Waiting:       'bg-yellow-100 text-yellow-700',
+  eligible:     'bg-green-100 text-green-700',
+  not_eligible: 'bg-red-100 text-red-700',
+  waiting:       'bg-yellow-100 text-yellow-700',
 };
 const APPLICATION_COLORS = {
-  'Not Applied': 'bg-gray-100 text-gray-700',
-  Applied:       'bg-blue-100 text-blue-700',
-  Approved:      'bg-green-100 text-green-700',
-  Rejected:      'bg-red-100 text-red-700',
+  applied:       'bg-blue-100 text-blue-700',
+  under_review:  'bg-yellow-100 text-yellow-700',
+  approved:      'bg-green-100 text-green-700',
+  disbursed:     'bg-green-200 text-green-800',
+  rejected:      'bg-red-100 text-red-700',
+  closed:        'bg-gray-100 text-gray-700',
 };
 
 export default function AdminLoansPage() {
@@ -19,35 +23,46 @@ export default function AdminLoansPage() {
   const [filterElig, setFilter] = useState('All');
 
   useEffect(() => {
-    const raw = localStorage.getItem('medcred_loans');
-    setLoans(raw ? JSON.parse(raw) : []);
+    fetchLoans();
   }, []);
 
-  const save = (updated) => {
-    setLoans(updated);
-    localStorage.setItem('medcred_loans', JSON.stringify(updated));
+  const fetchLoans = async () => {
+    try {
+      const res = await api.get(ENDPOINTS.ADMIN_LOANS);
+      if (res.data.success) {
+        setLoans(res.data.data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch loans:', err);
+    }
   };
 
-  const updateApp = (id, appStatus) => {
-    const updated = loans.map(l => l.id === id ? { ...l, applicationStatus: appStatus } : l);
-    save(updated);
-    if (selected?.id === id) setSelected(updated.find(l => l.id === id));
+  const updateApp = async (id, appStatus) => {
+    try {
+      const payload = { status: appStatus };
+      if (appStatus === 'rejected') {
+        const reason = prompt("Enter rejection reason:");
+        if (!reason) return;
+        payload.rejectionReason = reason;
+      }
+      const res = await api.patch(ENDPOINTS.ADMIN_LOAN_UPDATE(id), payload);
+      if (res.data.success) {
+        setLoans(loans.map(l => l._id === id ? res.data.data : l));
+        if (selected?._id === id) setSelected(res.data.data);
+      }
+    } catch (err) {
+      alert('Failed to update loan status');
+    }
   };
 
-  const blockDuplicate = (id) => {
-    const loan = loans.find(l => l.id === id);
-    if (!loan) return;
-    const duplicate = loans.find(l => l.userId === loan.userId && l.id !== id && l.applicationStatus === 'Applied');
-    if (!duplicate) { alert('No duplicate found for this user.'); return; }
-    const updated = loans.map(l => l.id === id ? { ...l, applicationStatus: 'Rejected', blockedAsDuplicate: true } : l);
-    save(updated);
-    if (selected?.id === id) setSelected(updated.find(l => l.id === id));
+  const blockDuplicate = async (id) => {
+    await updateApp(id, 'rejected');
   };
 
   const filtered = loans.filter(l => {
     const q = search.toLowerCase();
-    const matchQ = !q || l.userName.toLowerCase().includes(q) || l.id.toLowerCase().includes(q);
-    const matchF  = filterElig === 'All' || l.status === filterElig;
+    const matchQ = !q || l.userName.toLowerCase().includes(q) || l.loanId.toLowerCase().includes(q);
+    const matchF  = filterElig === 'All' || l.eligibilityStatus === filterElig;
     return matchQ && matchF;
   });
 
@@ -70,9 +85,9 @@ export default function AdminLoansPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
           { label: 'Total Applications', value: loans.length,                                   color:'text-[#003d9b]',  bg:'bg-[#dae2ff]',  icon:'payments' },
-          { label: 'Eligible',           value: loans.filter(l=>l.status==='Eligible').length,  color:'text-green-700',  bg:'bg-green-100',  icon:'check_circle' },
-          { label: 'Waiting Period',     value: loans.filter(l=>l.status==='Waiting').length,   color:'text-yellow-700', bg:'bg-yellow-100', icon:'hourglass_empty' },
-          { label: 'Applied',            value: loans.filter(l=>l.applicationStatus==='Applied').length, color:'text-blue-700', bg:'bg-blue-100', icon:'description' },
+          { label: 'Eligible',           value: loans.filter(l=>l.eligibilityStatus==='eligible').length,  color:'text-green-700',  bg:'bg-green-100',  icon:'check_circle' },
+          { label: 'Waiting Period',     value: loans.filter(l=>l.eligibilityStatus==='waiting').length,   color:'text-yellow-700', bg:'bg-yellow-100', icon:'hourglass_empty' },
+          { label: 'Applied',            value: loans.filter(l=>l.applicationStatus==='applied').length, color:'text-blue-700', bg:'bg-blue-100', icon:'description' },
         ].map((s,i)=>(
           <div key={i} className="bg-white rounded-xl border border-[#c3c6d6]/20 p-4 shadow-sm flex items-center gap-3">
             <div className={`w-10 h-10 rounded-full ${s.bg} ${s.color} flex items-center justify-center shrink-0`}>
@@ -116,7 +131,7 @@ export default function AdminLoansPage() {
           onChange={e => setFilter(e.target.value)}
           className="bg-[#f5f8ff] border border-[#c3c6d6]/40 rounded-xl px-3 py-2.5 text-sm focus:outline-none cursor-pointer"
         >
-          {['All','Eligible','Not Eligible','Waiting'].map(v=><option key={v}>{v}</option>)}
+          {['All','eligible','not_eligible','waiting'].map(v=><option key={v}>{v}</option>)}
         </select>
       </div>
 
@@ -139,41 +154,41 @@ export default function AdminLoansPage() {
             </thead>
             <tbody className="divide-y divide-[#c3c6d6]/10">
               {filtered.map(l => (
-                <tr key={l.id} className={`hover:bg-[#faf8ff]/60 transition-colors ${l.blockedAsDuplicate ? 'bg-red-50/30' : ''}`}>
-                  <td className="px-5 py-3.5 font-mono font-bold text-xs text-[#003d9b]">{l.id}</td>
+                <tr key={l._id} className={`hover:bg-[#faf8ff]/60 transition-colors ${l.isDuplicate ? 'bg-red-50/30' : ''}`}>
+                  <td className="px-5 py-3.5 font-mono font-bold text-xs text-[#003d9b]">{l.loanId}</td>
                   <td className="px-5 py-3.5">
                     <p className="font-bold text-[#191b23]">{l.userName}</p>
-                    {l.blockedAsDuplicate && (
+                    {l.isDuplicate && (
                       <span className="text-[10px] text-red-600 font-bold flex items-center gap-1">
                         <span className="material-symbols-outlined text-[12px]">warning</span> Blocked as Duplicate
                       </span>
                     )}
                   </td>
-                  <td className="px-5 py-3.5 text-xs text-[#516161] font-semibold">{l.cardPurchaseDate}</td>
+                  <td className="px-5 py-3.5 text-xs text-[#516161] font-semibold">{new Date(l.cardPurchaseDate).toLocaleDateString()}</td>
                   <td className="px-5 py-3.5">
                     <div>
-                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${ELIGIBILITY_COLORS[l.status]}`}>
-                        {l.status}
+                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${ELIGIBILITY_COLORS[l.eligibilityStatus] || 'bg-gray-100'}`}>
+                        {l.eligibilityStatus}
                       </span>
-                      {l.daysLeft && (
-                        <p className="text-[10px] text-[#737685] mt-0.5">{l.daysLeft} days remaining</p>
-                      )}
                     </div>
                   </td>
                   <td className="px-5 py-3.5">
-                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${APPLICATION_COLORS[l.applicationStatus]}`}>
+                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${APPLICATION_COLORS[l.applicationStatus] || 'bg-gray-100'}`}>
                       {l.applicationStatus}
                     </span>
                   </td>
                   <td className="px-5 py-3.5 text-center">
                     <div className="flex gap-1.5 justify-center">
                       <button onClick={() => setSelected(l)} className="bg-[#f0f4ff] hover:bg-[#dae2ff] text-[#003d9b] px-2.5 py-1.5 rounded-lg text-xs font-bold cursor-pointer">View</button>
-                      {l.applicationStatus === 'Applied' && (
+                      {l.applicationStatus === 'applied' && (
                         <>
-                          <button onClick={() => updateApp(l.id, 'Approved')} className="bg-green-50 hover:bg-green-100 text-green-700 px-2.5 py-1.5 rounded-lg text-xs font-bold cursor-pointer">Approve</button>
-                          <button onClick={() => updateApp(l.id, 'Rejected')} className="bg-red-50 hover:bg-red-100 text-red-600 px-2.5 py-1.5 rounded-lg text-xs font-bold cursor-pointer">Reject</button>
-                          <button onClick={() => blockDuplicate(l.id)} className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-2.5 py-1.5 rounded-lg text-xs font-bold cursor-pointer">Block Dup.</button>
+                          <button onClick={() => updateApp(l._id, 'approved')} className="bg-green-50 hover:bg-green-100 text-green-700 px-2.5 py-1.5 rounded-lg text-xs font-bold cursor-pointer">Approve</button>
+                          <button onClick={() => updateApp(l._id, 'rejected')} className="bg-red-50 hover:bg-red-100 text-red-600 px-2.5 py-1.5 rounded-lg text-xs font-bold cursor-pointer">Reject</button>
+                          <button onClick={() => blockDuplicate(l._id)} className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-2.5 py-1.5 rounded-lg text-xs font-bold cursor-pointer">Block Dup.</button>
                         </>
+                      )}
+                      {l.applicationStatus === 'approved' && (
+                        <button onClick={() => updateApp(l._id, 'disbursed')} className="bg-green-600 hover:bg-green-700 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold cursor-pointer">Disburse</button>
                       )}
                     </div>
                   </td>
@@ -201,12 +216,12 @@ export default function AdminLoansPage() {
             <div className="p-6 space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 {[
-                  { label: 'Loan ID',      value: selected.id },
+                  { label: 'Loan ID',      value: selected.loanId },
                   { label: 'User',         value: selected.userName },
-                  { label: 'Card Purchase',value: selected.cardPurchaseDate },
-                  { label: 'Eligibility',  value: selected.status },
+                  { label: 'Card Purchase',value: new Date(selected.cardPurchaseDate).toLocaleDateString() },
+                  { label: 'Eligibility',  value: selected.eligibilityStatus },
                   { label: 'Application',  value: selected.applicationStatus },
-                  { label: 'Amount',       value: selected.amount ? `₹${selected.amount.toLocaleString('en-IN')}` : 'N/A' },
+                  { label: 'Amount',       value: selected.loanAmount ? `₹${selected.loanAmount.toLocaleString('en-IN')}` : 'N/A' },
                 ].map((item,i)=>(
                   <div key={i} className="bg-[#f5f8ff] rounded-xl p-3">
                     <p className="text-[10px] text-[#516161] font-semibold uppercase">{item.label}</p>
@@ -214,10 +229,38 @@ export default function AdminLoansPage() {
                   </div>
                 ))}
               </div>
-              {selected.applicationStatus === 'Applied' && (
+              
+              {selected.patients && selected.patients.length > 0 && (
+                <div className="mt-4 border-t border-[#c3c6d6]/20 pt-4">
+                  <h4 className="text-xs font-bold text-[#516161] uppercase mb-2">Patients & Documents</h4>
+                  <div className="space-y-3 max-h-40 overflow-y-auto pr-2">
+                    {selected.patients.map((p, idx) => (
+                      <div key={idx} className="bg-gray-50 rounded-lg p-3 text-xs">
+                        <p className="font-bold text-[#191b23]">{p.patientName} <span className="text-gray-500 font-normal">({p.relationship})</span></p>
+                        <p className="text-gray-600 mt-1">Hospital: {p.hospitalName}</p>
+                        <div className="flex gap-2 mt-2">
+                          {p.prescriptionFileUrl && (
+                            <a href={`${SERVER_URL}${p.prescriptionFileUrl}`} target="_blank" rel="noopener noreferrer" className="text-[#003d9b] hover:underline font-bold">View Prescription</a>
+                          )}
+                          {p.estimatedBillUrl && (
+                            <a href={`${SERVER_URL}${p.estimatedBillUrl}`} target="_blank" rel="noopener noreferrer" className="text-[#003d9b] hover:underline font-bold">View Bill</a>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {selected.applicationStatus === 'applied' && (
                 <div className="flex gap-3 pt-2">
-                  <button onClick={() => updateApp(selected.id, 'Approved')} className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2.5 rounded-xl text-xs font-bold cursor-pointer">Approve</button>
-                  <button onClick={() => updateApp(selected.id, 'Rejected')} className="flex-1 border border-red-200 text-red-600 hover:bg-red-50 py-2.5 rounded-xl text-xs font-bold cursor-pointer">Reject</button>
+                  <button onClick={() => updateApp(selected._id, 'approved')} className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2.5 rounded-xl text-xs font-bold cursor-pointer">Approve</button>
+                  <button onClick={() => updateApp(selected._id, 'rejected')} className="flex-1 border border-red-200 text-red-600 hover:bg-red-50 py-2.5 rounded-xl text-xs font-bold cursor-pointer">Reject</button>
+                </div>
+              )}
+              {selected.applicationStatus === 'approved' && (
+                <div className="flex gap-3 pt-2">
+                  <button onClick={() => updateApp(selected._id, 'disbursed')} className="w-full bg-[#003d9b] hover:bg-[#002f7a] text-white py-2.5 rounded-xl text-xs font-bold cursor-pointer">Mark as Disbursed</button>
                 </div>
               )}
             </div>

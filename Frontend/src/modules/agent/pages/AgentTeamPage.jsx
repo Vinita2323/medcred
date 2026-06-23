@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import api from '../../../services/api';
+import { ENDPOINTS, STORAGE_KEYS } from '../../../services/types';
 
 export default function AgentTeamPage() {
   const [currentUser, setCurrentUser] = useState(null);
@@ -7,41 +9,40 @@ export default function AgentTeamPage() {
   const [selectedLeaderId, setSelectedLeaderId] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('All');
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     // Fetch logged in agent
-    const userJson = localStorage.getItem('currentUser');
+    const userJson = localStorage.getItem(STORAGE_KEYS.USER_DATA);
     if (userJson) {
-      const userObj = JSON.parse(userJson);
-      setCurrentUser(userObj);
-
-      // Fetch all agents
-      const agentsJson = localStorage.getItem('medcred_agents');
-      if (agentsJson) {
-        const allAgents = JSON.parse(agentsJson);
-        
-        if (userObj.role === 'Super Agent') {
-          // Team Leaders reporting to this Super Agent
-          const tls = allAgents.filter(a => a.role === 'Team Leader' && a.reportingManager === userObj.fullName);
-          setTeamLeaders(tls);
-          
-          // Field Agents reporting to those Team Leaders
-          const tlNames = tls.map(t => t.fullName);
-          const fas = allAgents.filter(a => a.role === 'Field Agent' && tlNames.includes(a.reportingManager));
-          setFieldAgents(fas);
-        } else if (userObj.role === 'Team Leader') {
-          // Field Agents reporting directly to this Team Leader
-          const fas = allAgents.filter(a => a.role === 'Field Agent' && a.reportingManager === userObj.fullName);
-          setFieldAgents(fas);
-        }
-      }
+      setCurrentUser(JSON.parse(userJson));
     }
+    fetchTeamData();
   }, []);
+
+  const fetchTeamData = async () => {
+    try {
+      setIsLoading(true);
+      const res = await api.get(ENDPOINTS.AGENT_TEAM);
+      if (res.data?.success) {
+        setTeamLeaders(res.data.data.teamLeaders || []);
+        setFieldAgents(res.data.data.fieldAgents || []);
+      }
+    } catch (error) {
+      console.error('Error fetching team data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isLoading) {
+    return <div className="flex justify-center items-center h-64 text-[#516161]">Loading team dashboard...</div>;
+  }
 
   if (!currentUser) {
     return (
       <div className="flex items-center justify-center min-h-[300px] text-[#516161]">
-        Loading team dashboard...
+        User session not found
       </div>
     );
   }
@@ -62,7 +63,7 @@ export default function AgentTeamPage() {
         // Find team leader name
         const leader = teamLeaders.find(t => t.agentId === selectedLeaderId);
         if (leader) {
-          result = result.filter(a => a.agentId === selectedLeaderId || a.reportingManager === leader.fullName);
+          result = result.filter(a => a.agentId === selectedLeaderId || a.reportingManagerName === leader.fullName);
         }
       }
     } else if (currentUser.role === 'Team Leader') {
@@ -221,7 +222,7 @@ export default function AgentTeamPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-xs font-medium text-[#516161]">
-                      {agent.reportingManager || '—'}
+                      {agent.reportingManagerName || '—'}
                     </td>
                     <td className="px-6 py-4">
                       <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${getRankBadge(agent.rank)}`}>

@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api from '../../../services/api';
+import { ENDPOINTS } from '../../../services/types';
 
 export default function AgentOnboardCustomerPage() {
   const navigate = useNavigate();
@@ -23,14 +25,20 @@ export default function AgentOnboardCustomerPage() {
   const [isAadhaarVerified, setIsAadhaarVerified] = useState(false);
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
 
-  // Upload Previews
+  // Upload Previews and Files
   const [profilePreview, setProfilePreview] = useState(null);
-  const [frontPreview, setFrontPreview] = useState(null);
-  const [backPreview, setBackPreview] = useState(null);
+  const [profileFile, setProfileFile] = useState(null);
 
-  const handleImageChange = (e, setPreview) => {
+  const [frontPreview, setFrontPreview] = useState(null);
+  const [frontFile, setFrontFile] = useState(null);
+
+  const [backPreview, setBackPreview] = useState(null);
+  const [backFile, setBackFile] = useState(null);
+
+  const handleImageChange = (e, setPreview, setFile) => {
     const file = e.target.files[0];
     if (file) {
+      setFile(file);
       const reader = new FileReader();
       reader.onload = (event) => {
         setPreview(event.target.result);
@@ -38,6 +46,7 @@ export default function AgentOnboardCustomerPage() {
       reader.readAsDataURL(file);
     }
   };
+
 
   const handleSendOtp = () => {
     if (aadhaarNumber.length !== 12) {
@@ -75,18 +84,43 @@ export default function AgentOnboardCustomerPage() {
     setStep(targetStep);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!profilePreview || !frontPreview || !backPreview) {
+    if (!profileFile || !frontFile || !backFile) {
       alert('Please upload all required identity documents.');
       return;
     }
+    
     setIsSubmitting(true);
-    setTimeout(() => {
-      alert('Customer profile created and sent for approval successfully!');
+    
+    try {
+      const formData = new FormData();
+      formData.append('fullName', fullName);
+      formData.append('mobileNumber', mobileNumber);
+      if (email) formData.append('email', email);
+      formData.append('dob', dob);
+      formData.append('gender', gender);
+      formData.append('address', address);
+      formData.append('aadhaarNumber', aadhaarNumber);
+      
+      formData.append('profilePhoto', profileFile);
+      formData.append('aadhaarFront', frontFile);
+      formData.append('aadhaarBack', backFile);
+
+      const res = await api.post(ENDPOINTS.AGENT_ONBOARD_CUSTOMER, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
+      if (res.data?.success) {
+        alert('Customer profile created and sent for approval successfully!');
+        navigate('/agent/customers');
+      }
+    } catch (error) {
+      console.error('Error onboarding customer:', error);
+      alert(error.response?.data?.message || 'Failed to onboard customer.');
+    } finally {
       setIsSubmitting(false);
-      navigate('/agent/customers');
-    }, 1500);
+    }
   };
 
   return (
@@ -379,7 +413,7 @@ export default function AgentOnboardCustomerPage() {
                     className="hidden" 
                     type="file" 
                     accept="image/*"
-                    onChange={(e) => handleImageChange(e, setProfilePreview)}
+                    onChange={(e) => handleImageChange(e, setProfilePreview, setProfileFile)}
                     required
                   />
                   {!profilePreview ? (
@@ -401,7 +435,7 @@ export default function AgentOnboardCustomerPage() {
                     className="hidden" 
                     type="file" 
                     accept="image/*"
-                    onChange={(e) => handleImageChange(e, setFrontPreview)}
+                    onChange={(e) => handleImageChange(e, setFrontPreview, setFrontFile)}
                     required
                   />
                   {!frontPreview ? (
@@ -423,7 +457,7 @@ export default function AgentOnboardCustomerPage() {
                     className="hidden" 
                     type="file" 
                     accept="image/*"
-                    onChange={(e) => handleImageChange(e, setBackPreview)}
+                    onChange={(e) => handleImageChange(e, setBackPreview, setBackFile)}
                     required
                   />
                   {!backPreview ? (

@@ -1,13 +1,48 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import BottomNavBar from '../components/Navigation/BottomNavBar';
+import api from '../../../services/api';
+import { ENDPOINTS } from '../../../services/types';
 
 export default function SupportPage() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
+  const [tickets, setTickets] = useState([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [newTicket, setNewTicket] = useState({ subject: '', description: '', priority: 'medium' });
+
+  useEffect(() => {
+    fetchTickets();
+  }, []);
+
+  const fetchTickets = async () => {
+    try {
+      const res = await api.get(ENDPOINTS.SUPPORT_TICKETS);
+      if (res.data.success) {
+        setTickets(res.data.data);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const handleSearchChange = (e) => {
     setSearchQuery(e.target.value);
+  };
+
+  const handleSubmitTicket = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await api.post(ENDPOINTS.SUPPORT_TICKETS, newTicket);
+      if (res.data.success) {
+        setTickets([res.data.data, ...tickets]);
+        setIsModalOpen(false);
+        setNewTicket({ subject: '', description: '', priority: 'medium' });
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Failed to submit ticket');
+    }
   };
 
   return (
@@ -53,7 +88,7 @@ export default function SupportPage() {
         <section className="grid grid-cols-2 gap-3">
           {/* Raise Ticket */}
           <div 
-            onClick={() => alert("Creating a new support ticket...")} 
+            onClick={() => setIsModalOpen(true)} 
             className="col-span-2 relative overflow-hidden bg-primary p-4 rounded-2xl flex flex-col justify-between h-36 cursor-pointer hover:shadow-lg transition-all active:scale-[0.98]"
           >
             <div className="absolute -right-6 -top-6 w-24 h-24 bg-white/10 rounded-full blur-xl"></div>
@@ -112,6 +147,37 @@ export default function SupportPage() {
           </a>
         </section>
 
+        {/* My Tickets */}
+        {tickets.length > 0 && (
+          <section className="space-y-3 mt-4">
+            <h3 className="text-xs font-bold text-on-surface-variant uppercase tracking-wider flex items-center gap-1.5">
+              <span className="material-symbols-outlined text-primary text-base">receipt_long</span>
+              My Recent Tickets
+            </h3>
+            <div className="space-y-2">
+              {tickets.map((ticket) => (
+                <div key={ticket._id} className="p-3 bg-surface-container-lowest rounded-xl border border-outline-variant/50 flex flex-col gap-2">
+                  <div className="flex justify-between items-start">
+                    <h4 className="font-bold text-xs text-on-surface">{ticket.subject}</h4>
+                    <span className={`text-[8px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                      ticket.status === 'open' ? 'bg-error/10 text-error' : 
+                      ticket.status === 'resolved' ? 'bg-secondary/10 text-secondary' : 
+                      'bg-outline-variant/30 text-on-surface-variant'
+                    }`}>
+                      {ticket.status.replace('_', ' ')}
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-on-surface-variant line-clamp-2">{ticket.description}</p>
+                  <div className="flex justify-between items-center mt-1">
+                    <span className="text-[9px] font-mono opacity-60">{ticket.ticketId}</span>
+                    <span className="text-[9px] opacity-60">{new Date(ticket.createdAt).toLocaleDateString()}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
         {/* Commonly Searched Topics */}
         <section className="space-y-3">
           <h3 className="text-xs font-bold text-on-surface-variant uppercase tracking-wider flex items-center gap-1.5">
@@ -161,6 +227,69 @@ export default function SupportPage() {
           </div>
         </section>
       </main>
+
+      {/* New Ticket Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white w-full max-w-sm rounded-3xl p-5 shadow-2xl relative">
+            <button 
+              onClick={() => setIsModalOpen(false)}
+              className="absolute top-4 right-4 text-on-surface-variant hover:text-on-surface cursor-pointer w-8 h-8 flex items-center justify-center rounded-full bg-surface-container hover:bg-surface-container-high transition-colors"
+            >
+              <span className="material-symbols-outlined text-sm">close</span>
+            </button>
+            
+            <h3 className="text-lg font-black text-on-surface mb-1">Raise a Ticket</h3>
+            <p className="text-xs text-on-surface-variant mb-4">Our support team will respond within 24 hours.</p>
+
+            <form onSubmit={handleSubmitTicket} className="space-y-3">
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-on-surface-variant">Subject</label>
+                <input
+                  type="text"
+                  required
+                  value={newTicket.subject}
+                  onChange={(e) => setNewTicket({ ...newTicket, subject: e.target.value })}
+                  placeholder="e.g. Card not activating"
+                  className="w-full px-3 py-2 bg-surface border border-outline-variant rounded-xl text-xs font-semibold focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                />
+              </div>
+              
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-on-surface-variant">Description</label>
+                <textarea
+                  required
+                  rows={4}
+                  value={newTicket.description}
+                  onChange={(e) => setNewTicket({ ...newTicket, description: e.target.value })}
+                  placeholder="Please describe your issue in detail..."
+                  className="w-full px-3 py-2 bg-surface border border-outline-variant rounded-xl text-xs font-semibold focus:ring-2 focus:ring-primary focus:border-transparent outline-none resize-none"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-on-surface-variant">Priority</label>
+                <select
+                  value={newTicket.priority}
+                  onChange={(e) => setNewTicket({ ...newTicket, priority: e.target.value })}
+                  className="w-full px-3 py-2 bg-surface border border-outline-variant rounded-xl text-xs font-semibold focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                >
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High (Urgent)</option>
+                </select>
+              </div>
+
+              <button
+                type="submit"
+                className="w-full py-3 bg-primary text-white font-bold rounded-xl hover:bg-primary-container transition-all cursor-pointer mt-2"
+              >
+                Submit Ticket
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
 
       <BottomNavBar />
     </div>

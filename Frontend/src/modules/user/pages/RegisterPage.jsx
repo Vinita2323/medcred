@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { saveUser, seedSelfMember, saveFamilyMembers, getAgeFromDob } from '../utils/storage';
+import api from '../../../services/api';
+import { ENDPOINTS } from '../../../services/types';
 
 // ── Aadhaar formatter helper ─────────────────────────────────────
 function formatAadhaar(val) {
@@ -21,9 +23,10 @@ export default function RegisterPage() {
   // ── Personal form ────────────────────────────────────────────────
   const [formData, setFormData] = useState({
     name: '', mobile: '', email: '', dob: '',
-    gender: '', aadhaar: '', address: '', consent: false
+    gender: '', aadhaar: '', address: '', password: '', consent: false
   });
   const [profilePic, setProfilePic] = useState(null);
+  const [profileFile, setProfileFile] = useState(null);
   const [showSuccess, setShowSuccess] = useState(false);
 
   // ── Family members ───────────────────────────────────────────────
@@ -43,9 +46,11 @@ export default function RegisterPage() {
 
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setProfileFile(file);
       const reader = new FileReader();
       reader.onload = (ev) => setProfilePic(ev.target.result);
-      reader.readAsDataURL(e.target.files[0]);
+      reader.readAsDataURL(file);
     }
   };
 
@@ -85,46 +90,67 @@ export default function RegisterPage() {
     setFamilyMembers(prev => prev.filter(m => m.id !== id));
   };
 
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+
   // ── Submit ───────────────────────────────────────────────────────
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setErrorMsg('');
     if (!formData.consent) {
       alert('Please agree to the verification terms to continue.');
       return;
     }
-    const userData = {
-      name: formData.name,
-      mobile: formData.mobile,
-      email: formData.email,
-      dob: formData.dob,
-      gender: formData.gender,
-      aadhaar: formData.aadhaar,
-      address: formData.address,
-      profilePic,
-      bloodGroup: '',
-      occupation: '',
-    };
-    saveUser(userData);
 
-    // Build Self member + all added family members
-    const selfMember = {
-      id: 'MC-SELF',
-      name: userData.name,
-      relationship: 'Self',
-      age: getAgeFromDob(userData.dob),
-      dob: userData.dob,
-      bloodGroup: '',
-      gender: userData.gender,
-      verified: true,
-      image: profilePic || null,
-    };
-    saveFamilyMembers([selfMember, ...familyMembers]);
+    try {
+      setLoading(true);
+      
+      const payload = new FormData();
+      payload.append('name', formData.name);
+      payload.append('mobile', formData.mobile);
+      payload.append('email', formData.email);
+      payload.append('dob', formData.dob);
+      payload.append('gender', formData.gender);
+      payload.append('aadhaar', formData.aadhaar);
+      payload.append('address', formData.address);
+      payload.append('password', formData.password);
+      payload.append('consent', formData.consent);
+      
+      if (profileFile) {
+        payload.append('profilePic', profileFile);
+      }
 
-    setShowSuccess(true);
-    setTimeout(() => {
-      setShowSuccess(false);
-      navigate('/verify-otp');
-    }, 2500);
+      const res = await api.post(ENDPOINTS.USER_REGISTER, payload, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      if (res.data.success) {
+        // Build Self member + all added family members
+        const selfMember = {
+          id: 'MC-SELF',
+          name: formData.name,
+          relationship: 'Self',
+          age: getAgeFromDob(formData.dob),
+          dob: formData.dob,
+          bloodGroup: '',
+          gender: formData.gender,
+          verified: true,
+          image: profilePic || null,
+        };
+        saveFamilyMembers([selfMember, ...familyMembers]);
+
+        setShowSuccess(true);
+        setTimeout(() => {
+          setShowSuccess(false);
+          navigate('/verify-otp', { state: { mobile: formData.mobile, purpose: 'register' } });
+        }, 2000);
+      }
+    } catch (error) {
+      setErrorMsg(error.response?.data?.message || 'Registration failed. Please try again.');
+      setLoading(false);
+    }
   };
 
   const relationshipOptions = ['Spouse', 'Son', 'Daughter', 'Father', 'Mother', 'Brother', 'Sister', 'Other'];
@@ -214,6 +240,17 @@ export default function RegisterPage() {
                   placeholder="rahul@example.com"
                   type="email" name="email" value={formData.email}
                   onChange={handleInputChange} required
+                />
+              </div>
+
+              {/* Password */}
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider px-0.5">Create Password *</label>
+                <input
+                  className="w-full h-11 px-3 bg-surface border border-outline-variant rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                  placeholder="Minimum 6 characters"
+                  type="password" name="password" value={formData.password}
+                  onChange={handleInputChange} required minLength={6}
                 />
               </div>
 
@@ -419,12 +456,19 @@ export default function RegisterPage() {
 
           {/* ── Submit ─────────────────────────────────────────── */}
           <div className="space-y-3 pb-4">
+            {errorMsg && (
+              <div className="bg-error/10 border border-error/20 text-error text-xs font-bold p-3 rounded-lg flex items-center gap-2">
+                <span className="material-symbols-outlined text-sm">error</span>
+                {errorMsg}
+              </div>
+            )}
             <button
-              className="w-full h-12 bg-primary hover:opacity-90 text-white text-sm font-bold rounded-xl shadow-lg transition-all active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full h-12 bg-primary hover:opacity-90 text-white text-sm font-bold rounded-xl shadow-lg transition-all active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
               type="submit"
+              disabled={loading}
             >
-              <span>Verify &amp; Continue</span>
-              <span className="material-symbols-outlined text-lg">arrow_forward</span>
+              <span>{loading ? 'Verifying...' : 'Verify & Continue'}</span>
+              {!loading && <span className="material-symbols-outlined text-lg">arrow_forward</span>}
             </button>
             <p className="text-center text-xs text-on-surface-variant">
               Already have an account?{' '}
