@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import api from '../../../services/api';
+import { ENDPOINTS, SERVER_URL } from '../../../services/types';
 
 const KYC_COLORS = {
   Verified: 'bg-green-100 text-green-700',
@@ -25,34 +27,85 @@ export default function AdminUsersPage() {
   const [drawer, setDrawer]       = useState(null);   // user object
   const [loading, setLoading]     = useState(false);
 
+  const [drawerDetails, setDrawerDetails] = useState({ familyMembers: [], claims: [] });
+
+  const fetchUsers = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get(ENDPOINTS.ADMIN_USERS);
+      if (res.data?.success) {
+        setUsers(res.data.data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch users', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const raw = localStorage.getItem('medcred_users');
-    setUsers(raw ? JSON.parse(raw) : []);
+    fetchUsers();
   }, []);
 
-  const save = (updated) => {
-    setUsers(updated);
-    localStorage.setItem('medcred_users', JSON.stringify(updated));
+  const openDrawer = async (user) => {
+    setDrawer(user);
+    setDrawerDetails({ familyMembers: [], claims: [] }); // Reset while loading
+    try {
+      const res = await api.get(ENDPOINTS.ADMIN_USER_DETAILS(user.dbId));
+      if (res.data?.success) {
+        setDrawerDetails(res.data.data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch user details', error);
+    }
   };
 
-  const blockToggle = (user) => {
-    const updated = users.map(u =>
-      u.id === user.id ? { ...u, status: u.status === 'Blocked' ? 'Active' : 'Blocked', cardStatus: u.status === 'Active' ? 'Suspended' : u.cardStatus } : u
-    );
-    save(updated);
-    if (drawer?.id === user.id) setDrawer(updated.find(u => u.id === user.id));
+  const blockToggle = async (user) => {
+    const newStatus = user.status === 'Blocked' ? 'active' : 'blocked';
+    try {
+      const res = await api.patch(ENDPOINTS.ADMIN_USER_STATUS(user.dbId), { status: newStatus });
+      if (res.data?.success) {
+        fetchUsers();
+        if (drawer?.id === user.id) setDrawer(null); // Close drawer to refresh state properly
+      }
+    } catch (error) {
+      console.error('Failed to update user status', error);
+      alert('Failed to update user status');
+    }
   };
 
-  const verifyKYC = (user) => {
-    const updated = users.map(u => u.id === user.id ? { ...u, kyc: 'Verified' } : u);
-    save(updated);
-    if (drawer?.id === user.id) setDrawer(updated.find(u => u.id === user.id));
+  const verifyKYC = async (user) => {
+    try {
+      const endpoint = (user.kycRef && user.kycRef._id)
+        ? ENDPOINTS.ADMIN_KYC_UPDATE(user.kycRef._id)
+        : ENDPOINTS.ADMIN_USER_VERIFY_KYC(user.dbId);
+
+      const res = await api.patch(endpoint, { status: 'verified' });
+      
+      if (res.data?.success) {
+        // Refresh users
+        fetchUsers();
+        if (drawer?.id === user.id) setDrawer({ ...drawer, kyc: 'Verified' });
+      } else {
+        alert(res.data?.message || 'Failed to verify KYC');
+      }
+    } catch (err) {
+      console.error('Error verifying KYC', err);
+      alert('Error verifying KYC');
+    }
   };
 
-  const activateCard = (user) => {
-    const updated = users.map(u => u.id === user.id ? { ...u, cardStatus: 'Active' } : u);
-    save(updated);
-    if (drawer?.id === user.id) setDrawer(updated.find(u => u.id === user.id));
+  const activateCard = async (user) => {
+    try {
+      const res = await api.patch(ENDPOINTS.ADMIN_USER_ACTIVATE_CARD(user.dbId));
+      if (res.data?.success) {
+        fetchUsers();
+        if (drawer?.id === user.id) setDrawer(null); // Close drawer to refresh state properly
+      }
+    } catch (error) {
+      console.error('Failed to activate card', error);
+      alert('Failed to activate card');
+    }
   };
 
   const filtered = users.filter(u => {
@@ -62,9 +115,6 @@ export default function AdminUsersPage() {
     const matchK  = filterKYC === 'All' || u.kyc === filterKYC;
     return matchQ && matchS && matchK;
   });
-
-  const familyMembers = JSON.parse(localStorage.getItem('medcred_family_members') || '[]');
-  const claims        = JSON.parse(localStorage.getItem('medcred_claims') || '[]');
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -176,7 +226,7 @@ export default function AdminUsersPage() {
                   <td className="px-5 py-3.5">
                     <div className="flex gap-1.5 justify-center flex-wrap">
                       <button
-                        onClick={() => setDrawer(user)}
+                        onClick={() => openDrawer(user)}
                         className="bg-[#f0f4ff] hover:bg-[#dae2ff] text-[#003d9b] px-2.5 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-colors"
                       >
                         View
@@ -262,20 +312,47 @@ export default function AdminUsersPage() {
                 ))}
               </div>
 
+              {/* KYC Documents */}
+              {drawerDetails.kycImages && (drawerDetails.kycImages.selfie || drawerDetails.kycImages.aadhaarFront || drawerDetails.kycImages.aadhaarBack) && (
+                <div>
+                  <h5 className="text-[9px] font-bold text-[#516161] uppercase tracking-wider mb-1">KYC Documents</h5>
+                  <div className="flex gap-2 overflow-x-auto pb-1">
+                    {drawerDetails.kycImages.selfie && (
+                      <div className="flex-shrink-0 w-16 h-16 rounded-lg bg-gray-100 border border-gray-200 overflow-hidden group relative">
+                        <img src={`${SERVER_URL}${drawerDetails.kycImages.selfie}`} alt="Selfie" className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-[8px] text-white font-bold cursor-pointer" onClick={() => window.open(`${SERVER_URL}${drawerDetails.kycImages.selfie}`, '_blank')}>View</div>
+                      </div>
+                    )}
+                    {drawerDetails.kycImages.aadhaarFront && (
+                      <div className="flex-shrink-0 w-24 h-16 rounded-lg bg-gray-100 border border-gray-200 overflow-hidden group relative">
+                        <img src={`${SERVER_URL}${drawerDetails.kycImages.aadhaarFront}`} alt="Aadhaar Front" className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-[8px] text-white font-bold cursor-pointer" onClick={() => window.open(`${SERVER_URL}${drawerDetails.kycImages.aadhaarFront}`, '_blank')}>Aadhaar Front</div>
+                      </div>
+                    )}
+                    {drawerDetails.kycImages.aadhaarBack && (
+                      <div className="flex-shrink-0 w-24 h-16 rounded-lg bg-gray-100 border border-gray-200 overflow-hidden group relative">
+                        <img src={`${SERVER_URL}${drawerDetails.kycImages.aadhaarBack}`} alt="Aadhaar Back" className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-[8px] text-white font-bold cursor-pointer" onClick={() => window.open(`${SERVER_URL}${drawerDetails.kycImages.aadhaarBack}`, '_blank')}>Aadhaar Back</div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* Family Members */}
               <div>
                 <h5 className="text-[9px] font-bold text-[#516161] uppercase tracking-wider mb-1">Family Members</h5>
-                {familyMembers.filter(f => f.primaryId === drawer.id).length === 0 ? (
+                {drawerDetails.familyMembers.length === 0 ? (
                   <p className="text-[11px] text-[#737685]">No family members registered.</p>
                 ) : (
                   <div className="space-y-1">
-                    {familyMembers.filter(f => f.primaryId === drawer.id).map((m, i) => (
+                    {drawerDetails.familyMembers.map((m, i) => (
                       <div key={i} className="flex items-center justify-between bg-[#f5f8ff] border border-[#c3c6d6]/10 rounded-lg px-2.5 py-1.5">
                         <div>
                           <p className="text-[11px] font-bold text-[#191b23]">{m.memberName}</p>
                           <p className="text-[8px] text-[#737685]">{m.relation}</p>
                         </div>
-                        <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold ${KYC_COLORS[m.aadhaarStatus]}`}>{m.aadhaarStatus}</span>
+                        <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold ${KYC_COLORS[m.aadhaarStatus] || 'text-[#737685]'}`}>{m.aadhaarStatus}</span>
                       </div>
                     ))}
                   </div>
@@ -285,15 +362,15 @@ export default function AdminUsersPage() {
               {/* Claims */}
               <div>
                 <h5 className="text-[9px] font-bold text-[#516161] uppercase tracking-wider mb-1">Claim History</h5>
-                {claims.filter(c => c.userId === drawer.id).length === 0 ? (
+                {drawerDetails.claims.length === 0 ? (
                   <p className="text-[11px] text-[#737685]">No claims submitted.</p>
                 ) : (
                   <div className="space-y-1">
-                    {claims.filter(c => c.userId === drawer.id).map((c, i) => (
+                    {drawerDetails.claims.map((c, i) => (
                       <div key={i} className="flex items-center justify-between bg-[#f5f8ff] border border-[#c3c6d6]/10 rounded-lg px-2.5 py-1.5">
                         <div>
                           <p className="text-[10px] font-bold text-[#191b23]">{c.id} — {c.type}</p>
-                          <p className="text-[8px] text-[#737685]">₹{c.amount.toLocaleString('en-IN')} · {c.submittedAt}</p>
+                          <p className="text-[8px] text-[#737685]">₹{c.amount?.toLocaleString('en-IN')} · {c.submittedAt}</p>
                         </div>
                         <span className="text-[8px] font-bold text-[#003d9b] bg-[#dae2ff] px-1.5 py-0.5 rounded">{c.status}</span>
                       </div>

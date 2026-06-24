@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+<<<<<<< HEAD
 import { getPlatformPlans, saveMembership } from '../utils/storage';
+=======
+import api from '../../../services/api';
+import { ENDPOINTS } from '../../../services/types';
+>>>>>>> 318574f954edd436278ce82f30178632b2cae125
 
 const planIcons = { individual: 'person', family: 'group', premium: 'workspace_premium' };
 const planGradients = {
@@ -15,14 +20,40 @@ export default function MembershipPlansPage() {
 
   const navigate = useNavigate();
   const location = useLocation();
+<<<<<<< HEAD
   const [selected, setSelected] = useState(planOrder.includes('family') ? 'family' : planOrder[0]);
+=======
+>>>>>>> 318574f954edd436278ce82f30178632b2cae125
   const fromRenew = location.state?.renew;
+
+  const [plans, setPlans] = useState([]);
+  const [selectedPlanId, setSelectedPlanId] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   const [isReferralModalOpen, setIsReferralModalOpen] = useState(false);
   const [sourceType, setSourceType] = useState('self'); // 'self' or 'agent'
   const [referralCode, setReferralCode] = useState('');
   const [agentDetail, setAgentDetail] = useState('');
   const [isCodeApplied, setIsCodeApplied] = useState(false);
+
+  useEffect(() => {
+    const fetchPlans = async () => {
+      try {
+        const res = await api.get(ENDPOINTS.PLANS);
+        if (res.data.success) {
+          setPlans(res.data.data);
+          // Auto-select family plan if available, else first plan
+          const defaultPlan = res.data.data.find(p => p.planId === 'family') || res.data.data[0];
+          if (defaultPlan) setSelectedPlanId(defaultPlan.planId);
+        }
+      } catch (err) {
+        console.error('Failed to fetch plans:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPlans();
+  }, []);
 
   useEffect(() => {
     if (isReferralModalOpen) {
@@ -37,33 +68,55 @@ export default function MembershipPlansPage() {
       document.documentElement.classList.remove('overflow-hidden');
     };
   }, [isReferralModalOpen]);
+
   const handlePurchaseClick = () => {
     setIsReferralModalOpen(true);
   };
 
   const applyCode = () => {
     if (referralCode.trim().length > 3) {
+      // Future: Could validate code with backend here
       setIsCodeApplied(true);
     } else {
       alert('Please enter a valid Referral Code (e.g. AGENT123).');
     }
   };
 
+  const selectedPlan = plans.find(p => p.planId === selectedPlanId);
+
   const handleProceedToPayment = () => {
-    const basePrice = PLANS[selected].price;
+    if (!selectedPlan) return;
+    
+    const basePrice = selectedPlan.price;
     const finalPrice = isCodeApplied && sourceType === 'agent' ? basePrice - 200 : basePrice;
     
     // Pass the discounted price, code, and agent info to the payment page
     navigate('/payment', { 
       state: { 
-        planId: selected, 
+        planId: selectedPlan.planId, 
+        planObjId: selectedPlan._id,
         price: finalPrice, 
         discount: isCodeApplied ? 200 : 0,
         agentDetail: sourceType === 'agent' ? agentDetail : null,
-        referralCode: isCodeApplied ? referralCode : null
+        referralCode: isCodeApplied ? referralCode : null,
+        planName: selectedPlan.name,
+        validity: selectedPlan.validity,
+        coverage: `₹${(selectedPlan.coverageAmount / 100000).toFixed(1)}L`,
+        members: selectedPlan.maxMembers
       } 
     });
   };
+
+  if (loading) {
+    return (
+      <div className="flex-grow flex items-center justify-center bg-[#F8FAFF] min-h-screen">
+        <div className="flex flex-col items-center gap-3">
+          <span className="material-symbols-outlined animate-spin text-primary text-4xl">progress_activity</span>
+          <p className="text-sm font-bold text-on-surface-variant">Loading Plans...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-grow flex flex-col bg-[#F8FAFF] min-h-screen">
@@ -92,18 +145,17 @@ export default function MembershipPlansPage() {
 
         {/* Plan Cards */}
         <div className="space-y-3">
-          {planOrder.map((planId, idx) => {
-            const plan = PLANS[planId];
-            const isSelected = selected === planId;
+          {plans.map((plan, idx) => {
+            const isSelected = selectedPlanId === plan.planId;
             return (
               <div
-                key={planId}
-                onClick={() => setSelected(planId)}
+                key={plan.planId}
+                onClick={() => setSelectedPlanId(plan.planId)}
                 className={`relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 ${isSelected ? 'ring-2 ring-primary shadow-xl scale-[1.01]' : 'shadow-md hover:shadow-lg hover:scale-[1.005]'}`}
                 style={{ animationDelay: `${idx * 80}ms` }}
               >
                 {/* Popular badge */}
-                {plan.popular && (
+                {plan.isPopular && (
                   <div className="absolute top-0 left-0 right-0 flex justify-center">
                     <div className="bg-tertiary text-white text-[9px] font-black px-3 py-0.5 rounded-b-xl tracking-wider">
                       ⭐ MOST POPULAR
@@ -112,11 +164,19 @@ export default function MembershipPlansPage() {
                 )}
 
                 {/* Card header gradient */}
+<<<<<<< HEAD
                 <div className={`bg-gradient-to-br ${planGradients[planId] || 'from-[#424242] to-[#212121]'} p-3.5 text-white ${plan.popular ? 'pt-6' : ''}`}>
                   <div className="flex justify-between items-start">
                     <div>
                       <div className="flex items-center gap-1.5 mb-0.5">
                         <span className="material-symbols-outlined text-white/80 text-lg">{planIcons[planId] || 'card_membership'}</span>
+=======
+                <div className={`bg-gradient-to-br ${planGradients[plan.planId] || planGradients['individual']} p-3.5 text-white ${plan.isPopular ? 'pt-6' : ''}`}>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <div className="flex items-center gap-1.5 mb-0.5">
+                        <span className="material-symbols-outlined text-white/80 text-lg">{planIcons[plan.planId] || 'health_and_safety'}</span>
+>>>>>>> 318574f954edd436278ce82f30178632b2cae125
                         <span className="text-[10px] font-bold uppercase tracking-widest opacity-80">{plan.name}</span>
                       </div>
                       <p className="text-2xl font-black mt-0.5">₹{plan.price.toLocaleString()}</p>
@@ -125,7 +185,7 @@ export default function MembershipPlansPage() {
                     <div className="text-right">
                       <div className="bg-white/20 rounded-lg px-2 py-1.5 text-center">
                         <p className="text-[8px] opacity-80 uppercase font-bold">Coverage</p>
-                        <p className="text-sm font-black">{plan.coverage}</p>
+                        <p className="text-sm font-black">₹{(plan.coverageAmount / 100000).toFixed(1)}L</p>
                       </div>
                     </div>
                   </div>
@@ -133,11 +193,11 @@ export default function MembershipPlansPage() {
                   <div className="flex gap-3 mt-2.5">
                     <div className="bg-white/15 rounded-lg px-2 py-1.5 flex-1 text-center">
                       <p className="text-[8px] opacity-80 font-bold uppercase">Members</p>
-                      <p className="text-sm font-black">Up to {plan.members}</p>
+                      <p className="text-sm font-black">Up to {plan.maxMembers}</p>
                     </div>
                     <div className="bg-white/15 rounded-lg px-2 py-1.5 flex-1 text-center">
                       <p className="text-[8px] opacity-80 font-bold uppercase">Validity</p>
-                      <p className="text-sm font-black">1 Year</p>
+                      <p className="text-sm font-black">{plan.validity}</p>
                     </div>
                   </div>
                 </div>
@@ -192,16 +252,17 @@ export default function MembershipPlansPage() {
         <div className="max-w-md mx-auto">
           <button
             onClick={handlePurchaseClick}
-            className="w-full py-3 bg-primary text-white font-black rounded-xl shadow-xl hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-2 text-sm px-2 whitespace-nowrap"
+            disabled={!selectedPlan}
+            className="w-full py-3 bg-primary text-white font-black rounded-xl shadow-xl hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-2 text-sm px-2 whitespace-nowrap disabled:opacity-50"
           >
             <span className="material-symbols-outlined text-lg">shopping_cart</span>
-            <span>Purchase {PLANS[selected].name} — ₹{PLANS[selected].price.toLocaleString()}</span>
+            {selectedPlan && <span>Purchase {selectedPlan.name} — ₹{selectedPlan.price.toLocaleString()}</span>}
           </button>
         </div>
       </div>
 
       {/* Referral Modal */}
-      {isReferralModalOpen && (
+      {isReferralModalOpen && selectedPlan && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
           <div className="bg-white w-full max-w-sm rounded-3xl p-5 shadow-2xl relative">
             <button 
@@ -294,7 +355,7 @@ export default function MembershipPlansPage() {
             >
               <span>Proceed to Pay</span>
               <span className="font-extrabold text-lg">
-                ₹{sourceType === 'agent' && isCodeApplied ? (PLANS[selected].price - 200).toLocaleString() : PLANS[selected].price.toLocaleString()}
+                ₹{sourceType === 'agent' && isCodeApplied ? (selectedPlan.price - 200).toLocaleString() : selectedPlan.price.toLocaleString()}
               </span>
             </button>
           </div>

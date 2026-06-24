@@ -1,66 +1,44 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import BottomNavBar from '../components/Navigation/BottomNavBar';
+import api from '../../../services/api';
+import { ENDPOINTS } from '../../../services/types';
 
 export default function HospitalsPage() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('All');
+  const [hospitals, setHospitals] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const filters = ['All', 'Multi-Speciality', 'Eye Care', 'Cardiology', 'Dental'];
 
-  const hospitals = [
-    {
-      id: 1,
-      name: 'Max Super Speciality Hospital',
-      type: 'Multi-Speciality',
-      rating: '4.8',
-      distance: '1.2 km',
-      address: 'Press Enclave Road, Saket, New Delhi',
-      cashless: true,
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCBP1HJBDSAGwEbyhasDzI2xXvrYsE4UABr6-H0DJbJaSU07l6_c4W7rj22MI5WffCSjkzePbrSd_xcKvNxtFL_kUqayZaQPfD1w1-Ezv9La3ZnQIF_d-YFSNoxnBHzhTbnqNFr6_UdJ1aUI0puyOBpvAlYtoWbxXA36SKmqghoY-7A2MVJzby_qL_NhECl8a-ZpV4atmPmiosCAmEQEqnt8q_mX7A6mPHkAnsbkcEyvvfezcVB16LB0FQC_MSTWxpybIe5fRswVLCF'
-    },
-    {
-      id: 2,
-      name: 'Apollo Hospitals',
-      type: 'Cardiology',
-      rating: '4.9',
-      distance: '3.4 km',
-      address: 'Sarita Vihar, Mathura Road, New Delhi',
-      cashless: true,
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAUC78WjGV34MJPpGWJdYIJ9ohVAA3Fk_2EgoN1_i_jtLS3UnK3ZWjb_hOTLoF4-Sp0-hVARCWKbEhj3XIjzLHBnIS5d59tmpu3_MT08c41ik3xk8hnrphYVrPwBL1IrPxYjugFlDET5HwJeSg19uUqYe01YaefchrBQ_7c7-dR-ASKD1hoWXTcmWHEJfaYQ3F0QnE2xGnuMASQ0qww9TKHGEfzEhD1Voy966WCUmdDxL_ljGkcGRaVmFo9AUH4Y1fLCpX8P-mfx9yW'
-    },
-    {
-      id: 3,
-      name: 'Fortis Memorial Research Institute',
-      type: 'Multi-Speciality',
-      rating: '4.7',
-      distance: '5.1 km',
-      address: 'Sector 44, Opposite HUDA City Centre, Gurugram',
-      cashless: true,
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuA8oMPsmWFNwG-gYLDdZJ98gvjNRspaUCwy0Mw2IJqcalgZNFmGH5RjCWLKR2UjmgDho6ydPU2gxoh28G8AFmO2g9u1zpEVL1cIi-B06GtPmPsdMoqkxBVPzgEbe39rdtheka7NXIHAsm1yZ4TAVvmh5StB7BPHuAkNMiIztdIYc7BR-nD1OVuSHUOQ6wtHILryC4rFxIUNeZl6iA3ckeQEsyRYoI3hjt1kW5t-bcxfOMLoH48TngIm7Sh_jUPEGD-lVvYO-h84yvDI'
-    },
-    {
-      id: 4,
-      name: 'Sharp Sight Eye Hospital',
-      type: 'Eye Care',
-      rating: '4.6',
-      distance: '2.8 km',
-      address: 'A-15, Swasthya Vihar, Vikas Marg, New Delhi',
-      cashless: true,
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDNdRn2Ot0wyBs2PwC5qaiJ2Rpzy0nitQw_wh74LATCMHnNi4W02hdHOpCJso4MwBszWu2tXVjA-LkA5-gXgVsS0vTuFtlXvFiHV0yOWLGXIB_xhLoAu_VqkTXcW43LgnNXaUqOZyEUSDCxFPu1hxAkP9-DFKKU5s3-jTa9UQBmNCo-Yfi2U_wvxp6rg0kT_rV4w---n5Zf1St47xvXnVblXlb6HtYSv1DQkQw2A3-DC1zC7sjiAVCP60qjOXU4w8LhON7W1VpvuWTD'
-    },
-    {
-      id: 5,
-      name: 'Clove Dental Clinic',
-      type: 'Dental',
-      rating: '4.5',
-      distance: '0.8 km',
-      address: 'GK-2 Main Road, Greater Kailash, New Delhi',
-      cashless: false,
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAupaUjWjUc9Hy3gOtW6iCQV1-nK6kOM1eWaUqGDieca3vXSyrO8VdiLz-GnQ8wiJnoyxbqxvRHsir87vwamiFGjAEBoT5GJX03BLZXdzCYM_HUOeOc_ULx8bt-cBAkBJO3a3Jv6RS7kesFNy1hW8VE6nWib0YLdHrWllxlc8UTPfotjpHscIaf1LkTvClrE8XwFDUoF5ij_U94o2P_Zphou7pHa1Hmj4Jfo0eE9xZSzDz_hxsT_mZhmGdZEZADPKpFMrU-CZcyScil'
-    }
-  ];
+  useEffect(() => {
+    const fetchHospitals = async () => {
+      try {
+        setIsLoading(true);
+        const response = await api.get(ENDPOINTS.HOSPITALS);
+        if (response.data.success) {
+          const mappedHospitals = response.data.data.map(h => ({
+            id: h._id,
+            name: h.name,
+            type: 'Multi-Speciality', // Defaulting since we don't have exact types in DB yet
+            rating: (4 + Math.random()).toFixed(1),
+            distance: (1 + Math.random() * 10).toFixed(1) + ' km',
+            address: `${h.location?.address || ''}, ${h.location?.city || ''}`.replace(/^, | , $/g, ''),
+            cashless: h.isClaimEnabled,
+            image: h.logoUrl || 'https://lh3.googleusercontent.com/aida-public/AB6AXuCBP1HJBDSAGwEbyhasDzI2xXvrYsE4UABr6-H0DJbJaSU07l6_c4W7rj22MI5WffCSjkzePbrSd_xcKvNxtFL_kUqayZaQPfD1w1-Ezv9La3ZnQIF_d-YFSNoxnBHzhTbnqNFr6_UdJ1aUI0puyOBpvAlYtoWbxXA36SKmqghoY-7A2MVJzby_qL_NhECl8a-ZpV4atmPmiosCAmEQEqnt8q_mX7A6mPHkAnsbkcEyvvfezcVB16LB0FQC_MSTWxpybIe5fRswVLCF'
+          }));
+          setHospitals(mappedHospitals);
+        }
+      } catch (error) {
+        console.error("Error fetching hospitals:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchHospitals();
+  }, []);
 
   const filteredHospitals = hospitals.filter(h => {
     const matchesSearch = h.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -127,7 +105,11 @@ export default function HospitalsPage() {
             {filteredHospitals.length} cashless network partners found
           </p>
 
-          {filteredHospitals.length > 0 ? (
+          {isLoading ? (
+            <div className="flex justify-center items-center py-10">
+              <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+            </div>
+          ) : filteredHospitals.length > 0 ? (
             filteredHospitals.map(h => (
               <div 
                 key={h.id}

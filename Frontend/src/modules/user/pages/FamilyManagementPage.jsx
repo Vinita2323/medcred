@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import BottomNavBar from '../components/Navigation/BottomNavBar';
-import { getFamilyMembers, removeFamilyMember } from '../utils/storage';
+import api from '../../../services/api';
+import { ENDPOINTS } from '../../../services/types';
+import { SERVER_URL } from '../../../services/types'; // To load images if needed, or use relative paths
 
 const DEFAULT_AVATAR = null; // no avatar fallback needed — we use icon
 
@@ -9,17 +11,40 @@ export default function FamilyManagementPage() {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [members, setMembers] = useState([]);
-  const [deleteConfirm, setDeleteConfirm] = useState(null); // holds id to confirm
+  const [loading, setLoading] = useState(true);
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
 
-  // Load from localStorage on mount
+  // Load from API on mount
   useEffect(() => {
-    setMembers(getFamilyMembers());
+    fetchMembers();
   }, []);
 
-  const handleDelete = (id) => {
-    removeFamilyMember(id);
-    setMembers(getFamilyMembers());
-    setDeleteConfirm(null);
+  const fetchMembers = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get(ENDPOINTS.FAMILY_MEMBERS);
+      if (res.data.success) {
+        setMembers(res.data.data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch family members:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    try {
+      const res = await api.delete(ENDPOINTS.FAMILY_REMOVE(id));
+      if (res.data.success) {
+        setMembers(members.filter(m => m._id !== id));
+      }
+    } catch (err) {
+      console.error('Failed to remove member:', err);
+      alert(err.response?.data?.message || 'Failed to remove member');
+    } finally {
+      setDeleteConfirm(null);
+    }
   };
 
   const filteredMembers = members.filter(member =>
@@ -68,22 +93,26 @@ export default function FamilyManagementPage() {
 
         {/* Family List */}
         <div className="space-y-4">
-          {filteredMembers.length === 0 && members.length === 0 && (
+          {loading ? (
+            <div className="text-center py-12">
+              <span className="material-symbols-outlined animate-spin text-3xl text-primary mb-2">sync</span>
+              <p className="text-sm text-on-surface-variant">Loading members...</p>
+            </div>
+          ) : filteredMembers.length === 0 && members.length === 0 ? (
             <div className="text-center py-12">
               <span className="material-symbols-outlined text-5xl text-outline/50 mb-3 block">group</span>
               <p className="text-sm font-bold text-on-surface-variant">No family members yet</p>
               <p className="text-xs text-outline mt-1">Add your spouse, children, or parents to cover them under your plan.</p>
             </div>
-          )}
-
-          {filteredMembers.map((member) => (
+          ) : (
+            filteredMembers.map((member) => (
             <div
-              key={member.id}
+              key={member._id}
               className="glass-card border border-outline-variant rounded-xl p-4 flex flex-col gap-3 shadow-sm hover:shadow-md transition-all relative overflow-hidden"
             >
               {/* Status Badge */}
               <div className="absolute top-4 right-4">
-                {member.verified ? (
+                {member.isVerified ? (
                   <span className="flex items-center gap-0.5 bg-tertiary-fixed text-on-tertiary-fixed px-2 py-0.5 rounded-full text-[10px] font-bold">
                     <span className="material-symbols-outlined text-xs" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
                     Verified
@@ -99,8 +128,8 @@ export default function FamilyManagementPage() {
               <div className="flex items-center gap-3 pr-20">
                 {/* Avatar */}
                 <div className="w-14 h-14 rounded-full border-2 border-primary-container overflow-hidden bg-surface-container-high flex items-center justify-center shrink-0">
-                  {member.image ? (
-                    <img alt={member.name} src={member.image} className="w-full h-full object-cover" />
+                  {member.profilePhoto ? (
+                    <img alt={member.name} src={member.profilePhoto.startsWith('http') ? member.profilePhoto : `${SERVER_URL}${member.profilePhoto}`} className="w-full h-full object-cover" />
                   ) : (
                     <span className="material-symbols-outlined text-2xl text-primary/50">person</span>
                   )}
@@ -120,7 +149,7 @@ export default function FamilyManagementPage() {
                 </div>
                 <div>
                   <p className="text-[10px] text-on-surface-variant uppercase font-semibold">Member ID</p>
-                  <p className="font-mono text-on-surface mt-0.5 text-[10px]">{member.id}</p>
+                  <p className="font-mono text-on-surface mt-0.5 text-[10px]">{member.memberId}</p>
                 </div>
                 <div>
                   <p className="text-[10px] text-on-surface-variant uppercase font-semibold">Blood</p>
@@ -139,7 +168,7 @@ export default function FamilyManagementPage() {
                     View Card
                   </button>
                   <button
-                    onClick={() => setDeleteConfirm(member.id)}
+                    onClick={() => setDeleteConfirm(member._id)}
                     className="flex-1 text-[11px] font-bold text-error flex items-center justify-center gap-1 py-1.5 rounded-lg hover:bg-error/5 transition-colors cursor-pointer"
                   >
                     <span className="material-symbols-outlined text-sm">person_remove</span>
@@ -148,7 +177,8 @@ export default function FamilyManagementPage() {
                 </div>
               )}
             </div>
-          ))}
+          ))
+          )}
 
           {filteredMembers.length === 0 && members.length > 0 && (
             <p className="text-center text-xs text-on-surface-variant py-8">No family members match your search.</p>

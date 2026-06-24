@@ -1,13 +1,36 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { getFamilyMembers } from '../utils/storage';
+import api from '../../../services/api';
+import { ENDPOINTS, SERVER_URL } from '../../../services/types';
 
 export default function LoanApplicationFormPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const state = location.state || { type: 'Individual', limit: 200000 };
 
-  const familyMembers = getFamilyMembers();
+  const [familyMembers, setFamilyMembers] = useState([]);
+
+  useEffect(() => {
+    fetchFamily();
+  }, []);
+
+  const fetchFamily = async () => {
+    try {
+      const res = await api.get(ENDPOINTS.FAMILY_MEMBERS);
+      if (res.data.success) {
+        // Map backend format to frontend format
+        const mapped = res.data.data.map(m => ({
+          id: m._id,
+          name: m.name,
+          relationship: m.relationship,
+          image: m.profilePhoto ? `${SERVER_URL}${m.profilePhoto}` : null,
+        }));
+        setFamilyMembers(mapped);
+      }
+    } catch (err) {
+      console.error('Failed to fetch family members', err);
+    }
+  };
 
   // Multi-select state
   const [selectedMemberIds, setSelectedMemberIds] = useState([]);
@@ -125,7 +148,7 @@ export default function LoanApplicationFormPage() {
     return Math.round(loanAmount / tenure);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (!applicantData.aadhaarNumber || !applicantData.panNumber) {
@@ -146,10 +169,47 @@ export default function LoanApplicationFormPage() {
     }
     
     setIsApplying(true);
-    setTimeout(() => {
+    try {
+      const formData = new FormData();
+      formData.append('aadhaarNumber', applicantData.aadhaarNumber);
+      formData.append('panNumber', applicantData.panNumber);
+      formData.append('loanAmount', loanAmount);
+      formData.append('tenure', tenure);
+
+      // We need to pass patients as a JSON string, and files mapped to them
+      const patientsPayload = activePatientIds.map(id => ({
+        patientName: patientsData[id].patientName,
+        relationship: patientsData[id].relationship,
+        hospitalName: patientsData[id].hospitalName,
+        admissionDate: patientsData[id].admissionDate,
+        treatmentReason: patientsData[id].reason,
+        familyMemberId: id !== 'manual' ? id : undefined,
+      }));
+      formData.append('patients', JSON.stringify(patientsPayload));
+
+      // Append files
+      activePatientIds.forEach((id, index) => {
+        if (patientsData[id].prescriptionFile) {
+          formData.append(`prescriptionFile_${index}`, patientsData[id].prescriptionFile);
+        }
+        if (patientsData[id].billFile) {
+          formData.append(`billFile_${index}`, patientsData[id].billFile);
+        }
+      });
+
+      const res = await api.post(ENDPOINTS.LOAN_APPLY, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      if (res.data.success) {
+        setApplied(true);
+      }
+    } catch (err) {
+      console.error('Loan apply error:', err);
+      alert(err.response?.data?.message || 'Failed to submit application');
+    } finally {
       setIsApplying(false);
-      setApplied(true);
-    }, 1500);
+    }
   };
 
   return (

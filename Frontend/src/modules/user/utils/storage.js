@@ -1,8 +1,8 @@
-// ─── MedCred LocalStorage Utility ────────────────────────────────────────────
+import { STORAGE_KEYS } from '../../../services/types';
+
 const KEYS = {
-  USER:       'medcred_user',
+  USER:       STORAGE_KEYS.USER_DATA,
   FAMILY:     'medcred_family',
-  LOGGED_IN:  'medcred_logged_in',
   MEMBERSHIP: 'medcred_membership',
   KYC:        'medcred_kyc',
 };
@@ -19,16 +19,16 @@ export function updateUser(fields) {
   saveUser({ ...(getUser() || {}), ...fields });
 }
 export function clearUser() {
-  [KEYS.USER, KEYS.LOGGED_IN, KEYS.MEMBERSHIP, KEYS.KYC, KEYS.FAMILY]
+  [KEYS.USER, STORAGE_KEYS.ACCESS_TOKEN, STORAGE_KEYS.REFRESH_TOKEN, KEYS.MEMBERSHIP, KEYS.KYC, KEYS.FAMILY]
     .forEach(k => localStorage.removeItem(k));
 }
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 export function setLoggedIn(value) {
-  localStorage.setItem(KEYS.LOGGED_IN, value ? 'true' : 'false');
+  // Legacy function, no longer strictly needed but kept for backward compatibility if any component calls it.
 }
 export function isLoggedIn() {
-  return localStorage.getItem(KEYS.LOGGED_IN) === 'true';
+  return !!localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
 }
 
 // ── Family Members ────────────────────────────────────────────────────────────

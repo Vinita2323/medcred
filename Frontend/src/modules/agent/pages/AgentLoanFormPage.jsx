@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api from '../../../services/api';
+import { ENDPOINTS } from '../../../services/types';
 
 export default function AgentLoanFormPage() {
   const navigate = useNavigate();
@@ -20,17 +22,39 @@ export default function AgentLoanFormPage() {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!customerId || !patientName || !hospitalName || !admissionDate || !prescriptionFile) {
       alert('Please fill out all required fields and upload the Doctor\'s Prescription.');
       return;
     }
+    
     setIsSubmitting(true);
-    setTimeout(() => {
+    
+    try {
+      const formData = new FormData();
+      formData.append('customerId', customerId);
+      formData.append('patientName', patientName);
+      formData.append('relationship', relationship);
+      formData.append('hospitalName', hospitalName);
+      formData.append('admissionDate', admissionDate);
+      formData.append('loanAmount', loanAmount);
+      formData.append('tenure', tenure);
+      formData.append('prescriptionFile', prescriptionFile);
+
+      const res = await api.post(ENDPOINTS.AGENT_LOAN_APPLY, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      if (res.data.success) {
+        setSubmitted(true);
+      }
+    } catch (error) {
+      console.error('Error applying for loan:', error);
+      alert(error.response?.data?.message || 'Failed to submit loan application.');
+    } finally {
       setIsSubmitting(false);
-      setSubmitted(true);
-    }, 1500);
+    }
   };
 
   return (

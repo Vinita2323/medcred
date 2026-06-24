@@ -1,119 +1,45 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-
-/* ── Seed mock data into localStorage if absent ─────────── */
-function seedData() {
-  if (!localStorage.getItem('medcred_users')) {
-    const users = [
-      { id: 'USR001', name: 'Arjun Mehta',    mobile: '9876543210', email: 'arjun@email.com', kyc: 'Verified',  cardStatus: 'Active',   plan: 'Premium', registeredAt: '2026-01-10', status: 'Active' },
-      { id: 'USR002', name: 'Priya Sharma',   mobile: '9123456780', email: 'priya@email.com', kyc: 'Pending',   cardStatus: 'Pending',  plan: 'Basic',   registeredAt: '2026-02-14', status: 'Active' },
-      { id: 'USR003', name: 'Rohan Gupta',    mobile: '9988776655', email: 'rohan@email.com', kyc: 'Verified',  cardStatus: 'Active',   plan: 'Elite',   registeredAt: '2026-01-22', status: 'Active' },
-      { id: 'USR004', name: 'Sneha Patil',    mobile: '8877665544', email: 'sneha@email.com', kyc: 'Rejected',  cardStatus: 'Suspended',plan: 'None',    registeredAt: '2026-03-05', status: 'Blocked' },
-      { id: 'USR005', name: 'Vikram Singh',   mobile: '7766554433', email: 'vikram@email.com',kyc: 'Verified',  cardStatus: 'Active',   plan: 'Premium', registeredAt: '2026-02-28', status: 'Active' },
-      { id: 'USR006', name: 'Anjali Desai',   mobile: '6655443322', email: 'anjali@email.com',kyc: 'Pending',   cardStatus: 'Pending',  plan: 'Basic',   registeredAt: '2026-04-01', status: 'Active' },
-      { id: 'USR007', name: 'Karan Patel',    mobile: '5544332211', email: 'karan@email.com', kyc: 'Verified',  cardStatus: 'Active',   plan: 'Elite',   registeredAt: '2026-03-18', status: 'Active' },
-      { id: 'USR008', name: 'Meera Joshi',    mobile: '9090909090', email: 'meera@email.com', kyc: 'Verified',  cardStatus: 'Expired',  plan: 'Basic',   registeredAt: '2025-12-01', status: 'Active' },
-    ];
-    localStorage.setItem('medcred_users', JSON.stringify(users));
-  }
-
-  if (!localStorage.getItem('medcred_claims')) {
-    const claims = [
-      { id: 'CLM001', userId: 'USR001', userName: 'Arjun Mehta',  type: 'Hospital',      amount: 85000,  status: 'Under Review',  submittedAt: '2026-06-01', documents: ['Hospital Bill', 'Discharge Summary'] },
-      { id: 'CLM002', userId: 'USR003', userName: 'Rohan Gupta',  type: 'Home Treatment', amount: 22000,  status: 'Submitted',     submittedAt: '2026-06-05', documents: ['Medicine Bills', 'Consultation Docs'] },
-      { id: 'CLM003', userId: 'USR005', userName: 'Vikram Singh', type: 'Hospital',      amount: 150000, status: 'Approved',      submittedAt: '2026-05-20', documents: ['Hospital Bill', 'Medical Reports'] },
-      { id: 'CLM004', userId: 'USR007', userName: 'Karan Patel',  type: 'Home Treatment', amount: 45000,  status: 'Rejected',      submittedAt: '2026-05-28', documents: ['Medicine Bills'] },
-      { id: 'CLM005', userId: 'USR002', userName: 'Priya Sharma', type: 'Hospital',      amount: 120000, status: 'Verification Pending', submittedAt: '2026-06-10', documents: ['Hospital Bill', 'Prescription'] },
-      { id: 'CLM006', userId: 'USR001', userName: 'Arjun Mehta',  type: 'Home Treatment', amount: 18000,  status: 'Completed',     submittedAt: '2026-04-15', documents: ['Medicine Bills'] },
-    ];
-    localStorage.setItem('medcred_claims', JSON.stringify(claims));
-  }
-
-  if (!localStorage.getItem('medcred_loans')) {
-    const loans = [
-      { id: 'LN001', userId: 'USR001', userName: 'Arjun Mehta',  cardPurchaseDate: '2026-01-10', status: 'Eligible',     applicationStatus: 'Applied',   amount: 250000 },
-      { id: 'LN002', userId: 'USR002', userName: 'Priya Sharma', cardPurchaseDate: '2026-02-14', status: 'Waiting',      applicationStatus: 'Not Applied', daysLeft: 12 },
-      { id: 'LN003', userId: 'USR003', userName: 'Rohan Gupta',  cardPurchaseDate: '2026-01-22', status: 'Eligible',     applicationStatus: 'Approved',  amount: 300000 },
-      { id: 'LN004', userId: 'USR005', userName: 'Vikram Singh', cardPurchaseDate: '2026-02-28', status: 'Eligible',     applicationStatus: 'Applied',   amount: 200000 },
-      { id: 'LN005', userId: 'USR006', userName: 'Anjali Desai', cardPurchaseDate: '2026-04-01', status: 'Not Eligible', applicationStatus: 'Not Applied', daysLeft: 16 },
-    ];
-    localStorage.setItem('medcred_loans', JSON.stringify(loans));
-  }
-
-  if (!localStorage.getItem('medcred_hospitals')) {
-    const hospitals = [
-      { id: 'HOS001', name: 'Apollo Hospitals',       location: 'Mumbai, Maharashtra',    contact: '+91-22-6676-0000', claimEnabled: true,  status: 'Active',  network: true  },
-      { id: 'HOS002', name: 'Fortis Healthcare',      location: 'Bangalore, Karnataka',   contact: '+91-80-6621-4444', claimEnabled: true,  status: 'Active',  network: true  },
-      { id: 'HOS003', name: 'Narayana Health',        location: 'Kolkata, West Bengal',   contact: '+91-33-7122-2222', claimEnabled: true,  status: 'Active',  network: true  },
-      { id: 'HOS004', name: 'Max Super Speciality',   location: 'New Delhi',              contact: '+91-11-2651-5050', claimEnabled: false, status: 'Pending', network: false },
-      { id: 'HOS005', name: 'Manipal Hospitals',      location: 'Pune, Maharashtra',      contact: '+91-20-6672-4444', claimEnabled: true,  status: 'Active',  network: true  },
-      { id: 'HOS006', name: 'Kokilaben Hospital',     location: 'Mumbai, Maharashtra',    contact: '+91-22-3069-9999', claimEnabled: false, status: 'Pending', network: false },
-    ];
-    localStorage.setItem('medcred_hospitals', JSON.stringify(hospitals));
-  }
-
-  if (!localStorage.getItem('medcred_family_members')) {
-    const members = [
-      { id: 'FM001', primaryUser: 'Arjun Mehta', primaryId: 'USR001', memberName: 'Sunita Mehta',  relation: 'Spouse', aadhaarStatus: 'Verified', status: 'Active' },
-      { id: 'FM002', primaryUser: 'Arjun Mehta', primaryId: 'USR001', memberName: 'Ravi Mehta',    relation: 'Father', aadhaarStatus: 'Verified', status: 'Active' },
-      { id: 'FM003', primaryUser: 'Rohan Gupta', primaryId: 'USR003', memberName: 'Anita Gupta',   relation: 'Spouse', aadhaarStatus: 'Pending',  status: 'Pending' },
-      { id: 'FM004', primaryUser: 'Vikram Singh',primaryId: 'USR005', memberName: 'Kavita Singh',  relation: 'Spouse', aadhaarStatus: 'Verified', status: 'Active' },
-      { id: 'FM005', primaryUser: 'Vikram Singh',primaryId: 'USR005', memberName: 'Aryan Singh',   relation: 'Child',  aadhaarStatus: 'Verified', status: 'Active' },
-      { id: 'FM006', primaryUser: 'Karan Patel', primaryId: 'USR007', memberName: 'Rekha Patel',   relation: 'Mother', aadhaarStatus: 'Rejected', status: 'Suspended' },
-    ];
-    localStorage.setItem('medcred_family_members', JSON.stringify(members));
-  }
-}
+import api from '../../../services/api';
+import { ENDPOINTS } from '../../../services/types';
 
 export default function AdminDashboardPage() {
   const navigate = useNavigate();
-  const [stats, setStats]       = useState(null);
+  const [stats, setStats]           = useState(null);
   const [activities, setActivities] = useState([]);
   const [claimBreakdown, setClaimBreakdown] = useState([]);
-  const [topAgents, setTopAgents] = useState([]);
+  const [topAgents, setTopAgents]   = useState([]);
 
   useEffect(() => {
-    seedData();
-    const users    = JSON.parse(localStorage.getItem('medcred_users') || '[]');
-    const claims   = JSON.parse(localStorage.getItem('medcred_claims') || '[]');
-    const agents   = JSON.parse(localStorage.getItem('medcred_agents') || '[]');
-    const hospitals= JSON.parse(localStorage.getItem('medcred_hospitals') || '[]');
+    const fetchStats = async () => {
+      try {
+        const res = await api.get(ENDPOINTS.ADMIN_DASHBOARD_STATS);
+        if (!res.data?.success) return;
 
-    const activeCards   = users.filter(u => u.cardStatus === 'Active').length;
-    const pendingClaims = claims.filter(c => ['Submitted','Under Review','Verification Pending'].includes(c.status)).length;
-    const activeAgents  = agents.filter(a => a.status === 'Approved').length;
-    const revenue       = claims.filter(c => c.status === 'Approved' || c.status === 'Completed').reduce((s, c) => s + c.amount, 0);
-    const pendingKYC    = users.filter(u => u.kyc === 'Pending').length;
+        const d = res.data.data;
 
-    setStats([
-      { label: 'Total Users',          value: users.length,    icon: 'group',               color: 'text-[#003d9b]', bg: 'bg-[#dae2ff]', route: '/admin/users' },
-      { label: 'Active Cards',         value: activeCards,     icon: 'credit_card',         color: 'text-green-700', bg: 'bg-green-100', route: '/admin/users' },
-      { label: 'Pending Claims',       value: pendingClaims,   icon: 'description',         color: 'text-orange-600',bg: 'bg-orange-100', route: '/admin/claims' },
-      { label: 'Active Agents',        value: activeAgents,    icon: 'badge',               color: 'text-[#0c56d0]', bg: 'bg-[#d4e6ff]', route: '/admin/agents' },
-      { label: 'Total Revenue',        value: `₹${(revenue/100000).toFixed(1)}L`, icon: 'payments', color: 'text-purple-700', bg: 'bg-purple-100', route: '/admin/reports' },
-      { label: 'Pending Verifications',value: pendingKYC,      icon: 'verified_user',       color: 'text-red-600',   bg: 'bg-red-100',   route: '/admin/users' },
-    ]);
+        setStats([
+          { label: 'Total Users',           value: d.totalUsers,    icon: 'group',               color: 'text-[#003d9b]', bg: 'bg-[#dae2ff]', route: '/admin/users' },
+          { label: 'Active Cards',          value: d.activeCards,   icon: 'credit_card',         color: 'text-green-700', bg: 'bg-green-100', route: '/admin/users' },
+          { label: 'Pending Claims',        value: d.pendingClaims, icon: 'description',         color: 'text-orange-600',bg: 'bg-orange-100', route: '/admin/claims' },
+          { label: 'Active Agents',         value: d.activeAgents,  icon: 'badge',               color: 'text-[#0c56d0]', bg: 'bg-[#d4e6ff]', route: '/admin/agents' },
+          { label: 'Total Revenue',         value: `₹${(d.totalRevenue / 100000).toFixed(1)}L`, icon: 'payments', color: 'text-purple-700', bg: 'bg-purple-100', route: '/admin/reports' },
+          { label: 'Pending Verifications', value: d.pendingKYC,    icon: 'verified_user',       color: 'text-red-600',   bg: 'bg-red-100',   route: '/admin/users' },
+        ]);
 
-    const breakdown = [
-      { label: 'Submitted',           count: claims.filter(c => c.status === 'Submitted').length,           color: 'bg-blue-500' },
-      { label: 'Under Review',        count: claims.filter(c => c.status === 'Under Review').length,        color: 'bg-yellow-500' },
-      { label: 'Verification Pending',count: claims.filter(c => c.status === 'Verification Pending').length,color: 'bg-orange-500' },
-      { label: 'Approved',            count: claims.filter(c => c.status === 'Approved').length,            color: 'bg-green-500' },
-      { label: 'Rejected',            count: claims.filter(c => c.status === 'Rejected').length,            color: 'bg-red-500' },
-      { label: 'Completed',           count: claims.filter(c => c.status === 'Completed').length,           color: 'bg-teal-500' },
-    ];
-    setClaimBreakdown(breakdown);
+        setClaimBreakdown((d.claimBreakdown || []).map((item, i) => ({
+          ...item,
+          color: ['bg-blue-500', 'bg-yellow-500', 'bg-orange-500', 'bg-green-500', 'bg-red-500', 'bg-teal-500'][i] || 'bg-gray-400',
+        })));
 
-    const approvedAgents = agents.filter(a => a.status === 'Approved').slice(0, 4);
-    setTopAgents(approvedAgents);
+        setTopAgents(d.topAgents || []);
+        setActivities(d.activityFeed || []);
+      } catch (err) {
+        console.error('Failed to fetch dashboard stats:', err);
+      }
+    };
 
-    setActivities([
-      { icon: 'person_add',    bg: 'bg-[#dae2ff]', text: 'text-[#003d9b]', title: 'New User Registered',    desc: 'Anjali Desai completed registration via Agent portal.', time: '5 min ago' },
-      { icon: 'description',   bg: 'bg-orange-100',text: 'text-orange-700',title: 'Claim Submitted',         desc: 'CLM005 — Priya Sharma submitted a ₹1,20,000 hospital claim.', time: '18 min ago' },
-      { icon: 'verified_user', bg: 'bg-green-100', text: 'text-green-700',  title: 'KYC Verified',           desc: 'Karan Patel\'s Aadhaar verification completed successfully.', time: '1 hr ago' },
-      { icon: 'badge',         bg: 'bg-purple-100',text: 'text-purple-700', title: 'Agent Pending Approval', desc: 'New field agent Suresh Kumar awaiting admin approval.', time: '2 hr ago' },
-      { icon: 'local_hospital',bg: 'bg-[#d4e6ff]', text: 'text-[#0c56d0]', title: 'Hospital Added',          desc: 'Kokilaben Hospital, Mumbai submitted for network approval.', time: '3 hr ago' },
-    ]);
+    fetchStats();
   }, []);
 
   const quickActions = [

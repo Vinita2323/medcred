@@ -6,6 +6,7 @@ import AgentSplashPage from '../pages/AgentSplashPage';
 import AgentLoginPage from '../pages/AgentLoginPage';
 import AgentOtpPage from '../pages/AgentOtpPage';
 import AgentRegisterPage from '../pages/AgentRegisterPage';
+import AgentForgotPasswordPage from '../pages/AgentForgotPasswordPage';
 import AgentDashboardPage from '../pages/AgentDashboardPage';
 import AgentCustomersPage from '../pages/AgentCustomersPage';
 import AgentProfilePage from '../pages/AgentProfilePage';
@@ -23,6 +24,7 @@ export default function AgentRoutes() {
       <Route path="/agent"           element={<AgentSplashPage />} />
       <Route path="/agent/splash"    element={<AgentSplashPage />} />
       <Route path="/agent/login"     element={<AgentLoginPage />} />
+      <Route path="/agent/forgot-password" element={<AgentForgotPasswordPage />} />
       <Route path="/agent/otp"       element={<AgentOtpPage />} />
       <Route path="/agent/register"  element={<AgentRegisterPage />} />
       

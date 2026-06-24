@@ -11,32 +11,64 @@ const AADHAAR_COLORS = {
   Rejected: 'bg-red-100 text-red-700',
 };
 
+import api from '../../../services/api';
+import { ENDPOINTS, SERVER_URL } from '../../../services/types';
+
 export default function AdminFamilyCardsPage() {
   const [members, setMembers] = useState([]);
   const [search, setSearch]   = useState('');
   const [filterStatus, setFilter] = useState('All');
   const [selectedMember, setSelected] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const raw = localStorage.getItem('medcred_family_members');
-    setMembers(raw ? JSON.parse(raw) : []);
+    fetchMembers();
   }, []);
 
-  const save = (updated) => {
-    setMembers(updated);
-    localStorage.setItem('medcred_family_members', JSON.stringify(updated));
+  const fetchMembers = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get(ENDPOINTS.ADMIN_FAMILY_MEMBERS);
+      if (res.data.success) {
+        // Map backend data to frontend model
+        const mapped = res.data.data.map(m => ({
+          _id: m._id,
+          id: m.memberId,
+          memberName: m.name,
+          primaryUser: m.primaryUserName,
+          relation: m.relationship,
+          aadhaarStatus: m.verificationStatus === 'verified' ? 'Verified' : (m.verificationStatus === 'rejected' ? 'Rejected' : 'Pending'),
+          status: m.status === 'active' ? 'Active' : (m.status === 'suspended' ? 'Suspended' : 'Pending'),
+          aadhaarFront: m.aadhaarFront,
+          aadhaarBack: m.aadhaarBack,
+        }));
+        setMembers(mapped);
+      }
+    } catch (err) {
+      console.error('Failed to fetch members:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const verifyMember = (id) => {
-    const updated = members.map(m => m.id === id ? { ...m, aadhaarStatus: 'Verified', status: 'Active' } : m);
-    save(updated);
-    if (selectedMember?.id === id) setSelected(updated.find(m => m.id === id));
+  const verifyMember = async (dbId, action = 'verified') => {
+    try {
+      const res = await api.patch(ENDPOINTS.ADMIN_FAMILY_VERIFY(dbId), { status: action });
+      if (res.data.success) {
+        // Refresh or manually update
+        fetchMembers();
+        setSelected(null);
+      }
+    } catch (err) {
+      console.error('Failed to verify:', err);
+      alert(err.response?.data?.message || 'Failed to verify member');
+    }
   };
 
-  const suspendCard = (id) => {
-    const updated = members.map(m => m.id === id ? { ...m, status: m.status === 'Suspended' ? 'Active' : 'Suspended' } : m);
-    save(updated);
-    if (selectedMember?.id === id) setSelected(updated.find(m => m.id === id));
+  const suspendCard = (dbId, currentStatus) => {
+    // We reuse the same endpoint for suspending for now or we can implement a status endpoint.
+    // Assuming 'rejected' works as suspension in our simplified model.
+    verifyMember(dbId, currentStatus === 'Suspended' ? 'verified' : 'rejected');
   };
 
   const filtered = members.filter(m => {
@@ -147,10 +179,10 @@ export default function AdminFamilyCardsPage() {
                     <div className="flex gap-1.5 justify-center">
                       <button onClick={() => setSelected(m)} className="bg-[#f0f4ff] hover:bg-[#dae2ff] text-[#003d9b] px-2.5 py-1.5 rounded-lg text-xs font-bold cursor-pointer">View</button>
                       {m.aadhaarStatus === 'Pending' && (
-                        <button onClick={() => verifyMember(m.id)} className="bg-green-50 hover:bg-green-100 text-green-700 px-2.5 py-1.5 rounded-lg text-xs font-bold cursor-pointer">Verify</button>
+                        <button onClick={() => verifyMember(m._id)} className="bg-green-50 hover:bg-green-100 text-green-700 px-2.5 py-1.5 rounded-lg text-xs font-bold cursor-pointer">Verify</button>
                       )}
                       <button
-                        onClick={() => suspendCard(m.id)}
+                        onClick={() => suspendCard(m._id, m.status)}
                         className={`px-2.5 py-1.5 rounded-lg text-xs font-bold cursor-pointer ${m.status === 'Suspended' ? 'bg-green-50 text-green-700 hover:bg-green-100' : 'bg-red-50 text-red-600 hover:bg-red-100'}`}
                       >
                         {m.status === 'Suspended' ? 'Reinstate' : 'Suspend'}
@@ -203,14 +235,44 @@ export default function AdminFamilyCardsPage() {
                 </div>
               ))}
             </div>
+            
+            {/* Aadhaar Documents Display */}
+            <div className="space-y-2 mt-4">
+              <p className="text-xs font-bold text-[#516161] uppercase tracking-wider">Aadhaar Documents</p>
+              <div className="flex gap-4">
+                {selectedMember.aadhaarFront ? (
+                  <a href={`${SERVER_URL}${selectedMember.aadhaarFront}`} target="_blank" rel="noopener noreferrer" className="flex-1 bg-[#f5f8ff] border border-[#c3c6d6]/40 rounded-xl p-2 flex flex-col items-center justify-center hover:bg-[#dae2ff] transition-colors overflow-hidden">
+                    <img src={`${SERVER_URL}${selectedMember.aadhaarFront}`} alt="Aadhaar Front" className="w-full h-24 object-cover rounded-lg mb-2" />
+                    <p className="text-[10px] font-bold text-[#003d9b]">View Front</p>
+                  </a>
+                ) : (
+                  <div className="flex-1 bg-[#f5f8ff] border border-[#c3c6d6]/40 border-dashed rounded-xl p-2 flex flex-col items-center justify-center h-32 opacity-60">
+                    <span className="material-symbols-outlined text-[#737685]">image_not_supported</span>
+                    <p className="text-[10px] text-[#737685] mt-1">No Front Image</p>
+                  </div>
+                )}
+                
+                {selectedMember.aadhaarBack ? (
+                  <a href={`${SERVER_URL}${selectedMember.aadhaarBack}`} target="_blank" rel="noopener noreferrer" className="flex-1 bg-[#f5f8ff] border border-[#c3c6d6]/40 rounded-xl p-2 flex flex-col items-center justify-center hover:bg-[#dae2ff] transition-colors overflow-hidden">
+                    <img src={`${SERVER_URL}${selectedMember.aadhaarBack}`} alt="Aadhaar Back" className="w-full h-24 object-cover rounded-lg mb-2" />
+                    <p className="text-[10px] font-bold text-[#003d9b]">View Back</p>
+                  </a>
+                ) : (
+                  <div className="flex-1 bg-[#f5f8ff] border border-[#c3c6d6]/40 border-dashed rounded-xl p-2 flex flex-col items-center justify-center h-32 opacity-60">
+                    <span className="material-symbols-outlined text-[#737685]">image_not_supported</span>
+                    <p className="text-[10px] text-[#737685] mt-1">No Back Image</p>
+                  </div>
+                )}
+              </div>
+            </div>
             <div className="flex gap-3 pt-2">
               {selectedMember.aadhaarStatus === 'Pending' && (
-                <button onClick={()=>verifyMember(selectedMember.id)} className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2.5 rounded-xl text-xs font-bold cursor-pointer">
+                <button onClick={()=>verifyMember(selectedMember._id)} className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2.5 rounded-xl text-xs font-bold cursor-pointer">
                   Verify Aadhaar
                 </button>
               )}
               <button
-                onClick={()=>suspendCard(selectedMember.id)}
+                onClick={()=>suspendCard(selectedMember._id, selectedMember.status)}
                 className={`flex-1 py-2.5 rounded-xl text-xs font-bold cursor-pointer border ${selectedMember.status==='Suspended'?'border-green-300 text-green-700 hover:bg-green-50':'border-red-200 text-red-600 hover:bg-red-50'}`}
               >
                 {selectedMember.status==='Suspended'?'Reinstate Card':'Suspend Card'}

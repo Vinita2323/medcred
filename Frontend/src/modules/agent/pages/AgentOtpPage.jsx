@@ -1,12 +1,25 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import api from '../../../services/api';
+import { ENDPOINTS, STORAGE_KEYS } from '../../../services/types';
 
 export default function AgentOtpPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const mobileNumber = location.state?.mobileNumber;
+  const purpose = location.state?.purpose || 'register';
+
   const [otp, setOtp] = useState(new Array(6).fill(''));
   const [resendTimer, setResendTimer] = useState(30);
   const [isVerifying, setIsVerifying] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
   const inputRefs = useRef([]);
+
+  useEffect(() => {
+    if (!mobileNumber) {
+      navigate('/agent/register');
+    }
+  }, [mobileNumber, navigate]);
 
   useEffect(() => {
     if (resendTimer > 0) {
@@ -48,22 +61,41 @@ export default function AgentOtpPage() {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setErrorMsg('');
     const code = otp.join('');
     if (code.length === 6) {
-      setIsVerifying(true);
-      setTimeout(() => {
+      try {
+        setIsVerifying(true);
+        const res = await api.post(ENDPOINTS.AGENT_VERIFY_OTP, { mobileNumber, otp: code });
+        
+        if (res.data.success) {
+          const { accessToken, refreshToken, agent } = res.data.data;
+          
+          localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, accessToken);
+          localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
+          localStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(agent));
+
+          navigate('/agent/dashboard');
+        }
+      } catch (error) {
+        setErrorMsg(error.response?.data?.message || 'Invalid OTP. Please try again.');
         setIsVerifying(false);
-        navigate('/agent/dashboard');
-      }, 1500);
+      }
     }
   };
 
-  const handleResend = () => {
+  const handleResend = async () => {
     if (resendTimer === 0) {
-      setResendTimer(30);
-      // Resend OTP API call logic
+      setErrorMsg('');
+      try {
+        await api.post(ENDPOINTS.AGENT_SEND_OTP, { mobileNumber, purpose });
+        setResendTimer(30);
+        alert('OTP resent successfully.');
+      } catch (error) {
+        setErrorMsg(error.response?.data?.message || 'Failed to resend OTP.');
+      }
     }
   };
 
@@ -118,9 +150,16 @@ export default function AgentOtpPage() {
             <div className="text-center mb-8">
               <h1 className="text-xl md:text-2xl font-bold text-[#191b23] mb-2">Verify Mobile Number</h1>
               <p className="text-sm text-[#434654] max-w-[320px] mx-auto">
-                Enter the 6-digit verification code sent to your mobile.
+                Enter the 6-digit verification code sent to {mobileNumber ? `+91 ${mobileNumber}` : 'your mobile'}.
               </p>
             </div>
+
+            {errorMsg && (
+              <div className="mb-4 bg-red-50 border border-red-200 text-red-600 text-xs font-bold p-3 rounded-lg flex items-center gap-2">
+                <span className="material-symbols-outlined text-sm">error</span>
+                {errorMsg}
+              </div>
+            )}
 
             <form className="space-y-6" onSubmit={handleSubmit}>
               {/* Inputs */}

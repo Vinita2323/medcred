@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import api from '../../../services/api';
+import { ENDPOINTS } from '../../../services/types';
 
 export default function AgentAdminPage() {
   const [agents, setAgents] = useState([]);
-  const [commissions, setCommissions] = useState({
-    Basic: { fieldAgent: 2.0, teamLeader: 1.0, superAgent: 0.5 },
-    Premium: { fieldAgent: 3.0, teamLeader: 1.5, superAgent: 0.8 },
-    Elite: { fieldAgent: 4.5, teamLeader: 2.0, superAgent: 1.0 },
-  });
+  const [commissions, setCommissions] = useState({});
+  const [plansData, setPlansData] = useState([]);
   
   const [activeTab, setActiveTab] = useState('approvals');
   const [editingPlan, setEditingPlan] = useState(null);
@@ -28,12 +27,30 @@ export default function AgentAdminPage() {
       setAgents(JSON.parse(agentsJson));
     }
 
-    // Load commissions
-    const commsJson = localStorage.getItem('medcred_commissions');
-    if (commsJson) {
-      setCommissions(JSON.parse(commsJson));
-    }
+    // Load commissions from backend
+    fetchPlans();
   }, []);
+
+  const fetchPlans = async () => {
+    try {
+      const res = await api.get(ENDPOINTS.PUBLIC_PLANS);
+      if (res.data?.success) {
+        setPlansData(res.data.data);
+        const comms = {};
+        res.data.data.forEach(plan => {
+          comms[plan.name] = {
+            id: plan.planId,
+            fieldAgent: plan.fieldAgentCommissionPct || 2.0,
+            agent: plan.agentCommissionPct || 1.0,
+            superAgent: plan.superAgentCommissionPct || 0.5,
+          };
+        });
+        setCommissions(comms);
+      }
+    } catch (error) {
+      console.error('Error fetching plans:', error);
+    }
+  };
 
   const saveAgentsToStorage = (updatedAgents) => {
     setAgents(updatedAgents);
@@ -102,23 +119,31 @@ export default function AgentAdminPage() {
   const startEditCommission = (planName) => {
     setEditingPlan(planName);
     setEditFa(commissions[planName].fieldAgent);
-    setEditTl(commissions[planName].teamLeader);
+    setEditTl(commissions[planName].agent);
     setEditSa(commissions[planName].superAgent);
   };
 
-  const saveCommissionConfig = () => {
-    const updated = {
-      ...commissions,
-      [editingPlan]: {
-        fieldAgent: parseFloat(editFa),
-        teamLeader: parseFloat(editTl),
-        superAgent: parseFloat(editSa),
+  const saveCommissionConfig = async () => {
+    try {
+      const planId = commissions[editingPlan].id;
+      const plansUpdate = {
+        [planId]: {
+          fieldAgentCommissionPct: parseFloat(editFa),
+          agentCommissionPct: parseFloat(editTl),
+          superAgentCommissionPct: parseFloat(editSa),
+        }
+      };
+
+      const res = await api.patch(ENDPOINTS.ADMIN_PLANS_UPDATE, { plans: plansUpdate });
+      if (res.data?.success) {
+        alert(`Commission rates updated for ${editingPlan} plan!`);
+        fetchPlans();
+        setEditingPlan(null);
       }
-    };
-    setCommissions(updated);
-    localStorage.setItem('medcred_commissions', JSON.stringify(updated));
-    setEditingPlan(null);
-    alert(`Commission rates updated for ${editingPlan} plan!`);
+    } catch (error) {
+      console.error('Error updating commission rates:', error);
+      alert('Failed to update commission rates');
+    }
   };
 
   // Get list of potential managers (Super Agents for Agents, Agents for Field Agents)
@@ -269,7 +294,11 @@ export default function AgentAdminPage() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-[#516161]">Agent Override</span>
+<<<<<<< HEAD
                   <span className="font-bold text-[#191b23]">{commissions[planName].teamLeader}%</span>
+=======
+                  <span className="font-bold text-[#191b23]">{commissions[planName].agent}%</span>
+>>>>>>> 318574f954edd436278ce82f30178632b2cae125
                 </div>
                 <div className="flex justify-between">
                   <span className="text-[#516161]">Super Agent Override</span>
@@ -328,7 +357,7 @@ export default function AgentAdminPage() {
                             onClick={() => handlePromoteAgent(agent, 'Agent')}
                             className="bg-[#f3f3fd] hover:bg-[#dae2ff] text-[#003d9b] px-2.5 py-1.5 rounded-lg text-xs font-bold cursor-pointer"
                           >
-                            Promote to TL
+                            Promote to Agent
                           </button>
                         )}
                         {agent.role === 'Agent' && (

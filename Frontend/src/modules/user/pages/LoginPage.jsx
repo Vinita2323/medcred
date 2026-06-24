@@ -1,21 +1,60 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { setLoggedIn, hasMembership } from '../utils/storage';
+import api from '../../../services/api';
+import { ENDPOINTS, STORAGE_KEYS } from '../../../services/types';
 
 export default function LoginPage() {
   const navigate = useNavigate();
   const [mobile, setMobile] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [loginMethod, setLoginMethod] = useState('password'); // 'password' or 'otp'
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!mobile || !password) {
-      alert('Please fill in all fields.');
-      return;
+    setErrorMsg('');
+
+    if (loginMethod === 'password') {
+      if (!mobile || !password) {
+        setErrorMsg('Please fill in all fields.');
+        return;
+      }
+      try {
+        setLoading(true);
+        const res = await api.post(ENDPOINTS.USER_LOGIN, { mobile, password });
+
+        if (res.data.success) {
+          const { accessToken, refreshToken, user } = res.data.data;
+          localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, accessToken);
+          localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
+          localStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(user));
+
+          navigate('/dashboard');
+        }
+      } catch (error) {
+        setErrorMsg(error.response?.data?.message || 'Login failed. Please try again.');
+        setLoading(false);
+      }
+    } else {
+      // OTP Logic
+      if (!mobile) {
+        setErrorMsg('Please enter your mobile number.');
+        return;
+      }
+      try {
+        setLoading(true);
+        const res = await api.post(ENDPOINTS.USER_SEND_LOGIN_OTP, { mobile });
+
+        if (res.data.success) {
+          navigate('/verify-otp', { state: { mobile, purpose: 'login' } });
+        }
+      } catch (error) {
+        setErrorMsg(error.response?.data?.message || 'Failed to send OTP. Please try again.');
+        setLoading(false);
+      }
     }
-    setLoggedIn(true);
-    navigate('/dashboard');
   };
 
   return (
@@ -45,7 +84,7 @@ export default function LoginPage() {
               <img 
                 alt="Healthcare Fintech Professional" 
                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuCBP1HJBDSAGwEbyhasDzI2xXvrYsE4UABr6-H0DJbJaSU07l6_c4W7rj22MI5WffCSjkzePbrSd_xcKvNxtFL_kUqayZaQPfD1w1-Ezv9La3ZnQIF_d-YFSNoxnBHzhTbnqNFr6_UdJ1aUI0puyOBpvAlYtoWbxXA36SKmqghoY-7A2MVJzby_qL_NhECl8a-ZpV4atmPmiosCAmEQEqnt8q_mX7A6mPHkAnsbkcEyvvfezcVB16LB0FQC_MSTWxpybIe5fRswVLCF"
+                src="/FinalLogo.png"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-primary/40 to-transparent"></div>
               <div className="absolute bottom-6 left-6 right-6 bg-white/70 backdrop-blur-md p-4 rounded-xl border border-white/20">
@@ -77,6 +116,32 @@ export default function LoginPage() {
                 <h2 className="text-2xl font-extrabold text-primary mb-1">Welcome Back</h2>
                 <p className="text-xs text-on-surface-variant">Log in to manage your medical finances.</p>
               </header>
+
+              {/* Login Method Tabs */}
+              <div className="flex rounded-lg bg-surface-container p-1 mb-6">
+                <button
+                  type="button"
+                  onClick={() => setLoginMethod('password')}
+                  className={`flex-1 py-2 text-xs font-bold rounded-md transition-all ${
+                    loginMethod === 'password'
+                      ? 'bg-white text-primary shadow-sm'
+                      : 'text-on-surface-variant hover:text-on-surface'
+                  }`}
+                >
+                  Password
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLoginMethod('otp')}
+                  className={`flex-1 py-2 text-xs font-bold rounded-md transition-all ${
+                    loginMethod === 'otp'
+                      ? 'bg-white text-primary shadow-sm'
+                      : 'text-on-surface-variant hover:text-on-surface'
+                  }`}
+                >
+                  OTP
+                </button>
+              </div>
               
               <form onSubmit={handleSubmit} className="space-y-4">
                 {/* Mobile Number Input */}
@@ -98,42 +163,57 @@ export default function LoginPage() {
                   </div>
                 </div>
                 
-                {/* Password Input */}
-                <div className="space-y-1">
-                  <div className="flex justify-between items-center">
-                    <label className="text-xs font-bold text-on-surface" htmlFor="password">Password</label>
-                    <button type="button" onClick={() => navigate('/forgot-password')} className="text-[10px] text-primary hover:underline cursor-pointer font-semibold">Forgot Password?</button>
-                  </div>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <span className="material-symbols-outlined text-on-surface-variant text-lg">lock</span>
+                {/* Password Input - Only shown if loginMethod is 'password' */}
+                {loginMethod === 'password' && (
+                  <div className="space-y-1">
+                    <div className="flex justify-between items-center">
+                      <label className="text-xs font-bold text-on-surface" htmlFor="password">Password</label>
+                      <button type="button" onClick={() => navigate('/forgot-password')} className="text-[10px] text-primary hover:underline cursor-pointer font-semibold">Forgot Password?</button>
                     </div>
-                    <input 
-                      className="w-full pl-10 pr-10 py-3 bg-surface border border-outline-variant rounded-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-xs font-semibold" 
-                      id="password" 
-                      name="password" 
-                      placeholder="••••••••" 
-                      type={showPassword ? "text" : "password"}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                    />
-                    <button 
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-on-surface-variant hover:text-primary transition-colors cursor-pointer" 
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                    >
-                      <span className="material-symbols-outlined text-lg">{showPassword ? "visibility_off" : "visibility"}</span>
-                    </button>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <span className="material-symbols-outlined text-on-surface-variant text-lg">lock</span>
+                      </div>
+                      <input 
+                        className="w-full pl-10 pr-10 py-3 bg-surface border border-outline-variant rounded-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-xs font-semibold" 
+                        id="password" 
+                        name="password" 
+                        placeholder="••••••••" 
+                        type={showPassword ? "text" : "password"}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                      />
+                      <button 
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-on-surface-variant hover:text-primary transition-colors cursor-pointer" 
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        <span className="material-symbols-outlined text-lg">{showPassword ? "visibility_off" : "visibility"}</span>
+                      </button>
+                    </div>
                   </div>
-                </div>
+                )}
+
+                {errorMsg && (
+                  <div className="bg-error/10 border border-error/20 text-error text-xs font-bold p-3 rounded-lg flex items-center gap-2">
+                    <span className="material-symbols-outlined text-sm">error</span>
+                    {errorMsg}
+                  </div>
+                )}
                 
                 <div className="pt-2 space-y-4">
                   {/* Primary Login Button */}
                   <button 
-                    className="w-full bg-primary text-white py-3 rounded-md text-xs font-bold hover:bg-primary-container active:scale-[0.98] transition-all duration-150 shadow-md cursor-pointer" 
+                    className="w-full bg-primary text-white py-3 rounded-md text-xs font-bold hover:bg-primary-container active:scale-[0.98] transition-all duration-150 shadow-md cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed flex justify-center items-center gap-2" 
                     type="submit"
+                    disabled={loading}
                   >
-                    Login
+                    {loading ? (
+                      <>
+                        <span className="material-symbols-outlined animate-spin text-sm">progress_activity</span>
+                        {loginMethod === 'otp' ? 'Sending OTP...' : 'Logging in...'}
+                      </>
+                    ) : (loginMethod === 'otp' ? 'Send OTP' : 'Login')}
                   </button>
                   <p className="text-center text-[11px] text-on-surface-variant">
                     Don't have an account?{' '}

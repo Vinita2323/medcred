@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import BottomNavBar from '../components/Navigation/BottomNavBar';
-import { hasMembership, isLoanEligible, getDaysUntilLoanEligible, getDaysActive } from '../utils/storage';
+import api from '../../../services/api';
+import { ENDPOINTS } from '../../../services/types';
 
 export default function LoanPage() {
   const navigate = useNavigate();
@@ -9,14 +10,56 @@ export default function LoanPage() {
   const [tenure, setTenure] = useState(12);
   const [applied, setApplied] = useState(false);
   const [isApplying, setIsApplying] = useState(false);
-  const isMember = hasMembership();
-  const loanEligible = isLoanEligible();
-  const daysUntilEligible = getDaysUntilLoanEligible();
-  const daysActive = getDaysActive();
-  const progressPct = Math.min(100, Math.round((daysActive / 30) * 100));
+  const [loading, setLoading] = useState(true);
 
-  const maxLimit = 500000;
+  // Backend state
+  const [isMember, setIsMember] = useState(false);
+  const [loanEligible, setLoanEligible] = useState(false);
+  const [daysUntilEligible, setDaysUntilEligible] = useState(0);
+  const [daysActive, setDaysActive] = useState(0);
+  const [progressPct, setProgressPct] = useState(0);
+  const [maxLimit, setMaxLimit] = useState(200000);
+  const [activeLoan, setActiveLoan] = useState(null);
+
   const minAmount = 10000;
+
+  useEffect(() => {
+    fetchEligibility();
+  }, []);
+
+  const fetchEligibility = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get(ENDPOINTS.LOAN_ELIGIBILITY);
+      if (res.data.success) {
+        const {
+          hasCard,
+          isEligible,
+          daysActive: dActive,
+          daysRemaining: dRemaining,
+          progressPct: pPct,
+          maxLoanAmount,
+          activeLoan: aLoan,
+        } = res.data.data;
+
+        setIsMember(hasCard);
+        setLoanEligible(isEligible);
+        setDaysActive(dActive || 0);
+        setDaysUntilEligible(dRemaining || 0);
+        setProgressPct(pPct || 0);
+        if (maxLoanAmount) setMaxLimit(maxLoanAmount);
+        
+        if (aLoan) {
+          setApplied(true);
+          setActiveLoan(aLoan);
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching loan eligibility:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSliderChange = (e) => {
     setLoanAmount(Number(e.target.value));
@@ -27,8 +70,16 @@ export default function LoanPage() {
   };
 
   const handleApply = () => {
-    setIsApplying(true);
+    navigate('/loan-application-form', { state: { type: 'Medical', limit: maxLimit } });
   };
+
+  if (loading) {
+    return (
+      <div className="flex-grow flex items-center justify-center bg-surface pb-24">
+        <span className="material-symbols-outlined animate-spin text-primary text-4xl">progress_activity</span>
+      </div>
+    );
+  }
   return (
     <div className="flex-grow flex flex-col bg-surface text-on-surface font-body-md relative pb-24">
       {/* TopAppBar */}
@@ -115,14 +166,14 @@ export default function LoanPage() {
             <div className="space-y-2">
               <h3 className="font-bold text-lg text-on-surface">Application Submitted</h3>
               <p className="text-xs text-on-surface-variant max-w-[280px] mx-auto leading-relaxed">
-                Your medical loan of <span className="font-bold text-primary">₹{loanAmount.toLocaleString('en-IN')}</span> for a tenure of <span className="font-bold text-primary">{tenure} Months</span> is under pre-approval. Payout will be processed directly to the hospital billing desk.
+                Your medical loan is currently in <span className="font-bold text-primary">{activeLoan?.applicationStatus?.replace('_', ' ')}</span> status. Payout will be processed directly to the hospital billing desk.
               </p>
             </div>
             <button 
-              onClick={() => navigate('/dashboard')}
+              onClick={() => navigate('/loan-details')}
               className="bg-primary text-white text-xs font-bold px-6 py-3 rounded-xl shadow-md cursor-pointer hover:opacity-90 active:scale-95 transition-all mt-4"
             >
-              Back to Dashboard
+              View Loan Status
             </button>
           </div>
         ) : (
@@ -274,7 +325,7 @@ export default function LoanPage() {
               ) : (
                 <>
                   <span className="material-symbols-outlined text-base">send</span>
-                  Apply Instantly
+                  Continue to Application
                 </>
               )}
             </button>

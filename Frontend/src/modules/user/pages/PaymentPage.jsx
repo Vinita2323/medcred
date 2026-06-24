@@ -2,7 +2,13 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Lottie from 'lottie-react';
 import membershipActivAnim from '../../../assets/Lotties/membershipActiv.json';
+<<<<<<< HEAD
 import { getPlatformPlans, saveMembership, getMembership } from '../utils/storage';
+=======
+import { PLANS, saveMembership, getMembership, updateUser } from '../utils/storage';
+import api from '../../../services/api';
+import { ENDPOINTS } from '../../../services/types';
+>>>>>>> 318574f954edd436278ce82f30178632b2cae125
 
 const METHODS = [
   { id: 'upi',     icon: 'smartphone',          label: 'UPI',         desc: 'Pay via any UPI app' },
@@ -16,11 +22,23 @@ export default function PaymentPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const planId = location.state?.planId || 'family';
+<<<<<<< HEAD
   const plans = getPlatformPlans();
   const plan = plans[planId];
+=======
+  const planObjId = location.state?.planObjId || null;
+  const plan = {
+    name: location.state?.planName || (PLANS[planId]?.name || 'Health Plan'),
+    price: location.state?.price || (PLANS[planId]?.price || 999),
+    validity: location.state?.validity || (PLANS[planId]?.validity || '1 Year'),
+    members: location.state?.members || (PLANS[planId]?.members || 1),
+    coverage: location.state?.coverage || (PLANS[planId]?.coverage || '2L')
+  };
+>>>>>>> 318574f954edd436278ce82f30178632b2cae125
   const finalPrice = location.state?.price || plan.price;
   const agentDetail = location.state?.agentDetail || null;
   const referralCode = location.state?.referralCode || null;
+  const discount = location.state?.discount || 0;
 
   const [method, setMethod] = useState('upi');
   const [processing, setProcessing] = useState(false);
@@ -56,15 +74,71 @@ export default function PaymentPage() {
     return true;
   };
 
-  const handlePay = () => {
+  const handlePay = async () => {
     if (!validateForm()) return;
     setProcessing(true);
-    setTimeout(() => {
-      saveMembership(planId, { method, txnId: 'MC' + Date.now().toString(36).toUpperCase(), price: finalPrice });
-      setMembership(getMembership());
+
+    try {
+      if (!planObjId) {
+        throw new Error("Plan ID is missing. Please select a plan again.");
+      }
+
+      // Step 1: Create Order
+      const orderRes = await api.post(ENDPOINTS.ORDERS_CREATE, {
+        planId: planObjId,
+        referralCode,
+        agentDetail,
+        discount,
+      });
+
+      if (!orderRes.data.success) {
+        throw new Error(orderRes.data.message || 'Failed to create order');
+      }
+      
+      const orderId = orderRes.data.data.orderId;
+
+      // Step 2: Confirm Payment (Simulating gateway processing delay)
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      const paymentDetails = {
+        upiId: method === 'upi' ? upiId : undefined,
+        bankName: method === 'netbank' ? bank : undefined,
+        cardLast4: method === 'card' ? card.number.slice(-4) : undefined,
+        cardHolderName: method === 'card' ? card.name : undefined,
+      };
+
+      const confirmRes = await api.post(ENDPOINTS.ORDERS_CONFIRM(orderId), {
+        paymentMethod: method,
+        paymentDetails,
+      });
+
+      if (!confirmRes.data.success) {
+        throw new Error(confirmRes.data.message || 'Failed to confirm payment');
+      }
+
+      const { card: newCard, order } = confirmRes.data.data;
+
+      // Step 3: Update local state & context
+      updateUser({ cardId: newCard._id });
+      
+      // Update local storage for backward compatibility with Dashboard
+      saveMembership(planId, { method, txnId: newCard.cardNumber, price: finalPrice });
+      
+      setMembership({
+        planName: newCard.planName,
+        cardNumber: newCard.cardNumber,
+        expiresAt: newCard.validTill,
+        price: finalPrice,
+        transactionId: order.orderId,
+      });
+
       setProcessing(false);
       setSuccess(true);
-    }, 2500);
+    } catch (error) {
+      console.error('Payment Error:', error);
+      alert(error.response?.data?.message || error.message || 'Payment failed. Please try again.');
+      setProcessing(false);
+    }
   };
 
   const handleDownloadInvoice = () => {

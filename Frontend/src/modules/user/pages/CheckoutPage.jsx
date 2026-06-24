@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
+import api from '../../../services/api';
+import { ENDPOINTS } from '../../../services/types';
+
 const METHODS = [
   { id: 'upi',     icon: 'smartphone',          label: 'UPI',         desc: 'Pay via any UPI app' },
   { id: 'card',    icon: 'credit_card',          label: 'Credit / Debit Card', desc: 'Visa, Mastercard, RuPay' },
@@ -12,8 +15,8 @@ const BANKS = ['SBI', 'HDFC Bank', 'ICICI Bank', 'Axis Bank', 'Kotak Bank', 'Yes
 export default function CheckoutPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const product = location.state?.product || { label: 'Medical Equipment', price: 999 };
-  const price = product.price || 1575; // Dummy price for UI if not present
+  const product = location.state?.product || { name: 'Medical Equipment', price: 999 };
+  const price = product.discountedPrice || product.price || 1575;
 
   const [method, setMethod] = useState('upi');
   const [processing, setProcessing] = useState(false);
@@ -23,6 +26,7 @@ export default function CheckoutPage() {
   const [upiId, setUpiId] = useState('');
   const [card, setCard] = useState({ number: '', expiry: '', cvv: '', name: '' });
   const [bank, setBank] = useState('');
+  const [deliveryAddress, setDeliveryAddress] = useState('');
 
   const formatCardNumber = (val) => {
     let clean = val.replace(/\D/g, '').slice(0, 16);
@@ -43,16 +47,35 @@ export default function CheckoutPage() {
       if (!card.expiry || !card.cvv || !card.name) { alert('Please fill all card details'); return false; }
     }
     if (method === 'netbank' && !bank) { alert('Please select a bank'); return false; }
+    if (!deliveryAddress || deliveryAddress.trim().length < 10) { alert('Please enter a complete delivery address'); return false; }
     return true;
   };
 
-  const handlePay = () => {
+  const handlePay = async () => {
     if (!validateForm()) return;
     setProcessing(true);
-    setTimeout(() => {
+    
+    try {
+      const payload = {
+        productId: product._id || product.productId,
+        deliveryAddress,
+        paymentMethod: method,
+        paymentDetails: method === 'upi' ? { upiId } : 
+                        method === 'netbank' ? { bankName: bank } : 
+                        { cardLast4: card.number.slice(-4), cardHolderName: card.name }
+      };
+
+      const res = await api.post(ENDPOINTS.PRODUCT_ORDER_CREATE, payload);
+      
+      if (res.data.success) {
+        setProcessing(false);
+        setSuccess(true);
+      }
+    } catch (err) {
+      console.error('Payment failed:', err);
+      alert('Payment failed. Please try again.');
       setProcessing(false);
-      setSuccess(true);
-    }, 2000);
+    }
   };
 
   const handleDownloadInvoice = () => {
@@ -193,18 +216,29 @@ export default function CheckoutPage() {
       <main className="flex-grow overflow-y-auto px-4 py-5 max-w-md mx-auto w-full space-y-5">
         {/* Order summary */}
         <div className="bg-white rounded-2xl border border-outline-variant p-4 shadow-sm flex items-center gap-4">
-          {product.img ? (
-            <img src={product.img} alt={product.label} className="w-16 h-16 object-contain rounded-lg bg-surface-container-lowest" />
+          {product.imageUrl ? (
+            <img src={product.imageUrl} alt={product.name} className="w-16 h-16 object-contain rounded-lg bg-surface-container-lowest" />
           ) : (
             <div className="w-16 h-16 bg-surface-container rounded-lg flex items-center justify-center">
               <span className="material-symbols-outlined text-on-surface-variant text-2xl">medical_services</span>
             </div>
           )}
           <div className="flex-1">
-            <p className="font-bold text-on-surface text-sm line-clamp-2">{product.label}</p>
+            <p className="font-bold text-on-surface text-sm line-clamp-2">{product.name}</p>
             <p className="text-[11px] text-on-surface-variant mt-0.5">Qty: 1</p>
           </div>
           <p className="text-lg font-black text-primary">₹{price.toLocaleString()}</p>
+        </div>
+
+        {/* Delivery Address */}
+        <div className="bg-white rounded-2xl border border-outline-variant p-4 shadow-sm space-y-3">
+          <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Delivery Address</p>
+          <textarea 
+            value={deliveryAddress}
+            onChange={(e) => setDeliveryAddress(e.target.value)}
+            placeholder="Enter full shipping address (House No, Street, City, Pincode)"
+            className="w-full h-24 p-3 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary resize-none transition-all"
+          />
         </div>
 
         {/* Payment method selector */}

@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { STORAGE_KEYS, ENDPOINTS } from '../../../services/types';
+import api from '../../../services/api';
 
 export default function AgentLayout() {
   const navigate = useNavigate();
@@ -9,7 +11,7 @@ export default function AgentLayout() {
   const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
-    const userJson = localStorage.getItem('currentUser');
+    const userJson = localStorage.getItem(STORAGE_KEYS.USER_DATA);
     if (userJson) {
       setCurrentUser(JSON.parse(userJson));
     }
@@ -48,9 +50,17 @@ export default function AgentLayout() {
 
   const menuItems = getMenuItems();
 
-  const handleLogout = () => {
-    alert('Logged out from Agent Portal.');
-    navigate('/agent/login');
+  const handleLogout = async () => {
+    try {
+      await api.post(ENDPOINTS.AUTH_LOGOUT);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      localStorage.removeItem(STORAGE_KEYS.USER_DATA);
+      localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+      localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+      navigate('/agent/login');
+    }
   };
 
   // Determine header title based on route

@@ -1,17 +1,21 @@
 import React, { useState, useEffect } from 'react';
+import api from '../../../services/api';
+import { ENDPOINTS, STORAGE_KEYS } from '../../../services/types';
 
 export default function AgentTeamPage() {
   const [currentUser, setCurrentUser] = useState(null);
-  const [teamLeaders, setTeamLeaders] = useState([]);
+  const [agents, setAgents] = useState([]);
   const [fieldAgents, setFieldAgents] = useState([]);
   const [selectedLeaderId, setSelectedLeaderId] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('All');
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     // Fetch logged in agent
-    const userJson = localStorage.getItem('currentUser');
+    const userJson = localStorage.getItem(STORAGE_KEYS.USER_DATA);
     if (userJson) {
+<<<<<<< HEAD
       const userObj = JSON.parse(userJson);
       setCurrentUser(userObj);
 
@@ -35,13 +39,36 @@ export default function AgentTeamPage() {
           setFieldAgents(fas);
         }
       }
+=======
+      setCurrentUser(JSON.parse(userJson));
+>>>>>>> 318574f954edd436278ce82f30178632b2cae125
     }
+    fetchTeamData();
   }, []);
+
+  const fetchTeamData = async () => {
+    try {
+      setIsLoading(true);
+      const res = await api.get(ENDPOINTS.AGENT_TEAM);
+      if (res.data?.success) {
+        setAgents(res.data.data.agents || []);
+        setFieldAgents(res.data.data.fieldAgents || []);
+      }
+    } catch (error) {
+      console.error('Error fetching team data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isLoading) {
+    return <div className="flex justify-center items-center h-64 text-[#516161]">Loading team dashboard...</div>;
+  }
 
   if (!currentUser) {
     return (
       <div className="flex items-center justify-center min-h-[300px] text-[#516161]">
-        Loading team dashboard...
+        User session not found
       </div>
     );
   }
@@ -51,18 +78,22 @@ export default function AgentTeamPage() {
     let result = [];
     if (currentUser.role === 'Super Agent') {
       if (roleFilter === 'Agent') {
+<<<<<<< HEAD
         result = [...teamLeaders];
+=======
+        result = [...agents];
+>>>>>>> 318574f954edd436278ce82f30178632b2cae125
       } else if (roleFilter === 'Field Agent') {
         result = [...fieldAgents];
       } else {
-        result = [...teamLeaders, ...fieldAgents];
+        result = [...agents, ...fieldAgents];
       }
 
       if (selectedLeaderId !== 'All') {
-        // Find team leader name
-        const leader = teamLeaders.find(t => t.agentId === selectedLeaderId);
+        // Find agent name
+        const leader = agents.find(t => t.agentId === selectedLeaderId);
         if (leader) {
-          result = result.filter(a => a.agentId === selectedLeaderId || a.reportingManager === leader.fullName);
+          result = result.filter(a => a.agentId === selectedLeaderId || a.reportingManagerName === leader.fullName);
         }
       }
     } else if (currentUser.role === 'Agent') {
@@ -101,7 +132,11 @@ export default function AgentTeamPage() {
           <h2 className="text-xl md:text-2xl font-bold">Team Performance &amp; Network</h2>
           <p className="text-xs opacity-90 max-w-xl">
             {currentUser.role === 'Super Agent' 
+<<<<<<< HEAD
               ? `Managing ${teamLeaders.length} Agents and ${fieldAgents.length} Field Agents in your downline.` 
+=======
+              ? `Managing ${agents.length} Agents and ${fieldAgents.length} Field Agents in your downline.` 
+>>>>>>> 318574f954edd436278ce82f30178632b2cae125
               : `Managing ${fieldAgents.length} Field Agents reporting directly to you.`}
           </p>
         </div>
@@ -112,14 +147,14 @@ export default function AgentTeamPage() {
         <div className="bg-white p-4 rounded-xl border border-[#c3c6d6]/20 shadow-sm">
           <p className="text-xs text-[#516161] font-semibold">Total Downline Members</p>
           <p className="text-2xl font-extrabold text-[#003d9b] mt-1">
-            {currentUser.role === 'Super Agent' ? teamLeaders.length + fieldAgents.length : fieldAgents.length}
+            {currentUser.role === 'Super Agent' ? agents.length + fieldAgents.length : fieldAgents.length}
           </p>
         </div>
         <div className="bg-white p-4 rounded-xl border border-[#c3c6d6]/20 shadow-sm">
           <p className="text-xs text-[#516161] font-semibold">Active Subscriptions</p>
           <p className="text-2xl font-extrabold text-[#003d9b] mt-1">
             {currentUser.role === 'Super Agent' 
-              ? (teamLeaders.length * 15) + (fieldAgents.length * 6) 
+              ? (agents.length * 15) + (fieldAgents.length * 6) 
               : fieldAgents.length * 8}
           </p>
         </div>
@@ -161,7 +196,7 @@ export default function AgentTeamPage() {
                   onChange={(e) => setSelectedLeaderId(e.target.value)}
                 >
                   <option value="All">All Teams</option>
-                  {teamLeaders.map(tl => (
+                  {agents.map(tl => (
                     <option key={tl.agentId} value={tl.agentId}>{tl.fullName}'s Team</option>
                   ))}
                 </select>
@@ -221,7 +256,7 @@ export default function AgentTeamPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-xs font-medium text-[#516161]">
-                      {agent.reportingManager || '—'}
+                      {agent.reportingManagerName || '—'}
                     </td>
                     <td className="px-6 py-4">
                       <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${getRankBadge(agent.rank)}`}>

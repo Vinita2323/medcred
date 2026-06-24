@@ -1,8 +1,13 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import api from '../../../services/api';
+import { ENDPOINTS, STORAGE_KEYS } from '../../../services/types';
 
 export default function AgentWalletPage() {
+  const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState(null);
   const [requestPending, setRequestPending] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [walletStats, setWalletStats] = useState({
     totalEarnings: 0,
     pendingEarnings: 0,
@@ -13,8 +18,9 @@ export default function AgentWalletPage() {
   const [transactions, setTransactions] = useState([]);
 
   useEffect(() => {
-    const userJson = localStorage.getItem('currentUser');
+    const userJson = localStorage.getItem(STORAGE_KEYS.USER_DATA);
     if (userJson) {
+<<<<<<< HEAD
       const user = JSON.parse(userJson);
       setCurrentUser(user);
 
@@ -65,36 +71,69 @@ export default function AgentWalletPage() {
           { id: 'TX-77014', date: 'June 05, 2026', client: 'Field Agent Withdrawal', details: 'Payout Settlement Approved', amount: 3000, type: 'debit', status: 'Paid' },
         ]);
       }
+=======
+      setCurrentUser(JSON.parse(userJson));
+>>>>>>> 318574f954edd436278ce82f30178632b2cae125
     }
+    fetchWalletData();
   }, []);
 
-  const handleRequestPayout = () => {
+  const fetchWalletData = async () => {
+    try {
+      setIsLoading(true);
+      // Fetch wallet stats
+      const walletRes = await api.get(ENDPOINTS.AGENT_WALLET);
+      if (walletRes.data?.success) {
+        const w = walletRes.data.data;
+        setWalletStats({
+          totalEarnings: w.totalEarnings,
+          pendingEarnings: w.pendingCommissions,
+          paidEarnings: w.paidEarnings,
+          balance: w.withdrawableBalance,
+        });
+      }
+
+      // Fetch transactions
+      const txRes = await api.get(ENDPOINTS.AGENT_WALLET_TRANSACTIONS);
+      if (txRes.data?.success) {
+        setTransactions(txRes.data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching wallet data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRequestPayout = async () => {
     if (walletStats.balance <= 0) {
       alert('You have no withdrawable balance left.');
       return;
     }
-    setRequestPending(true);
-    setTimeout(() => {
+    
+    const amountToWithdraw = walletStats.balance;
+    const confirmWithdrawal = window.confirm(`Are you sure you want to request a withdrawal of ₹${amountToWithdraw.toLocaleString('en-IN')}?`);
+    if (!confirmWithdrawal) return;
+
+    try {
+      setRequestPending(true);
+      const res = await api.post(ENDPOINTS.AGENT_WALLET_WITHDRAW, { amount: amountToWithdraw });
+      if (res.data?.success) {
+        alert('Settlement withdrawal request submitted successfully to the administrators.');
+        // Refresh data to show updated balances and new pending transaction
+        fetchWalletData();
+      }
+    } catch (error) {
+      console.error('Error requesting withdrawal:', error);
+      alert(error.response?.data?.message || 'Failed to submit withdrawal request.');
+    } finally {
       setRequestPending(false);
-      setWalletStats(prev => ({
-        ...prev,
-        paidEarnings: prev.paidEarnings + prev.balance,
-        balance: 0,
-      }));
-      
-      const newTx = {
-        id: `TX-${Math.floor(10000 + Math.random() * 90000)}`,
-        date: 'Today',
-        client: 'Self Payout Request',
-        details: 'Wallet Balance Payout Withdrawal Request',
-        amount: walletStats.balance,
-        type: 'debit',
-        status: 'Processing',
-      };
-      setTransactions(prev => [newTx, ...prev]);
-      alert('Settlement withdrawal request of ₹' + walletStats.balance.toLocaleString('en-IN') + ' submitted successfully to the administrators.');
-    }, 1500);
+    }
   };
+
+  if (isLoading) {
+    return <div className="flex justify-center items-center h-64 text-[#516161]">Loading wallet...</div>;
+  }
 
   if (!currentUser) {
     return (
