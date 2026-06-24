@@ -10,78 +10,8 @@ export default function AgentLoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
 
-<<<<<<< HEAD
-  useEffect(() => {
-    const initialAgents = [
-      {
-        fullName: 'System Administrator',
-        mobileNumber: '1000000000',
-        email: 'admin@medcred.in',
-        password: 'admin',
-        role: 'Admin',
-        agentId: 'ADMIN-001',
-        referralCode: 'ADMIN10',
-        reportingManager: '',
-        commissionRate: 0,
-        rank: 'Platinum',
-        salesCount: 50,
-        earnings: 125000,
-        status: 'Approved',
-        joiningDate: 'January 10, 2023'
-      },
-      {
-        fullName: 'Rajesh Kumar',
-        mobileNumber: '91111966732',
-        email: 'rajesh.super@medcred.in',
-        password: '1234abc',
-        role: 'Super Agent',
-        agentId: 'MC-9921',
-        referralCode: 'SUPER90',
-        reportingManager: 'System Administrator',
-        commissionRate: 1.0,
-        rank: 'Platinum',
-        salesCount: 42,
-        earnings: 55200,
-        status: 'Approved',
-        joiningDate: 'March 14, 2023'
-      },
-      {
-        fullName: 'Sanjay Dutt',
-        mobileNumber: '8000000000',
-        email: 'sanjay.tl@medcred.in',
-        password: 'agent',
-        role: 'Agent',
-        agentId: 'MC-8822',
-        referralCode: 'LEADER80',
-        reportingManager: 'Rajesh Kumar',
-        commissionRate: 1.5,
-        rank: 'Gold',
-        salesCount: 18,
-        earnings: 18450,
-        status: 'Approved',
-        joiningDate: 'June 01, 2023'
-      },
-      {
-        fullName: 'Amit Patel',
-        mobileNumber: '7000000000',
-        email: 'amit.field@medcred.in',
-        password: 'agent',
-        role: 'Field Agent',
-        agentId: 'MC-7733',
-        referralCode: 'FIELD70',
-        reportingManager: 'Sanjay Dutt',
-        commissionRate: 2.5,
-        rank: 'Silver',
-        salesCount: 8,
-        earnings: 8400,
-        status: 'Approved',
-        joiningDate: 'August 12, 2023'
-      }
-    ];
-=======
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
->>>>>>> 318574f954edd436278ce82f30178632b2cae125
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -159,8 +89,8 @@ export default function AgentLoginPage() {
         <div className="w-full max-w-md">
           {/* Logo Section */}
           <div className="flex flex-col items-center mb-8">
-            <div className="w-16 h-16 bg-[#0052cc] rounded-xl flex items-center justify-center shadow-lg mb-4 cursor-pointer" onClick={() => navigate('/agent')}>
-              <span className="material-symbols-outlined text-white text-[40px]" style={{ fontVariationSettings: "'FILL' 1" }}>medical_services</span>
+            <div className="w-16 h-16 rounded-xl flex items-center justify-center mb-4 cursor-pointer bg-white border border-[#c3c6d6]/30 shadow-md p-1" onClick={() => navigate('/agent')}>
+              <img src="/Logo (5).png" alt="MedCred India" className="w-full h-full object-contain drop-shadow-sm" />
             </div>
             <h1 className="text-2xl md:text-3xl font-bold text-[#003d9b] tracking-tight">MedCred India</h1>
             <p className="text-xs font-semibold text-[#516161] uppercase tracking-widest mt-1">Agent Portal</p>

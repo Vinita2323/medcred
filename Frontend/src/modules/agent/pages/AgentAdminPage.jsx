@@ -294,11 +294,7 @@ export default function AgentAdminPage() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-[#516161]">Agent Override</span>
-<<<<<<< HEAD
-                  <span className="font-bold text-[#191b23]">{commissions[planName].teamLeader}%</span>
-=======
                   <span className="font-bold text-[#191b23]">{commissions[planName].agent}%</span>
->>>>>>> 318574f954edd436278ce82f30178632b2cae125
                 </div>
                 <div className="flex justify-between">
                   <span className="text-[#516161]">Super Agent Override</span>

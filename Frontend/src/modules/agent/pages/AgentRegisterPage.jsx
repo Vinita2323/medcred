@@ -176,47 +176,9 @@ export default function AgentRegisterPage() {
         alert('Registration submitted successfully! Your status is currently "Pending Approval". The administrator will review and assign your manager & designation.');
         navigate('/agent/login');
       }
-<<<<<<< HEAD
-
-      // Check if code matches a Agent or Super Agent
-      let suggestedRole = role; 
-      let suggManager = '';
-
-      if (suggestedRole === 'Agent') {
-        suggManager = 'Rajesh Kumar';
-      } else if (suggestedRole === 'Field Agent') {
-        suggManager = 'Sanjay Dutt';
-      } else if (suggestedRole === 'Super Agent') {
-        suggManager = 'System Administrator';
-      }
-
-      const newAgent = {
-        fullName,
-        mobileNumber,
-        email,
-        password,
-        referralCodeUsed: referralCode,
-        aadhaarNumber,
-        status: 'Pending Approval',
-        role: suggestedRole,
-        reportingManager: suggManager,
-        agentId: 'MC-PENDING',
-        referralCode: '',
-        commissionRate: suggestedRole === 'Super Agent' ? 1.0 : suggestedRole === 'Agent' ? 1.5 : 2.5,
-        rank: 'Bronze',
-        salesCount: 0,
-        earnings: 0,
-        joiningDate: ''
-      };
-
-      const updatedList = [...agentsList, newAgent];
-      localStorage.setItem('medcred_agents', JSON.stringify(updatedList));
-
-=======
     } catch (error) {
       alert(error.response?.data?.message || 'Registration failed. Please try again.');
     } finally {
->>>>>>> 318574f954edd436278ce82f30178632b2cae125
       setIsSubmitting(false);
     }
   };

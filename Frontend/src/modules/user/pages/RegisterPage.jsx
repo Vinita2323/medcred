@@ -27,6 +27,10 @@ export default function RegisterPage() {
   });
   const [profilePic, setProfilePic] = useState(null);
   const [profileFile, setProfileFile] = useState(null);
+  const [aadhaarFrontPic, setAadhaarFrontPic] = useState(null);
+  const [aadhaarFrontFile, setAadhaarFrontFile] = useState(null);
+  const [aadhaarBackPic, setAadhaarBackPic] = useState(null);
+  const [aadhaarBackFile, setAadhaarBackFile] = useState(null);
   const [showSuccess, setShowSuccess] = useState(false);
 
   // ── Family members ───────────────────────────────────────────────
@@ -44,12 +48,12 @@ export default function RegisterPage() {
     setFormData(prev => ({ ...prev, aadhaar: formatAadhaar(e.target.value) }));
   };
 
-  const handleFileChange = (e) => {
+  const handleImageChange = (e, setPreview, setFile) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      setProfileFile(file);
+      setFile(file);
       const reader = new FileReader();
-      reader.onload = (ev) => setProfilePic(ev.target.result);
+      reader.onload = (ev) => setPreview(ev.target.result);
       reader.readAsDataURL(file);
     }
   };
@@ -119,6 +123,12 @@ export default function RegisterPage() {
       if (profileFile) {
         payload.append('profilePic', profileFile);
       }
+      if (aadhaarFrontFile) {
+        payload.append('aadhaarFront', aadhaarFrontFile);
+      }
+      if (aadhaarBackFile) {
+        payload.append('aadhaarBack', aadhaarBackFile);
+      }
 
       const res = await api.post(ENDPOINTS.USER_REGISTER, payload, {
         headers: {
@@ -187,23 +197,7 @@ export default function RegisterPage() {
                 <h2 className="text-sm font-bold text-on-surface">Personal Information</h2>
                 <p className="text-[10px] text-on-surface-variant">As per your Aadhaar card</p>
               </div>
-              {/* Profile Photo */}
-              <div className="ml-auto relative">
-                <label className="w-14 h-14 rounded-full border-2 border-dashed border-outline-variant bg-surface-container flex flex-col items-center justify-center text-on-surface-variant cursor-pointer hover:border-primary transition-all overflow-hidden">
-                  {profilePic ? (
-                    <img src={profilePic} alt="Profile" className="w-full h-full object-cover" />
-                  ) : (
-                    <>
-                      <span className="material-symbols-outlined text-xl">add_a_photo</span>
-                      <span className="text-[8px] font-bold mt-0.5">PHOTO</span>
-                    </>
-                  )}
-                  <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
-                </label>
-                <div className="absolute bottom-0 right-0 w-5 h-5 bg-primary text-white rounded-full flex items-center justify-center shadow pointer-events-none">
-                  <span className="material-symbols-outlined text-[10px]">add</span>
-                </div>
-              </div>
+
             </div>
 
             <div className="p-4 space-y-3.5">
@@ -282,15 +276,49 @@ export default function RegisterPage() {
                 </div>
               </div>
 
-              {/* Aadhaar */}
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider px-0.5">Aadhaar Number *</label>
-                <input
-                  className="w-full h-11 px-3 bg-surface border border-outline-variant rounded-lg text-sm tracking-wider focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                  placeholder="0000 0000 0000" maxLength={14}
-                  type="text" name="aadhaar" value={formData.aadhaar}
-                  onChange={handleAadhaarChange} required
-                />
+              {/* Document Uploads */}
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider px-0.5">Identity Documents *</label>
+                <div className="grid grid-cols-3 gap-3">
+                  {/* User Photo */}
+                  <div className="flex flex-col items-center gap-1.5">
+                    <label className="w-full aspect-square border-2 border-dashed border-outline-variant rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-all overflow-hidden relative group">
+                      <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageChange(e, setProfilePic, setProfileFile)} required />
+                      {!profilePic ? (
+                        <span className="material-symbols-outlined text-on-surface-variant text-2xl group-hover:scale-110 transition-transform">account_circle</span>
+                      ) : (
+                        <img src={profilePic} className="w-full h-full object-cover" alt="Profile" />
+                      )}
+                    </label>
+                    <span className="text-[9px] font-bold text-on-surface-variant text-center leading-tight">User Photo</span>
+                  </div>
+
+                  {/* Aadhaar Front */}
+                  <div className="flex flex-col items-center gap-1.5">
+                    <label className="w-full aspect-square border-2 border-dashed border-outline-variant rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-all overflow-hidden relative group">
+                      <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageChange(e, setAadhaarFrontPic, setAadhaarFrontFile)} required />
+                      {!aadhaarFrontPic ? (
+                        <span className="material-symbols-outlined text-on-surface-variant text-2xl group-hover:scale-110 transition-transform">badge</span>
+                      ) : (
+                        <img src={aadhaarFrontPic} className="w-full h-full object-cover" alt="Aadhaar Front" />
+                      )}
+                    </label>
+                    <span className="text-[9px] font-bold text-on-surface-variant text-center leading-tight">Aadhaar Front</span>
+                  </div>
+
+                  {/* Aadhaar Back */}
+                  <div className="flex flex-col items-center gap-1.5">
+                    <label className="w-full aspect-square border-2 border-dashed border-outline-variant rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-all overflow-hidden relative group">
+                      <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageChange(e, setAadhaarBackPic, setAadhaarBackFile)} required />
+                      {!aadhaarBackPic ? (
+                        <span className="material-symbols-outlined text-on-surface-variant text-2xl group-hover:scale-110 transition-transform">credit_card</span>
+                      ) : (
+                        <img src={aadhaarBackPic} className="w-full h-full object-cover" alt="Aadhaar Back" />
+                      )}
+                    </label>
+                    <span className="text-[9px] font-bold text-on-surface-variant text-center leading-tight">Aadhaar Back</span>
+                  </div>
+                </div>
               </div>
 
               {/* Address */}

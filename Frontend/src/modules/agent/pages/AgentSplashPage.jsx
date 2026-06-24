@@ -95,17 +95,8 @@ export default function AgentSplashPage() {
           <div className="pulse-effect" style={{ animationDelay: '0s' }}></div>
           <div className="pulse-effect" style={{ animationDelay: '1.5s' }}></div>
           
-          <div className="relative w-32 h-32 md:w-40 md:h-40 bg-white rounded-full shadow-lg flex items-center justify-center border border-primary/10 transition-transform duration-300 hover:scale-105">
-            <div className="flex flex-col items-center">
-              <span className="material-symbols-outlined text-[64px] md:text-[80px] text-[#003d9b]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                health_and_safety
-              </span>
-              <div className="absolute -bottom-1 -right-1 bg-[#003d9b] text-white w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center shadow-md border-4 border-[#faf8ff]">
-                <span className="material-symbols-outlined text-[28px] md:text-[36px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                  verified_user
-                </span>
-              </div>
-            </div>
+          <div className="relative w-32 h-32 md:w-40 md:h-40 bg-white rounded-full shadow-lg flex items-center justify-center border border-primary/10 transition-transform duration-300 hover:scale-105 overflow-hidden">
+            <img src="/Logo (5).png" alt="MedCred India" className="w-[85%] h-[85%] object-contain" />
           </div>
         </div>
 

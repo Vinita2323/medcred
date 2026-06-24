@@ -1,11 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-<<<<<<< HEAD
-import { getPlatformPlans, saveMembership } from '../utils/storage';
-=======
 import api from '../../../services/api';
 import { ENDPOINTS } from '../../../services/types';
->>>>>>> 318574f954edd436278ce82f30178632b2cae125
 
 const planIcons = { individual: 'person', family: 'group', premium: 'workspace_premium' };
 const planGradients = {
@@ -15,15 +11,9 @@ const planGradients = {
 };
 
 export default function MembershipPlansPage() {
-  const PLANS = getPlatformPlans();
-  const planOrder = Object.keys(PLANS).filter(k => !PLANS[k].isHidden);
-
   const navigate = useNavigate();
   const location = useLocation();
-<<<<<<< HEAD
-  const [selected, setSelected] = useState(planOrder.includes('family') ? 'family' : planOrder[0]);
-=======
->>>>>>> 318574f954edd436278ce82f30178632b2cae125
+
   const fromRenew = location.state?.renew;
 
   const [plans, setPlans] = useState([]);
@@ -164,19 +154,11 @@ export default function MembershipPlansPage() {
                 )}
 
                 {/* Card header gradient */}
-<<<<<<< HEAD
-                <div className={`bg-gradient-to-br ${planGradients[planId] || 'from-[#424242] to-[#212121]'} p-3.5 text-white ${plan.popular ? 'pt-6' : ''}`}>
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <div className="flex items-center gap-1.5 mb-0.5">
-                        <span className="material-symbols-outlined text-white/80 text-lg">{planIcons[planId] || 'card_membership'}</span>
-=======
                 <div className={`bg-gradient-to-br ${planGradients[plan.planId] || planGradients['individual']} p-3.5 text-white ${plan.isPopular ? 'pt-6' : ''}`}>
                   <div className="flex justify-between items-start">
                     <div>
                       <div className="flex items-center gap-1.5 mb-0.5">
                         <span className="material-symbols-outlined text-white/80 text-lg">{planIcons[plan.planId] || 'health_and_safety'}</span>
->>>>>>> 318574f954edd436278ce82f30178632b2cae125
                         <span className="text-[10px] font-bold uppercase tracking-widest opacity-80">{plan.name}</span>
                       </div>
                       <p className="text-2xl font-black mt-0.5">₹{plan.price.toLocaleString()}</p>

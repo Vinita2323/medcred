@@ -10,89 +10,7 @@ export default function AgentDashboardPage() {
   const [quickActions, setQuickActions] = useState([]);
 
   useEffect(() => {
-<<<<<<< HEAD
-    // Get current logged-in agent session
-    const userJson = localStorage.getItem('currentUser');
-    if (userJson) {
-      const userObj = JSON.parse(userJson);
-      setCurrentUser(userObj);
-
-      // Load agents list to aggregate dynamic stats
-      const agentsJson = localStorage.getItem('medcred_agents');
-      const allAgents = agentsJson ? JSON.parse(agentsJson) : [];
-      setAgents(allAgents);
-
-      // Customize stats and quick actions based on designation
-      if (userObj.role === 'Admin') {
-        const pendingCount = allAgents.filter(a => a.status === 'Pending Approval').length;
-        const approvedCount = allAgents.filter(a => a.status === 'Approved').length;
-
-        setStats([
-          { label: 'Active Roster', value: approvedCount.toString(), icon: 'group', color: 'text-[#003d9b]', bg: 'bg-[#dae2ff]', route: '/agent/admin' },
-          { label: 'Pending Approvals', value: pendingCount.toString(), icon: 'how_to_reg', color: 'text-[#7b2600]', bg: 'bg-[#ffdbcf]', route: '/agent/admin' },
-          { label: 'Active Teams', value: allAgents.filter(a => a.role === 'Agent').length.toString(), icon: 'partner_exchange', color: 'text-[#0c56d0]', bg: 'bg-[#d4e6e5]', route: '/agent/admin' },
-          { label: 'Dynamic Plans', value: '3 Active', icon: 'payments', color: 'text-green-700', bg: 'bg-green-100', route: '/agent/admin' },
-        ]);
-
-        setQuickActions([
-          { label: 'Review Approvals', icon: 'how_to_reg', route: '/agent/admin' },
-          { label: 'Commission Engine', icon: 'account_balance_wallet', route: '/agent/admin' },
-          { label: 'Manage Roster', icon: 'badge', route: '/agent/admin' },
-          { label: 'Admin Settings', icon: 'admin_panel_settings', route: '/agent/profile' },
-        ]);
-      } else if (userObj.role === 'Super Agent') {
-        const tls = allAgents.filter(a => a.role === 'Agent' && a.reportingManager === userObj.fullName);
-        const fas = allAgents.filter(a => a.role === 'Field Agent' && tls.map(t => t.fullName).includes(a.reportingManager));
-
-        setStats([
-          { label: 'Agents', value: tls.length.toString(), icon: 'partner_exchange', color: 'text-[#003d9b]', bg: 'bg-[#dae2ff]', route: '/agent/team' },
-          { label: 'Field Agents', value: fas.length.toString(), icon: 'badge', color: 'text-[#0c56d0]', bg: 'bg-[#d4e6e5]', route: '/agent/team' },
-          { label: 'Network Sales', value: '₹8.4L', icon: 'payments', color: 'text-[#7b2600]', bg: 'bg-[#ffdbcf]' },
-          { label: 'Overriding Earnings', value: `₹${userObj.earnings.toLocaleString('en-IN')}`, icon: 'account_balance_wallet', color: 'text-green-700', bg: 'bg-green-100', route: '/agent/wallet' },
-        ]);
-
-        setQuickActions([
-          { label: 'Manage Team', icon: 'group', route: '/agent/team' },
-          { label: 'Network Performance', icon: 'insights', route: '/agent/team' },
-          { label: 'Wallet Payouts', icon: 'account_balance', route: '/agent/wallet' },
-          { label: 'Support Desk', icon: 'support_agent', route: '/agent/profile' },
-        ]);
-      } else if (userObj.role === 'Agent') {
-        const fas = allAgents.filter(a => a.role === 'Field Agent' && a.reportingManager === userObj.fullName);
-
-        setStats([
-          { label: 'Field Agents Managed', value: fas.length.toString(), icon: 'badge', color: 'text-[#003d9b]', bg: 'bg-[#dae2ff]', route: '/agent/team' },
-          { label: 'Active Leads', value: (fas.length * 8).toString(), icon: 'group', color: 'text-[#0c56d0]', bg: 'bg-[#d4e6e5]', route: '/agent/team' },
-          { label: 'Team Revenue', value: '₹2.1L', icon: 'payments', color: 'text-[#7b2600]', bg: 'bg-[#ffdbcf]' },
-          { label: 'My Override', value: `₹${userObj.earnings.toLocaleString('en-IN')}`, icon: 'account_balance_wallet', color: 'text-green-700', bg: 'bg-green-100', route: '/agent/wallet' },
-        ]);
-
-        setQuickActions([
-          { label: 'My Agents', icon: 'group', route: '/agent/team' },
-          { label: 'Commission Wallet', icon: 'account_balance_wallet', route: '/agent/wallet' },
-          { label: 'Apply Loan', icon: 'payments', route: '/agent/apply-loan' },
-          { label: 'Support Desk', icon: 'support_agent', route: '/agent/profile' },
-        ]);
-      } else {
-        // Field Agent
-        setStats([
-          { label: 'Onboarded Clients', value: userObj.salesCount.toString(), icon: 'group', color: 'text-[#003d9b]', bg: 'bg-[#dae2ff]', route: '/agent/customers' },
-          { label: 'Subscriptions Sold', value: userObj.salesCount.toString(), icon: 'verified_user', color: 'text-[#0c56d0]', bg: 'bg-[#d4e6e5]', route: '/agent/customers' },
-          { label: 'Total Revenue', value: `₹${(userObj.salesCount * 50000).toLocaleString('en-IN')}`, icon: 'payments', color: 'text-[#7b2600]', bg: 'bg-[#ffdbcf]' },
-          { label: 'Wallet Earnings', value: `₹${userObj.earnings.toLocaleString('en-IN')}`, icon: 'account_balance_wallet', color: 'text-green-700', bg: 'bg-green-100', route: '/agent/wallet' },
-        ]);
-
-        setQuickActions([
-          { label: 'Onboard Customer', icon: 'person_add', route: '/agent/register-customer' },
-          { label: 'Apply Loan', icon: 'payments', route: '/agent/apply-loan' },
-          { label: 'Customer Directory', icon: 'group', route: '/agent/customers' },
-          { label: 'My Wallet', icon: 'account_balance_wallet', route: '/agent/wallet' },
-        ]);
-      }
-    }
-=======
     fetchDashboardStats();
->>>>>>> 318574f954edd436278ce82f30178632b2cae125
   }, []);
 
   const fetchDashboardStats = async () => {
@@ -183,27 +101,6 @@ export default function AgentDashboardPage() {
     );
   }
 
-<<<<<<< HEAD
-  // Fetch pending registrations for Admin list
-  const pendingRegistrations = agents.filter(a => a.status === 'Pending Approval');
-  
-  // Fetch team list for Super Agent / Agent
-  const getSubordinateAgents = () => {
-    if (currentUser.role === 'Super Agent') {
-      const tls = agents.filter(a => a.role === 'Agent' && a.reportingManager === currentUser.fullName);
-      return tls;
-    }
-    if (currentUser.role === 'Agent') {
-      const fas = agents.filter(a => a.role === 'Field Agent' && a.reportingManager === currentUser.fullName);
-      return fas;
-    }
-    return [];
-  };
-
-  const subordinateList = getSubordinateAgents();
-
-=======
->>>>>>> 318574f954edd436278ce82f30178632b2cae125
   const mockActivities = [
     { title: 'New Customer Onboarded', desc: 'Amit Patel registered Priya Mehta successfully.', time: '10 mins ago', icon: 'person_add', bg: 'bg-[#dae2ff]', text: 'text-[#003d9b]' },
     { title: 'Commission Credited', desc: '₹4,500 override credited for Sanjay Dutt\'s sale.', time: '2 hours ago', icon: 'payments', bg: 'bg-green-100', text: 'text-green-700' },

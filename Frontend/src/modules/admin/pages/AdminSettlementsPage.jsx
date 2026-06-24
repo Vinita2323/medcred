@@ -11,54 +11,6 @@ export default function AdminSettlementsPage() {
   const [processing, setProcessing]     = useState(null);
   const [loading, setLoading]           = useState(true);
 
-<<<<<<< HEAD
-  useEffect(() => {
-    // We add fake pending/paid earnings to the agents for demo purposes
-    const raw = localStorage.getItem('medcred_agents');
-    let data = raw ? JSON.parse(raw) : [];
-    
-    if (data.filter(a => a.status === 'Approved').length === 0) {
-      const dummyAgents = [
-        { agentId: 'MC-10023', fullName: 'Rajesh Kumar', mobileNumber: '9876543210', email: 'rajesh@example.com', role: 'Super Agent', status: 'Approved', pendingEarnings: 12500, paidEarnings: 45000 },
-        { agentId: 'MC-20045', fullName: 'Priya Sharma', mobileNumber: '9876543211', email: 'priya@example.com', role: 'Agent', status: 'Approved', pendingEarnings: 8200, paidEarnings: 21000 },
-        { agentId: 'MC-30067', fullName: 'Amit Patel', mobileNumber: '9876543212', email: 'amit@example.com', role: 'Field Agent', status: 'Approved', pendingEarnings: 3400, paidEarnings: 12000 },
-        { agentId: 'MC-40089', fullName: 'Neha Singh', mobileNumber: '9876543213', email: 'neha@example.com', role: 'Field Agent', status: 'Approved', pendingEarnings: 0, paidEarnings: 8500 }
-      ];
-      data = [...data, ...dummyAgents];
-      localStorage.setItem('medcred_agents', JSON.stringify(data));
-    }
-
-    data = data.filter(a => a.status === 'Approved').map(a => ({
-      ...a,
-      pendingEarnings: a.pendingEarnings !== undefined ? a.pendingEarnings : Math.floor(Math.random() * 15000),
-      paidEarnings: a.paidEarnings !== undefined ? a.paidEarnings : Math.floor(Math.random() * 50000)
-    }));
-    setAgents(data);
-  }, []);
-
-  const handlePayout = (agent) => {
-    if (agent.pendingEarnings === 0) return;
-    setProcessing(agent.agentId);
-    setTimeout(() => {
-      const updated = agents.map(a => 
-        a.agentId === agent.agentId 
-          ? { ...a, paidEarnings: a.paidEarnings + a.pendingEarnings, pendingEarnings: 0 }
-          : a
-      );
-      setAgents(updated);
-      
-      // Also update localStorage so it reflects across the app
-      const fullAgents = JSON.parse(localStorage.getItem('medcred_agents') || '[]');
-      const synced = fullAgents.map(a => {
-        const u = updated.find(up => up.agentId === a.agentId);
-        return u ? { ...a, pendingEarnings: u.pendingEarnings, paidEarnings: u.paidEarnings } : a;
-      });
-      localStorage.setItem('medcred_agents', JSON.stringify(synced));
-      
-      setProcessing(null);
-      alert(`Successfully processed payout of ₹${agent.pendingEarnings.toLocaleString('en-IN')} for ${agent.fullName}`);
-    }, 1200);
-=======
   const fetchSettlements = async (status = statusFilter) => {
     setLoading(true);
     try {
@@ -73,7 +25,6 @@ export default function AdminSettlementsPage() {
     } finally {
       setLoading(false);
     }
->>>>>>> 318574f954edd436278ce82f30178632b2cae125
   };
 
   useEffect(() => {

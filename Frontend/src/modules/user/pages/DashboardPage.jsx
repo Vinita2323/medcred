@@ -1,31 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import BottomNavBar from '../components/Navigation/BottomNavBar';
-<<<<<<< HEAD
-import { getMembership, hasMembership, getMembershipDaysRemaining, getDaysActive, isLoanEligible, getDaysUntilLoanEligible, getPlatformPlans } from '../utils/storage';
-=======
-import { getMembership, hasMembership, getMembershipDaysRemaining, getDaysActive, isLoanEligible, getDaysUntilLoanEligible, PLANS, getUser } from '../utils/storage';
+import { getMembership, hasMembership, getMembershipDaysRemaining, getDaysActive, isLoanEligible, getDaysUntilLoanEligible, DEFAULT_PLANS as PLANS, getUser } from '../utils/storage';
 import api from '../../../services/api';
 import { ENDPOINTS } from '../../../services/types';
->>>>>>> 318574f954edd436278ce82f30178632b2cae125
 import imgBP from '../../../assets/Machine/Bloodpressure.webp';
 import imgGlucometer from '../../../assets/Machine/Glucometer.webp';
 import imgThermometer from '../../../assets/Machine/thermometer.jpg';
 import imgWeighing from '../../../assets/Machine/Weighting.webp';
 import imgAcupressure from '../../../assets/Machine/Acupressure.jpg';
 import imgMassager from '../../../assets/Machine/Bodymassager.jpg';
+import imgChatSupport from '../../../assets/chat-removebg-preview.png';
 
 export default function DashboardPage() {
   const navigate = useNavigate();
-<<<<<<< HEAD
-  const PLANS = getPlatformPlans();
-  const membership = getMembership();
-  const active = hasMembership();
-  const daysLeft = getMembershipDaysRemaining();
-  const loanReady = isLoanEligible();
-  const loanDays = getDaysUntilLoanEligible();
-=======
->>>>>>> 318574f954edd436278ce82f30178632b2cae125
+
   const [isBenefitsModalOpen, setIsBenefitsModalOpen] = useState(false);
   const user = getUser();
   const [card, setCard] = useState(null);
@@ -158,54 +147,54 @@ export default function DashboardPage() {
           </div>
         )}
         {/* Health Card Widget */}
-        <section className="bg-gradient-to-br from-primary to-secondary rounded-2xl p-5 text-white shadow-xl relative overflow-hidden">
+        <section className="bg-gradient-to-br from-primary to-secondary rounded-2xl p-4 text-white shadow-xl relative overflow-hidden">
           <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full -mr-20 -mt-20 blur-3xl"></div>
           <div className="relative z-10 flex flex-col justify-between">
-            <div className="flex justify-between items-start mb-6">
+            <div className="flex justify-between items-start mb-4">
               <div>
-                <p className="text-[10px] text-primary-fixed opacity-90 uppercase tracking-widest font-semibold">MedCred India</p>
-                <h2 className="text-lg font-bold mt-0.5">Health Passport</h2>
+                <p className="text-[9px] text-primary-fixed opacity-90 uppercase tracking-widest font-semibold">MedCred India</p>
+                <h2 className="text-base font-bold mt-0.5">Health Passport</h2>
               </div>
               <div className="bg-white p-1 rounded-lg">
                 <img 
                   alt="Card QR Code" 
-                  className="w-10 h-10" 
+                  className="w-8 h-8" 
                   src={card ? (card.qrCodeUrl || "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=" + card.cardId) : "https://lh3.googleusercontent.com/aida-public/AB6AXuAVFKhfs1tM3Gf0ITg4jWdnRQHkrL8HDzZvFtI-B9uGiZ6xrV203DSr_6-NfcQYke-zjjy31uvCI5Jrpmcl7i7ATbS4JTae4bacfbet6Zw1YHRaeZZaNckjfnb2mqMjSSWMMk9em26YAV6gJFrCDnQOlMt6B39DT6Ax4XoKBe5vO5Dg7hWeD2gULy4mCIoRCY106MlvBRPPnswqBYtHWoCSu09-fRTpYXF8FmqmOCQ_lmCi8iK1XUfmB9YU5Sapnk2iI7QpDP8tFLyk"}
                 />
               </div>
             </div>
             
-            <div className="space-y-4">
-              <p className="text-lg tracking-[0.2em] font-mono font-bold">{card ? card.cardNumber : "•••• •••• 1234"}</p>
+            <div className="space-y-3">
+              <p className="text-base tracking-[0.15em] font-mono font-bold">{card ? card.cardNumber : "•••• •••• 1234"}</p>
               <div className="flex justify-between items-end">
                 <div className="flex gap-4">
                   <div>
-                    <p className="text-[9px] opacity-70 uppercase font-semibold">Status</p>
-                    <p className="text-xs font-semibold capitalize">{card ? card.status : "Active"}</p>
+                    <p className="text-[8px] opacity-70 uppercase font-semibold">Status</p>
+                    <p className="text-[11px] font-semibold capitalize">{card ? card.status : "Active"}</p>
                   </div>
                   <div>
-                    <p className="text-[9px] opacity-70 uppercase font-semibold">Type</p>
-                    <p className="text-xs font-semibold">{card ? card.planName : "Platinum"}</p>
+                    <p className="text-[8px] opacity-70 uppercase font-semibold">Type</p>
+                    <p className="text-[11px] font-semibold">{card ? card.planName : "Platinum"}</p>
                   </div>
                   <div>
-                    <p className="text-[9px] opacity-70 uppercase font-semibold">Valid Till</p>
-                    <p className="text-xs font-semibold">{card ? new Date(card.validTill).toLocaleDateString('en-GB', { month: '2-digit', year: '2-digit' }).replace('/', '/') : "12/28"}</p>
+                    <p className="text-[8px] opacity-70 uppercase font-semibold">Valid Till</p>
+                    <p className="text-[11px] font-semibold">{card ? new Date(card.validTill).toLocaleDateString('en-GB', { month: '2-digit', year: '2-digit' }).replace('/', '/') : "12/28"}</p>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="flex gap-3 mt-6">
+            <div className="flex gap-2.5 mt-4">
               <button 
                 onClick={() => navigate('/card')}
-                className="flex-1 bg-white text-primary text-xs py-2.5 rounded-lg flex items-center justify-center gap-1 font-bold active:scale-95 transition-all cursor-pointer shadow-md"
+                className="flex-1 bg-white text-primary text-[11px] py-2 rounded-lg flex items-center justify-center gap-1 font-bold active:scale-95 transition-all cursor-pointer shadow-md"
               >
                 <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>visibility</span>
                 View Card
               </button>
               <button 
                 onClick={() => alert("MedCred Passport PDF downloaded successfully.")}
-                className="flex-1 glass-effect text-white text-xs py-2.5 rounded-lg flex items-center justify-center gap-1 font-bold active:scale-95 transition-all cursor-pointer"
+                className="flex-1 glass-effect text-white text-[11px] py-2 rounded-lg flex items-center justify-center gap-1 font-bold active:scale-95 transition-all cursor-pointer"
               >
                 <span className="material-symbols-outlined text-sm">download</span>
                 Download
@@ -214,8 +203,34 @@ export default function DashboardPage() {
           </div>
         </section>
 
+        {/* Chat Support Section */}
+        <section className="bg-[#F5F8FF] border border-blue-100 rounded-2xl p-3 shadow-sm relative overflow-visible mt-2">
+          {/* Chat Illustration */}
+          <div className="absolute left-0 bottom-0 w-[100px] h-[110px] pointer-events-none">
+            <img src={imgChatSupport} alt="Chat Support" className="w-full h-full object-contain object-bottom drop-shadow-md origin-bottom" />
+          </div>
+
+          <div className="ml-[100px] flex flex-col justify-between min-h-[85px] z-10 relative">
+            <div>
+              <h3 className="text-base font-black text-[#0D1B3E] leading-tight">Need Help?</h3>
+              <p className="text-[10px] text-[#4A5568] mt-1 leading-snug">Chat with our health expert for any queries</p>
+            </div>
+            
+            <div className="flex items-end justify-between mt-3">
+              <div className="flex items-center gap-1 mb-1">
+                <span className="material-symbols-outlined text-[#00A86B] text-[12px]">schedule</span>
+                <span className="text-[9px] font-bold text-[#00A86B]">Available 24/7</span>
+              </div>
+              <button className="bg-[#0A4DBF] text-white text-[10px] font-bold py-1.5 px-2 rounded-lg flex items-center gap-0.5 active:scale-95 transition-all shadow-[0_4px_12px_rgba(10,77,191,0.2)] cursor-pointer whitespace-nowrap">
+                Start Chat
+                <span className="material-symbols-outlined text-[12px] font-bold">arrow_forward</span>
+              </button>
+            </div>
+          </div>
+        </section>
+
         {/* Medical Equipment Grid */}
-        <section className="space-y-3">
+        <section className="space-y-3 mt-4">
           <div className="flex justify-between items-center">
             <h3 className="text-sm font-bold text-on-surface flex items-center gap-2">
               Medical Equipment
@@ -389,6 +404,7 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+
 
       <BottomNavBar />
     </div>

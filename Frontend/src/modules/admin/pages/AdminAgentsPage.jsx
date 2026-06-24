@@ -77,67 +77,6 @@ export default function AdminAgentsPage() {
     }
   }, []);
 
-<<<<<<< HEAD
-  const handleApprove = (e) => {
-    e.preventDefault();
-    const randomId  = `MC-${Math.floor(10000 + Math.random() * 90000)}`;
-    const randomRef = `${assignedRole.split(' ')[0].toUpperCase()}${Math.floor(10 + Math.random() * 90)}`;
-    const updated = agents.map(a =>
-      a.mobileNumber === approvingAgent.mobileNumber
-        ? { ...a, status: 'Approved', role: assignedRole, reportingManager: assignedManager,
-            agentId: randomId, referralCode: randomRef,
-            commissionRate: assignedRole === 'Super Agent' ? 1.0 : assignedRole === 'Agent' ? 1.5 : 2.5,
-            rank: 'Bronze', salesCount: 0, earnings: 0,
-            joiningDate: new Date().toLocaleDateString('en-IN') }
-        : a
-    );
-    saveAgents(updated);
-    setApproving(null);
-    alert(`${approvingAgent.fullName} approved as ${assignedRole}!`);
-  };
-
-  const handleReject = (agent) => {
-    if (!window.confirm(`Reject ${agent.fullName}?`)) return;
-    saveAgents(agents.map(a => a.mobileNumber === agent.mobileNumber ? { ...a, status: 'Rejected' } : a));
-  };
-
-  const blockToggle = (agent) => {
-    saveAgents(agents.map(a =>
-      a.mobileNumber === agent.mobileNumber
-        ? { ...a, status: a.status === 'Blocked' ? 'Approved' : 'Blocked' }
-        : a
-    ));
-  };
-
-  const promote = (agent, newRole) => {
-    saveAgents(agents.map(a =>
-      a.mobileNumber === agent.mobileNumber
-        ? { ...a, role: newRole, commissionRate: newRole === 'Super Agent' ? 1.0 : newRole === 'Agent' ? 1.5 : 2.5 }
-        : a
-    ));
-  };
-
-  const startEditCommission = (plan) => {
-    setEditPlan(plan);
-    setEfa(commissions[plan].fieldAgent);
-    setEtl(commissions[plan].teamLeader);
-    setEsa(commissions[plan].superAgent);
-  };
-
-  const saveCommission = () => {
-    const updated = { ...commissions, [editingPlan]: { fieldAgent: parseFloat(editFa), teamLeader: parseFloat(editTl), superAgent: parseFloat(editSa) } };
-    setCommissions(updated);
-    localStorage.setItem('medcred_commissions', JSON.stringify(updated));
-    setEditPlan(null);
-    alert(`Commission rates updated for ${editingPlan} plan!`);
-  };
-
-  const getPotentialManagers = (role) => {
-    if (role === 'Agent') return agents.filter(a => a.role === 'Super Agent' && a.status === 'Approved');
-    if (role === 'Field Agent')  return agents.filter(a => a.role === 'Agent' && a.status === 'Approved');
-    return [];
-  };
-=======
   useEffect(() => {
     fetchAgents();
     fetchPlans();
@@ -150,7 +89,6 @@ export default function AdminAgentsPage() {
       return () => clearTimeout(t);
     }
   }, [successMsg]);
->>>>>>> 318574f954edd436278ce82f30178632b2cae125
 
   // ── Derived lists ─────────────────────────────────────────────
   const pending = agents.filter(a => a.status === 'Pending Approval');
@@ -353,20 +291,6 @@ export default function AdminAgentsPage() {
           <span className="material-symbols-outlined text-[#003d9b]">settings_suggest</span>
           Commission Configuration Engine
         </h3>
-<<<<<<< HEAD
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {Object.keys(commissions).map(plan => (
-            <div key={plan} className="border border-[#c3c6d6]/30 rounded-xl p-4 space-y-2.5">
-              <h4 className="font-extrabold text-[#003d9b]">{plan} Plan</h4>
-              {[
-                { role: 'Field Agent',   val: commissions[plan].fieldAgent },
-                { role: 'Agent',   val: commissions[plan].teamLeader },
-                { role: 'Super Agent',   val: commissions[plan].superAgent },
-              ].map(r => (
-                <div key={r.role} className="flex justify-between text-xs">
-                  <span className="text-[#516161] font-semibold">{r.role}</span>
-                  <span className="font-extrabold text-[#191b23]">{r.val}%</span>
-=======
         <p className="text-xs text-[#516161] mb-4">Configure commission percentages for Field Agents, Agents, and Super Agents for each plan.</p>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -378,7 +302,6 @@ export default function AdminAgentsPage() {
                 <div className="flex justify-between items-center">
                   <span className="font-bold text-[#516161] text-xs">Field Agent</span>
                   <span className="font-extrabold text-[#191b23]">{commissions[planName].fieldAgent}%</span>
->>>>>>> 318574f954edd436278ce82f30178632b2cae125
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="font-bold text-[#516161] text-xs">Agent</span>
@@ -441,71 +364,6 @@ export default function AdminAgentsPage() {
           )}
         </div>
         <div className="overflow-x-auto">
-<<<<<<< HEAD
-          <table className="w-full text-sm text-left">
-            <thead>
-              <tr className="bg-[#faf8ff] text-[#737685] text-xs font-bold border-b border-[#c3c6d6]/20">
-                <th className="px-5 py-3">Agent Name</th>
-                <th className="px-5 py-3">Contact</th>
-                {activeTab !== 'Pending Approval' && <th className="px-5 py-3">Role</th>}
-                {activeTab !== 'Pending Approval' && <th className="px-5 py-3">Referral Code</th>}
-                {activeTab === 'Active Agents' && <th className="px-5 py-3">Sales / Earnings</th>}
-                <th className="px-5 py-3 text-center">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#c3c6d6]/10">
-              {listByTab(activeTab).map(agent => (
-                <tr key={agent.mobileNumber} className="hover:bg-[#faf8ff]/60 transition-colors">
-                  <td className="px-5 py-3.5">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-full bg-[#dae2ff] text-[#003d9b] font-bold text-xs flex items-center justify-center shrink-0">
-                        {agent.fullName?.charAt(0) || 'A'}
-                      </div>
-                      <div>
-                        <p className="font-bold text-[#191b23]">{agent.fullName}</p>
-                        {agent.agentId && <p className="text-[10px] text-[#737685] font-mono">{agent.agentId}</p>}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-5 py-3.5 text-xs">
-                    <p className="font-semibold text-[#191b23]">{agent.mobileNumber}</p>
-                    <p className="text-[#737685]">{agent.email}</p>
-                  </td>
-                  {activeTab !== 'Pending Approval' && (
-                    <td className="px-5 py-3.5">
-                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${ROLE_COLORS[agent.role] || 'bg-gray-100 text-gray-700'}`}>{agent.role}</span>
-                    </td>
-                  )}
-                  {activeTab !== 'Pending Approval' && (
-                    <td className="px-5 py-3.5 font-mono text-xs font-bold text-[#0052cc]">{agent.referralCode || '—'}</td>
-                  )}
-                  {activeTab === 'Active Agents' && (
-                    <td className="px-5 py-3.5 text-xs">
-                      <p className="font-bold text-[#191b23]">{agent.salesCount || 0} sales</p>
-                      <p className="text-green-700 font-semibold">₹{(agent.earnings || 0).toLocaleString('en-IN')}</p>
-                    </td>
-                  )}
-                  <td className="px-5 py-3.5">
-                    <div className="flex gap-1.5 justify-center flex-wrap">
-                      {activeTab === 'Pending Approval' && (
-                        <>
-                          <button onClick={() => setApproving(agent)} className="bg-[#003d9b] hover:bg-[#0052cc] text-white px-2.5 py-1.5 rounded-lg text-xs font-bold cursor-pointer">Assign & Approve</button>
-                          <button onClick={() => handleReject(agent)} className="border border-red-200 text-red-600 hover:bg-red-50 px-2.5 py-1.5 rounded-lg text-xs font-bold cursor-pointer">Reject</button>
-                        </>
-                      )}
-                      {activeTab === 'Active Agents' && (
-                        <>
-                          {agent.role === 'Field Agent' && <button onClick={() => promote(agent, 'Agent')} className="bg-[#f0f4ff] hover:bg-[#dae2ff] text-[#003d9b] px-2.5 py-1.5 rounded-lg text-xs font-bold cursor-pointer">→ Agent</button>}
-                          {agent.role === 'Agent' && <button onClick={() => promote(agent, 'Super Agent')} className="bg-purple-50 hover:bg-purple-100 text-purple-700 px-2.5 py-1.5 rounded-lg text-xs font-bold cursor-pointer">→ Super Agent</button>}
-                          <button onClick={() => blockToggle(agent)} className="border border-red-200 text-red-600 hover:bg-red-50 px-2.5 py-1.5 rounded-lg text-xs font-bold cursor-pointer">Block</button>
-                        </>
-                      )}
-                      {activeTab === 'Blocked' && (
-                        <button onClick={() => blockToggle(agent)} className="border border-green-300 text-green-700 hover:bg-green-50 px-2.5 py-1.5 rounded-lg text-xs font-bold cursor-pointer">Unblock</button>
-                      )}
-                    </div>
-                  </td>
-=======
           {loading ? (
             <div className="flex items-center justify-center py-16 text-[#516161] text-sm gap-2">
               <span className="material-symbols-outlined animate-spin">progress_activity</span>
@@ -521,7 +379,6 @@ export default function AdminAgentsPage() {
                   {activeTab !== 'Pending Approval' && <th className="px-5 py-3">Referral Code</th>}
                   {activeTab === 'Active Agents' && <th className="px-5 py-3">Sales / Earnings</th>}
                   <th className="px-5 py-3 text-center">Actions</th>
->>>>>>> 318574f954edd436278ce82f30178632b2cae125
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#c3c6d6]/10">
@@ -701,22 +558,6 @@ export default function AdminAgentsPage() {
 
       {/* Edit Commission Modal */}
       {editingPlan && (
-<<<<<<< HEAD
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setEditPlan(null)}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4 animate-fade-in" onClick={e=>e.stopPropagation()}>
-            <div className="flex justify-between items-center border-b border-[#c3c6d6]/20 pb-3">
-              <h3 className="font-extrabold text-[#003d9b]">Configure {editingPlan} Rates</h3>
-              <button onClick={() => setEditPlan(null)} className="material-symbols-outlined text-[#737685] cursor-pointer">close</button>
-            </div>
-            {[
-              { label: 'Field Agent Commission (%)', val: editFa, setter: setEfa },
-              { label: 'Agent Override (%)',   val: editTl, setter: setEtl },
-              { label: 'Super Agent Override (%)',   val: editSa, setter: setEsa },
-            ].map((f,i)=>(
-              <div key={i} className="space-y-1">
-                <label className="text-xs font-semibold text-[#516161]">{f.label}</label>
-                <input type="number" value={f.val} onChange={e=>f.setter(e.target.value)} step="0.1" className="w-full bg-[#f5f8ff] border border-[#c3c6d6]/40 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#003d9b]" />
-=======
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 space-y-6 animate-fade-in" onClick={e => e.stopPropagation()}>
             <h3 className="font-extrabold text-[#003d9b] text-lg border-b border-[#c3c6d6]/20 pb-3 capitalize">
@@ -733,7 +574,6 @@ export default function AdminAgentsPage() {
                   onChange={(e) => setEditFa(e.target.value)} 
                   className="w-full bg-[#f3f3fd] border border-[#c3c6d6]/40 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#003d9b] font-bold"
                 />
->>>>>>> 318574f954edd436278ce82f30178632b2cae125
               </div>
               <div className="space-y-1">
                 <label className="text-xs font-semibold text-[#516161]">Agent (%)</label>

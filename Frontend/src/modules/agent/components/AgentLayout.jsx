@@ -14,6 +14,8 @@ export default function AgentLayout() {
     const userJson = localStorage.getItem(STORAGE_KEYS.USER_DATA);
     if (userJson) {
       setCurrentUser(JSON.parse(userJson));
+    } else {
+      setCurrentUser({ fullName: 'Mock Super Agent', role: 'Super Agent', rank: 'Platinum' });
     }
   }, []);
 
@@ -34,11 +36,8 @@ export default function AgentLayout() {
       { label: 'Register Customer', icon: 'person_add', route: '/agent/register-customer' },
       { label: 'Apply Loan', icon: 'payments', route: '/agent/apply-loan' },
       { label: 'Customer Directory', icon: 'group', route: '/agent/customers' },
+      { label: 'Team Management', icon: 'partner_exchange', route: '/agent/team' }
     ];
-
-    if (currentUser.role === 'Super Agent' || currentUser.role === 'Agent') {
-      baseItems.push({ label: 'Team Management', icon: 'partner_exchange', route: '/agent/team' });
-    }
 
     baseItems.push(
       { label: 'Agent Wallet', icon: 'account_balance_wallet', route: '/agent/wallet' },
@@ -93,9 +92,9 @@ export default function AgentLayout() {
       {/* Desktop Sidebar (hidden on mobile) */}
       <aside className="hidden md:flex flex-col w-64 bg-white border-r border-[#c3c6d6]/20 h-screen fixed top-0 left-0 z-40">
         {/* Brand/Logo */}
-        <div className="h-16 flex items-center px-6 border-b border-[#c3c6d6]/20 gap-3">
-          <span className="material-symbols-outlined text-[#003d9b] text-2xl font-bold">medical_services</span>
-          <h1 className="text-lg font-bold text-[#003d9b] tracking-tight">MedCred India</h1>
+        <div className="h-28 flex flex-col justify-center items-center border-b border-[#c3c6d6]/20 py-3 bg-[#fdfcff]">
+          <img src="/Logo (5).png" alt="MedCred Logo" className="h-16 w-auto object-contain" />
+          <span className="text-[11px] font-extrabold text-[#003d9b] uppercase tracking-widest mt-2">Agent Panel</span>
         </div>
 
         {/* Sidebar Navigation */}
@@ -152,14 +151,14 @@ export default function AgentLayout() {
             className="w-64 bg-white h-full flex flex-col shadow-2xl animate-slide-in-right"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="h-16 flex items-center justify-between px-4 border-b border-[#c3c6d6]/20">
-              <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-[#003d9b] text-xl">medical_services</span>
-                <span className="font-bold text-[#003d9b] text-sm">MedCred India</span>
+            <div className="h-28 flex items-start justify-between px-4 border-b border-[#c3c6d6]/20 py-4 relative bg-[#fdfcff]">
+              <div className="flex flex-col items-center w-full mt-2">
+                <img src="/Logo (5).png" alt="MedCred Logo" className="h-14 w-auto object-contain" />
+                <span className="text-[10px] font-extrabold text-[#003d9b] uppercase tracking-widest mt-1.5">Agent Panel</span>
               </div>
               <button
                 onClick={() => setIsMobileDrawerOpen(false)}
-                className="material-symbols-outlined text-[#434654] p-1.5 hover:bg-[#f3f3fd] rounded-full"
+                className="absolute right-3 top-3 material-symbols-outlined text-[#434654] p-1.5 hover:bg-[#f3f3fd] rounded-full"
               >
                 close
               </button>

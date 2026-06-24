@@ -2,13 +2,9 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Lottie from 'lottie-react';
 import membershipActivAnim from '../../../assets/Lotties/membershipActiv.json';
-<<<<<<< HEAD
-import { getPlatformPlans, saveMembership, getMembership } from '../utils/storage';
-=======
-import { PLANS, saveMembership, getMembership, updateUser } from '../utils/storage';
+import { saveMembership, getMembership, updateUser } from '../utils/storage';
 import api from '../../../services/api';
 import { ENDPOINTS } from '../../../services/types';
->>>>>>> 318574f954edd436278ce82f30178632b2cae125
 
 const METHODS = [
   { id: 'upi',     icon: 'smartphone',          label: 'UPI',         desc: 'Pay via any UPI app' },
@@ -22,19 +18,14 @@ export default function PaymentPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const planId = location.state?.planId || 'family';
-<<<<<<< HEAD
-  const plans = getPlatformPlans();
-  const plan = plans[planId];
-=======
   const planObjId = location.state?.planObjId || null;
   const plan = {
-    name: location.state?.planName || (PLANS[planId]?.name || 'Health Plan'),
-    price: location.state?.price || (PLANS[planId]?.price || 999),
-    validity: location.state?.validity || (PLANS[planId]?.validity || '1 Year'),
-    members: location.state?.members || (PLANS[planId]?.members || 1),
-    coverage: location.state?.coverage || (PLANS[planId]?.coverage || '2L')
+    name: location.state?.planName || 'Health Plan',
+    price: location.state?.price || 999,
+    validity: location.state?.validity || '1 Year',
+    members: location.state?.members || 1,
+    coverage: location.state?.coverage || '2L'
   };
->>>>>>> 318574f954edd436278ce82f30178632b2cae125
   const finalPrice = location.state?.price || plan.price;
   const agentDetail = location.state?.agentDetail || null;
   const referralCode = location.state?.referralCode || null;
