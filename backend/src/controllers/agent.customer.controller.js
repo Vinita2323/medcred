@@ -1,5 +1,6 @@
 import User from '../models/User.model.js';
 import Agent from '../models/Agent.model.js';
+import Card from '../models/Card.model.js';
 import bcrypt from 'bcryptjs';
 
 /**
@@ -96,6 +97,38 @@ export const onboardCustomer = async (req, res) => {
     });
   } catch (error) {
     console.error('Error in onboardCustomer:', error);
+    res.status(500).json({ success: false, message: 'Server Error' });
+  }
+};
+
+/**
+ * @desc    Get all customers who used the agent's referral code
+ * @route   GET /api/v1/agent/customers/referrals
+ * @access  Private (Agent)
+ */
+export const getReferrals = async (req, res) => {
+  try {
+    const { referralCode, customReferralCode } = req.user;
+    
+    const queryCodes = [];
+    if (referralCode) queryCodes.push(referralCode);
+    if (customReferralCode) queryCodes.push(customReferralCode);
+
+    if (queryCodes.length === 0) {
+      return res.status(200).json({ success: true, count: 0, data: [] });
+    }
+
+    const referrals = await Card.find({ referralCodeUsed: { $in: queryCodes } })
+      .populate('userId', 'fullName mobile email')
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      count: referrals.length,
+      data: referrals,
+    });
+  } catch (error) {
+    console.error('Error in getReferrals:', error);
     res.status(500).json({ success: false, message: 'Server Error' });
   }
 };

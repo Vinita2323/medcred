@@ -15,6 +15,7 @@ import AgentOnboardCustomerPage from '../pages/AgentOnboardCustomerPage';
 import AgentWalletPage from '../pages/AgentWalletPage';
 import AgentTeamPage from '../pages/AgentTeamPage';
 import AgentAdminPage from '../pages/AgentAdminPage';
+import AgentReferralsPage from '../pages/AgentReferralsPage';
 
 import AgentLayout from '../components/AgentLayout';
 
@@ -38,6 +39,7 @@ export default function AgentRoutes() {
         <Route path="/agent/wallet" element={<AgentWalletPage />} />
         <Route path="/agent/team" element={<AgentTeamPage />} />
         <Route path="/agent/admin" element={<AgentAdminPage />} />
+        <Route path="/agent/referrals" element={<AgentReferralsPage />} />
       </Route>
     </Routes>
   );

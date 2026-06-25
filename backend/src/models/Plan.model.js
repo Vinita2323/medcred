@@ -62,15 +62,15 @@ const planSchema = new mongoose.Schema(
     },
     fieldAgentCommissionPct: {
       type: Number,
-      default: 2.0,
+      default: 12,
     },
     agentCommissionPct: {
       type: Number,
-      default: 1.0,
+      default: 4,
     },
     superAgentCommissionPct: {
       type: Number,
-      default: 0.5,
+      default: 3,
     },
     isActive: {
       type: Boolean,

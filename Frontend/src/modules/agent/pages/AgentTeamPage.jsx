@@ -116,141 +116,186 @@ export default function AgentTeamPage() {
   const renderHierarchyView = () => {
     if (currentUser.role === 'Super Agent') {
       return (
-        <div className="space-y-4">
-          {agents.length === 0 && fieldAgents.length === 0 && (
-             <p className="text-sm text-gray-500 text-center py-8">No team members found in your network.</p>
-          )}
-          {agents.map(agent => {
-            const myFieldAgents = fieldAgents.filter(fa => fa.reportingManagerName === agent.fullName || fa.reportingManagerName === agent.agentId);
-            return (
-              <div key={agent.agentId} className="bg-white border border-[#c3c6d6]/30 rounded-2xl p-4 shadow-sm transition-all hover:shadow-md">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-[#dae2ff] flex items-center justify-center text-[#003d9b] font-bold border border-[#003d9b]/10 text-lg">
-                      {agent.fullName.charAt(0)}
-                    </div>
-                    <div>
-                      <div className="font-bold text-[#191b23] flex items-center gap-2 text-sm md:text-base">
-                        {agent.fullName}
-                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${getRankBadge(agent.rank)}`}>
-                          {agent.rank}
-                        </span>
-                      </div>
-                      <div className="text-[10px] md:text-xs text-[#737685] font-mono mt-0.5">Agent • ID: {agent.agentId}</div>
-                    </div>
-                  </div>
-                  <div className="text-right hidden sm:block">
-                    <div className="text-xs font-bold text-[#003d9b]">{agent.salesCount || Math.floor(Math.random() * 20) + 1} Sales</div>
-                    <div className="text-[10px] text-[#737685]">{agent.commissionRate}% Comm.</div>
-                  </div>
-                </div>
-
-                {/* Field Agents under this Agent */}
-                {myFieldAgents.length > 0 && (
-                  <div className="mt-4 ml-5 pl-4 border-l-2 border-[#003d9b]/20 space-y-3 relative">
-                    <span className="absolute -left-[9px] -top-2 text-[#003d9b] material-symbols-outlined text-lg bg-white rounded-full">arrow_drop_down_circle</span>
-                    <p className="text-[10px] font-bold text-[#516161] uppercase tracking-wider mb-2">Field Agents ({myFieldAgents.length})</p>
-                    {myFieldAgents.map(fa => (
-                      <div key={fa.agentId} className="bg-[#faf8ff] p-3 rounded-xl border border-[#c3c6d6]/30 flex items-center justify-between hover:bg-white transition-colors shadow-sm">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-[#e8f0fe] flex items-center justify-center text-[#1a73e8] font-bold text-xs border border-[#1a73e8]/10">
-                            {fa.fullName.charAt(0)}
-                          </div>
-                          <div>
-                            <div className="font-bold text-[#191b23] text-xs">{fa.fullName}</div>
-                            <div className="text-[9px] text-[#737685] font-mono mt-0.5">Field Agent • ID: {fa.agentId}</div>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-[11px] font-bold text-[#1a73e8]">{fa.salesCount || Math.floor(Math.random() * 10) + 1} Sales</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+        <div className="bg-white border border-[#c3c6d6]/30 rounded-2xl p-6 shadow-sm overflow-x-auto hide-scrollbar">
+          <div className="min-w-[600px]">
+            {/* Root: Super Agent (You) */}
+            <div className="flex items-center gap-4 relative z-10">
+              <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-[#003d9b] to-[#0052cc] flex items-center justify-center text-white font-bold text-xl shadow-lg ring-4 ring-[#eaf2ff]">
+                {currentUser.fullName ? currentUser.fullName.charAt(0) : 'S'}
               </div>
-            );
-          })}
-          
-          {/* Unassigned Field Agents */}
-          {fieldAgents.filter(fa => !agents.find(a => a.fullName === fa.reportingManagerName || a.agentId === fa.reportingManagerName)).length > 0 && (
-             <div className="bg-white border border-[#c3c6d6]/30 rounded-2xl p-4 shadow-sm mt-4">
-                <h4 className="text-xs font-bold text-[#191b23] mb-3 uppercase tracking-wider">Direct Reporting Field Agents</h4>
-                <div className="space-y-3">
-                   {fieldAgents.filter(fa => !agents.find(a => a.fullName === fa.reportingManagerName || a.agentId === fa.reportingManagerName)).map(fa => (
-                     <div key={fa.agentId} className="bg-[#faf8ff] p-3 rounded-xl border border-[#c3c6d6]/20 flex items-center justify-between">
+              <div>
+                <h3 className="font-extrabold text-[#191b23] text-lg flex items-center gap-2">
+                  {currentUser.fullName} <span className="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">(You)</span>
+                </h3>
+                <p className="text-xs text-[#0052cc] font-bold uppercase tracking-wider">Super Agent</p>
+              </div>
+            </div>
+
+            <div className="ml-7 mt-2 pl-8 border-l-2 border-dashed border-[#c3c6d6]/80 space-y-8 relative py-4">
+              {agents.length === 0 && fieldAgents.length === 0 && (
+                 <p className="text-sm text-[#737685] italic ml-4">No team members found in your network.</p>
+              )}
+
+              {/* Level 1: Agents */}
+              {agents.map((agent, i) => {
+                const myFieldAgents = fieldAgents.filter(fa => fa.reportingManagerName === agent.fullName || fa.reportingManagerName === agent.agentId);
+                const isLastAgent = i === agents.length - 1 && fieldAgents.filter(fa => !agents.find(a => a.fullName === fa.reportingManagerName || a.agentId === fa.reportingManagerName)).length === 0;
+
+                return (
+                  <div key={agent.agentId} className="relative">
+                    {/* Connector line */}
+                    <div className="absolute -left-8 top-6 w-8 border-t-2 border-dashed border-[#c3c6d6]/80" />
+                    {isLastAgent && <div className="absolute -left-[34px] top-6 bottom-0 w-2 bg-white" />}
+
+                    <div className="bg-[#f8faff] border border-[#c3c6d6]/40 hover:border-[#003d9b]/40 transition-colors rounded-xl p-4 shadow-sm w-full max-w-md relative z-10">
+                      <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-[#e8f0fe] flex items-center justify-center text-[#1a73e8] font-bold text-xs">
-                            {fa.fullName.charAt(0)}
+                          <div className="w-10 h-10 rounded-full bg-[#dae2ff] flex items-center justify-center text-[#003d9b] font-bold border border-[#003d9b]/10 text-lg">
+                            {agent.fullName.charAt(0)}
                           </div>
                           <div>
-                            <div className="font-bold text-[#191b23] text-xs">{fa.fullName}</div>
-                            <div className="text-[9px] text-[#737685] font-mono mt-0.5">Field Agent • ID: {fa.agentId}</div>
+                            <div className="font-bold text-[#191b23] text-sm">
+                              {agent.fullName}
+                            </div>
+                            <div className="text-[10px] text-[#737685] font-mono mt-0.5">Agent • {agent.agentId}</div>
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className="text-[11px] font-bold text-[#1a73e8]">{fa.salesCount || Math.floor(Math.random() * 10) + 1} Sales</div>
+                          <div className="text-xs font-bold text-[#003d9b]">{agent.salesCount || Math.floor(Math.random() * 20) + 1} Sales</div>
+                          <span className={`px-2 py-0.5 mt-1 inline-block rounded-full text-[9px] font-bold uppercase tracking-wider ${getRankBadge(agent.rank)}`}>
+                            {agent.rank}
+                          </span>
                         </div>
                       </div>
-                   ))}
-                </div>
-             </div>
-          )}
+                    </div>
+
+                    {/* Level 2: Field Agents under this Agent */}
+                    {myFieldAgents.length > 0 && (
+                      <div className="ml-5 mt-2 pl-8 border-l-2 border-dashed border-[#c3c6d6]/60 space-y-4 py-3 relative">
+                        {myFieldAgents.map((fa, j) => {
+                          const isLastFA = j === myFieldAgents.length - 1;
+                          return (
+                            <div key={fa.agentId} className="relative">
+                              <div className="absolute -left-8 top-5 w-8 border-t-2 border-dashed border-[#c3c6d6]/60" />
+                              {isLastFA && <div className="absolute -left-[34px] top-5 bottom-0 w-2 bg-white" />}
+                              
+                              <div className="bg-white border border-[#c3c6d6]/30 rounded-lg p-3 shadow-sm w-full max-w-sm flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-8 h-8 rounded-full bg-[#e8f0fe] flex items-center justify-center text-[#1a73e8] font-bold text-xs">
+                                    {fa.fullName.charAt(0)}
+                                  </div>
+                                  <div>
+                                    <div className="font-bold text-[#191b23] text-xs">{fa.fullName}</div>
+                                    <div className="text-[9px] text-[#737685] font-mono mt-0.5">Field Agent • {fa.agentId}</div>
+                                  </div>
+                                </div>
+                                <div className="text-[11px] font-bold text-[#1a73e8]">{fa.salesCount || Math.floor(Math.random() * 10) + 1} Sales</div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+
+              {/* Direct Reporting Field Agents */}
+              {fieldAgents.filter(fa => !agents.find(a => a.fullName === fa.reportingManagerName || a.agentId === fa.reportingManagerName)).map((fa, i, arr) => {
+                const isLast = i === arr.length - 1;
+                return (
+                  <div key={fa.agentId} className="relative">
+                    <div className="absolute -left-8 top-5 w-8 border-t-2 border-dashed border-[#c3c6d6]/80" />
+                    {isLast && <div className="absolute -left-[34px] top-5 bottom-0 w-2 bg-white" />}
+                    
+                    <div className="bg-white border border-[#c3c6d6]/40 rounded-lg p-3 shadow-sm w-full max-w-sm flex items-center justify-between relative z-10">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-[#e8f0fe] flex items-center justify-center text-[#1a73e8] font-bold text-xs border border-[#1a73e8]/20">
+                          {fa.fullName.charAt(0)}
+                        </div>
+                        <div>
+                          <div className="font-bold text-[#191b23] text-xs">{fa.fullName} <span className="text-[9px] text-green-600 bg-green-50 px-1 py-0.5 rounded ml-1 font-bold">Direct</span></div>
+                          <div className="text-[9px] text-[#737685] font-mono mt-0.5">Field Agent • {fa.agentId}</div>
+                        </div>
+                      </div>
+                      <div className="text-[11px] font-bold text-[#1a73e8]">{fa.salesCount || Math.floor(Math.random() * 10) + 1} Sales</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
       );
     }
 
     if (currentUser.role === 'Agent') {
       return (
-        <div className="space-y-6">
-          <div className="bg-white border border-[#c3c6d6]/30 rounded-2xl p-5 shadow-sm relative overflow-hidden">
-             <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50 rounded-bl-full -mr-4 -mt-4 opacity-50 pointer-events-none"></div>
-             <h3 className="text-xs font-bold text-[#516161] uppercase tracking-wider mb-4">Your Reporting Manager</h3>
-             <div className="bg-[#faf8ff] p-4 rounded-xl border border-[#003d9b]/10 flex justify-between items-center relative z-10 hover:shadow-md transition-shadow">
-               <div className="flex items-center gap-4">
-                 <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-[#003d9b] to-[#0052cc] flex items-center justify-center text-white font-bold text-lg shadow-md ring-4 ring-white">
-                   {currentUser.reportingManagerName ? currentUser.reportingManagerName.charAt(0) : 'S'}
-                 </div>
-                 <div>
-                   <div className="font-extrabold text-[#191b23] text-base">{currentUser.reportingManagerName || 'System Administrator'}</div>
-                   <div className="text-[11px] font-semibold text-[#0052cc] uppercase tracking-wider mt-0.5">Super Agent</div>
-                 </div>
-               </div>
-             </div>
-          </div>
-          
-          <div className="bg-white border border-[#c3c6d6]/30 rounded-2xl p-5 shadow-sm">
-             <div className="flex items-center justify-between mb-4">
-               <h3 className="text-xs font-bold text-[#516161] uppercase tracking-wider flex items-center gap-2">
-                  Your Downline 
-                  <span className="bg-[#003d9b]/10 text-[#003d9b] px-2 py-0.5 rounded-full text-[10px]">{fieldAgents.length}</span>
-               </h3>
-             </div>
-             <div className="space-y-3">
-               {fieldAgents.map(fa => (
-                 <div key={fa.agentId} className="bg-[#faf8ff] p-4 rounded-xl border border-[#c3c6d6]/20 flex items-center justify-between hover:border-[#003d9b]/30 transition-all hover:shadow-sm">
+        <div className="bg-white border border-[#c3c6d6]/30 rounded-2xl p-6 shadow-sm overflow-x-auto hide-scrollbar">
+          <div className="min-w-[500px]">
+            {/* Root: Super Agent (Parent) */}
+            <div className="flex items-center gap-4 relative z-10 opacity-80">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-[#003d9b] to-[#0052cc] flex items-center justify-center text-white font-bold text-lg shadow-md">
+                {currentUser.reportingManagerName ? currentUser.reportingManagerName.charAt(0) : 'S'}
+              </div>
+              <div>
+                <h3 className="font-extrabold text-[#191b23] text-base">{currentUser.reportingManagerName || 'System Administrator'}</h3>
+                <p className="text-[10px] text-[#0052cc] font-bold uppercase tracking-wider">Super Agent (Your Manager)</p>
+              </div>
+            </div>
+
+            <div className="ml-6 mt-2 pl-8 border-l-2 border-dashed border-[#c3c6d6]/80 space-y-6 relative py-4">
+              {/* Level 1: Agent (You) */}
+              <div className="relative">
+                <div className="absolute -left-8 top-6 w-8 border-t-2 border-dashed border-[#c3c6d6]/80" />
+                <div className="bg-[#f8faff] border-2 border-[#003d9b]/30 rounded-xl p-4 shadow-md w-full max-w-md relative z-10">
+                  <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-[#e8f0fe] flex items-center justify-center text-[#1a73e8] font-bold text-sm border border-[#1a73e8]/20">
-                        {fa.fullName.charAt(0)}
+                      <div className="w-10 h-10 rounded-full bg-[#003d9b] flex items-center justify-center text-white font-bold text-lg ring-4 ring-[#dae2ff]">
+                        {currentUser.fullName.charAt(0)}
                       </div>
                       <div>
-                        <div className="font-bold text-[#191b23] text-sm">{fa.fullName}</div>
-                        <div className="text-[10px] text-[#737685] font-mono mt-0.5">Field Agent • ID: {fa.agentId}</div>
+                        <div className="font-bold text-[#191b23] text-sm flex items-center gap-2">
+                          {currentUser.fullName} <span className="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full border border-blue-200">You</span>
+                        </div>
+                        <div className="text-[10px] text-[#737685] font-mono mt-0.5">Agent • {currentUser.agentId || 'N/A'}</div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className="text-xs font-extrabold text-[#1a73e8]">{fa.salesCount || Math.floor(Math.random() * 10) + 1} Sales</div>
-                      <div className="text-[10px] text-[#737685] mt-0.5">{fa.commissionRate || 5}% Comm.</div>
-                    </div>
-                 </div>
-               ))}
-               {fieldAgents.length === 0 && (
-                 <div className="text-center py-8">
-                    <span className="material-symbols-outlined text-4xl text-[#c3c6d6] mb-2">person_add_disabled</span>
-                    <p className="text-sm text-[#737685] font-medium">No field agents reporting to you currently.</p>
-                 </div>
-               )}
-             </div>
+                  </div>
+                </div>
+
+                {/* Level 2: Field Agents under You */}
+                <div className="ml-5 mt-2 pl-8 border-l-2 border-dashed border-[#c3c6d6]/60 space-y-4 py-3 relative">
+                  {fieldAgents.length === 0 && (
+                    <p className="text-[11px] text-[#737685] italic">No Field Agents in your downline yet.</p>
+                  )}
+                  {fieldAgents.map((fa, j) => {
+                    const isLastFA = j === fieldAgents.length - 1;
+                    return (
+                      <div key={fa.agentId} className="relative">
+                        <div className="absolute -left-8 top-5 w-8 border-t-2 border-dashed border-[#c3c6d6]/60" />
+                        {isLastFA && <div className="absolute -left-[34px] top-5 bottom-0 w-2 bg-white" />}
+                        
+                        <div className="bg-white border border-[#c3c6d6]/30 rounded-lg p-3 shadow-sm w-full max-w-sm flex items-center justify-between hover:border-[#1a73e8]/30 transition-colors">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-[#e8f0fe] flex items-center justify-center text-[#1a73e8] font-bold text-xs">
+                              {fa.fullName.charAt(0)}
+                            </div>
+                            <div>
+                              <div className="font-bold text-[#191b23] text-xs">{fa.fullName}</div>
+                              <div className="text-[9px] text-[#737685] font-mono mt-0.5">Field Agent • {fa.agentId}</div>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-[11px] font-bold text-[#1a73e8]">{fa.salesCount || Math.floor(Math.random() * 10) + 1} Sales</div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       );

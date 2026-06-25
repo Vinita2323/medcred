@@ -1,37 +1,37 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import api from '../../../services/api';
 import { ENDPOINTS } from '../../../services/types';
 
-const TABS = ['Pending Approval', 'Active Agents', 'Blocked'];
+const TABS = ['All Agents', 'Super Agents', 'Agents', 'Field Agents', 'Pending Requests', 'Hierarchy'];
 
 const ROLE_COLORS = {
-  'Super Agent':  'bg-purple-100 text-purple-700',
-  'Agent':  'bg-blue-100 text-blue-700',
-  'Field Agent':  'bg-[#dae2ff] text-[#003d9b]',
-  'Admin':        'bg-yellow-100 text-yellow-700',
-};
-
-const STATUS_MAP = {
-  'Pending Approval': 'Pending Approval',
-  'Active Agents':    'Approved',
-  'Blocked':          'Blocked',
+  'Super Agent': 'bg-purple-100 text-purple-700',
+  'Agent': 'bg-blue-100 text-blue-700',
+  'Field Agent': 'bg-[#dae2ff] text-[#003d9b]',
+  'Admin': 'bg-yellow-100 text-yellow-700',
 };
 
 export default function AdminAgentsPage() {
-  const [agents, setAgents]             = useState([]);
-  const [activeTab, setTab]             = useState('Pending Approval');
-  const [loading, setLoading]           = useState(true);
-  const [actionLoading, setActionLoad]  = useState(false);
-  const [error, setError]               = useState('');
-  const [successMsg, setSuccessMsg]     = useState('');
+  const [agents, setAgents] = useState([]);
+  const [activeTab, setTab] = useState('All Agents');
+  const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoad] = useState(false);
+  const [error, setError] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
 
-  // Approve modal state
-  const [approvingAgent, setApproving]  = useState(null);
-  const [assignedRole, setRole]         = useState('Field Agent');
-  const [assignedManager, setManager]   = useState('');
+  // Modals
+  const [approvingAgent, setApproving] = useState(null);
+  const [assignedRole, setRole] = useState('Field Agent');
+  const [assignedManager, setManager] = useState('');
+  const [customCode, setCustomCode] = useState('');
+  
+  const [detailsAgent, setDetailsAgent] = useState(null);
 
-  // Search
+  // Search & Filters
   const [search, setSearch] = useState('');
+  const [filterDistrict, setFilterDistrict] = useState('');
+  const [filterCity, setFilterCity] = useState('');
 
   // Commission Engine State
   const [commissions, setCommissions] = useState({});
@@ -65,9 +65,9 @@ export default function AdminAgentsPage() {
         res.data.data.forEach(p => {
           comms[p.name] = {
             id: p.planId,
-            fieldAgent: p.fieldAgentCommissionPct || 2.0,
-            agent: p.agentCommissionPct || 1.0,
-            superAgent: p.superAgentCommissionPct || 0.5,
+            fieldAgent: p.fieldAgentCommissionPct || 12,
+            agent: p.agentCommissionPct || 4,
+            superAgent: p.superAgentCommissionPct || 3,
           };
         });
         setCommissions(comms);
@@ -82,7 +82,7 @@ export default function AdminAgentsPage() {
     fetchPlans();
   }, [fetchAgents, fetchPlans]);
 
-  // Auto-clear success message after 4 seconds
+  // Auto-clear success message
   useEffect(() => {
     if (successMsg) {
       const t = setTimeout(() => setSuccessMsg(''), 4000);
@@ -90,25 +90,89 @@ export default function AdminAgentsPage() {
     }
   }, [successMsg]);
 
+  // Prevent background scrolling when a modal is open
+  useEffect(() => {
+    if (approvingAgent || detailsAgent || editingPlan) {
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+      document.documentElement.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+      document.documentElement.style.overflow = 'unset';
+    };
+  }, [approvingAgent, detailsAgent, editingPlan]);
+
   // ── Derived lists ─────────────────────────────────────────────
   const pending = agents.filter(a => a.status === 'Pending Approval');
-  const active  = agents.filter(a => a.status === 'Approved');
-  const blocked = agents.filter(a => a.status === 'Blocked');
+  const active = agents.filter(a => a.status === 'Approved');
+  const rejected = agents.filter(a => a.status === 'Rejected');
+  
+  const superAgents = active.filter(a => a.role === 'Super Agent');
+  const midAgents = active.filter(a => a.role === 'Agent');
+  const fieldAgents = active.filter(a => a.role === 'Field Agent');
 
   const listByTab = (tab) => {
-    let arr = tab === 'Pending Approval' ? pending : tab === 'Active Agents' ? active : blocked;
+    let arr = [];
+    if (tab === 'All Agents') arr = agents;
+    else if (tab === 'Super Agents') arr = superAgents;
+    else if (tab === 'Agents') arr = midAgents;
+    else if (tab === 'Field Agents') arr = fieldAgents;
+    else if (tab === 'Pending Requests') arr = pending;
+    
+    // Apply filters
     if (search) {
       const q = search.toLowerCase();
       arr = arr.filter(a =>
         a.fullName?.toLowerCase().includes(q) ||
         a.mobileNumber?.includes(search) ||
-        a.email?.toLowerCase().includes(q)
+        a.email?.toLowerCase().includes(q) ||
+        a.referralCode?.toLowerCase().includes(q)
       );
+    }
+    if (filterDistrict) {
+      arr = arr.filter(a => a.district?.toLowerCase().includes(filterDistrict.toLowerCase()));
+    }
+    if (filterCity) {
+      arr = arr.filter(a => a.city?.toLowerCase().includes(filterCity.toLowerCase()));
     }
     return arr;
   };
 
-  // ── Commission Edit ───────────────────────────────────────────
+  const getPotentialManagers = (role) => {
+    if (role === 'Field Agent') return [...superAgents, ...midAgents];
+    if (role === 'Agent') return superAgents;
+    return [];
+  };
+
+  // ── Hierarchy Helpers ──────────────────────────────────────────
+  const buildHierarchy = () => {
+    // Top level
+    return superAgents.map(sa => {
+      const children = midAgents.filter(ma => ma.reportingManagerId === sa._id);
+      const saTotalFieldAgents = children.reduce((acc, ma) => {
+        return acc + fieldAgents.filter(fa => fa.reportingManagerId === ma._id).length;
+      }, 0);
+      
+      return {
+        ...sa,
+        totalAgents: children.length,
+        totalFieldAgents: saTotalFieldAgents,
+        children: children.map(ma => {
+          const grandChildren = fieldAgents.filter(fa => fa.reportingManagerId === ma._id);
+          return {
+            ...ma,
+            totalFieldAgents: grandChildren.length,
+            children: grandChildren
+          };
+        })
+      };
+    });
+  };
+
+  // ── Actions ───────────────────────────────────────────────────
   const startEditCommission = (planName) => {
     setEditingPlan(planName);
     setEditFa(commissions[planName].fieldAgent);
@@ -126,7 +190,6 @@ export default function AdminAgentsPage() {
           superAgentCommissionPct: parseFloat(editSa),
         }
       };
-
       const res = await api.patch(ENDPOINTS.ADMIN_PLANS_UPDATE, { plans: plansUpdate });
       if (res.data?.success) {
         setSuccessMsg(`Commission rates updated for ${editingPlan} plan!`);
@@ -134,19 +197,10 @@ export default function AdminAgentsPage() {
         setEditingPlan(null);
       }
     } catch (error) {
-      console.error('Error updating commission rates:', error);
       setError('Failed to update commission rates');
     }
   };
 
-  // ── Get potential managers for dropdown ───────────────────────
-  const getPotentialManagers = (role) => {
-    if (role === 'Agent') return active.filter(a => a.role === 'Super Agent');
-    if (role === 'Field Agent')  return active.filter(a => a.role === 'Agent');
-    return [];
-  };
-
-  // ── Approve ───────────────────────────────────────────────────
   const handleApprove = async (e) => {
     e.preventDefault();
     if (!assignedRole) return;
@@ -164,6 +218,7 @@ export default function AdminAgentsPage() {
         role: assignedRole,
         reportingManagerId: assignedManager || null,
         reportingManagerName: selectedManager?.fullName || null,
+        customReferralCode: customCode,
       };
       const res = await api.patch(ENDPOINTS.ADMIN_AGENT_APPROVE(approvingAgent._id), payload);
       if (res.data.success) {
@@ -171,6 +226,7 @@ export default function AdminAgentsPage() {
         setApproving(null);
         setRole('Field Agent');
         setManager('');
+        setCustomCode('');
         await fetchAgents();
       }
     } catch (err) {
@@ -180,7 +236,6 @@ export default function AdminAgentsPage() {
     }
   };
 
-  // ── Reject ────────────────────────────────────────────────────
   const handleReject = async (agent) => {
     if (!window.confirm(`Reject ${agent.fullName}'s registration?`)) return;
     try {
@@ -197,13 +252,9 @@ export default function AdminAgentsPage() {
     }
   };
 
-  // ── Block / Unblock ───────────────────────────────────────────
   const blockToggle = async (agent) => {
     const newStatus = agent.status === 'Blocked' ? 'Approved' : 'Blocked';
-    const confirmMsg = newStatus === 'Blocked'
-      ? `Block ${agent.fullName}? They will not be able to login.`
-      : `Unblock ${agent.fullName}?`;
-    if (!window.confirm(confirmMsg)) return;
+    if (!window.confirm(`Are you sure you want to change status to ${newStatus}?`)) return;
     try {
       setActionLoad(true);
       const res = await api.patch(ENDPOINTS.ADMIN_AGENT_STATUS(agent._id), { status: newStatus });
@@ -212,24 +263,7 @@ export default function AdminAgentsPage() {
         await fetchAgents();
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Action failed.');
-    } finally {
-      setActionLoad(false);
-    }
-  };
-
-  // ── Promote ───────────────────────────────────────────────────
-  const promote = async (agent, newRole) => {
-    if (!window.confirm(`Promote ${agent.fullName} to ${newRole}?`)) return;
-    try {
-      setActionLoad(true);
-      const res = await api.patch(ENDPOINTS.ADMIN_AGENT_PROMOTE(agent._id), { newRole });
-      if (res.data.success) {
-        setSuccessMsg(res.data.message);
-        await fetchAgents();
-      }
-    } catch (err) {
-      setError(err.response?.data?.message || 'Promotion failed.');
+      setError('Action failed.');
     } finally {
       setActionLoad(false);
     }
@@ -237,21 +271,20 @@ export default function AdminAgentsPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-
       {/* Banner */}
       <section className="bg-gradient-to-r from-[#003d9b] to-[#0052cc] text-white rounded-2xl p-6 shadow-md relative overflow-hidden">
         <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-10 -mt-10 blur-xl pointer-events-none" />
         <div className="relative z-10">
           <span className="text-[11px] uppercase tracking-widest text-blue-200 font-bold">Agent Network</span>
-          <h2 className="text-xl font-extrabold mt-1">Agent Management</h2>
-          <p className="text-sm text-white/80 mt-1">Approve registrations, manage the agent hierarchy, track performance.</p>
+          <h2 className="text-xl font-extrabold mt-1">Agent Hierarchy & Management</h2>
+          <p className="text-sm text-white/80 mt-1">Manage a 3-level agent hierarchy system across districts, assign parent agents, and approve registrations.</p>
         </div>
       </section>
 
       {/* Success / Error Toast */}
       {successMsg && (
         <div className="bg-green-50 border border-green-200 text-green-700 text-sm font-semibold px-4 py-3 rounded-xl flex items-center gap-2 animate-fade-in">
-          <span className="material-symbols-outlined text-base" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+          <span className="material-symbols-outlined text-base">check_circle</span>
           {successMsg}
         </div>
       )}
@@ -266,21 +299,23 @@ export default function AdminAgentsPage() {
       )}
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
         {[
+          { label: 'Super Agents', value: superAgents.length, color: 'text-purple-700', bg: 'bg-purple-100', icon: 'stars' },
+          { label: 'Agents', value: midAgents.length, color: 'text-blue-700', bg: 'bg-blue-100', icon: 'group' },
+          { label: 'Field Agents', value: fieldAgents.length, color: 'text-[#003d9b]', bg: 'bg-[#dae2ff]', icon: 'person_pin' },
           { label: 'Pending Approval', value: pending.length, color: 'text-yellow-700', bg: 'bg-yellow-100', icon: 'how_to_reg' },
-          { label: 'Active Agents',    value: active.length,  color: 'text-green-700',  bg: 'bg-green-100',  icon: 'badge' },
-          { label: 'Blocked',          value: blocked.length, color: 'text-red-700',    bg: 'bg-red-100',    icon: 'block' },
-          { label: 'Total Registered', value: agents.length,  color: 'text-[#003d9b]', bg: 'bg-[#dae2ff]', icon: 'group' },
+          { label: 'Approved', value: active.length, color: 'text-green-700', bg: 'bg-green-100', icon: 'verified' },
+          { label: 'Rejected', value: rejected.length, color: 'text-red-700', bg: 'bg-red-100', icon: 'cancel' },
         ].map((s, i) => (
-          <div key={i} className="bg-white rounded-xl border border-[#c3c6d6]/20 p-4 shadow-sm flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-full ${s.bg} ${s.color} flex items-center justify-center shrink-0`}>
-              <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>{s.icon}</span>
-            </div>
-            <div>
-              <p className="text-xs text-[#516161] font-semibold">{s.label}</p>
+          <div key={i} className="bg-white rounded-xl border border-[#c3c6d6]/20 p-4 shadow-sm flex flex-col gap-2">
+            <div className="flex items-center gap-2">
+              <div className={`w-8 h-8 rounded-full ${s.bg} ${s.color} flex items-center justify-center shrink-0`}>
+                <span className="material-symbols-outlined text-[16px]">{s.icon}</span>
+              </div>
               <p className="text-xl font-extrabold text-[#191b23]">{loading ? '—' : s.value}</p>
             </div>
+            <p className="text-xs text-[#516161] font-semibold">{s.label}</p>
           </div>
         ))}
       </div>
@@ -291,13 +326,10 @@ export default function AdminAgentsPage() {
           <span className="material-symbols-outlined text-[#003d9b]">settings_suggest</span>
           Commission Configuration Engine
         </h3>
-        <p className="text-xs text-[#516161] mb-4">Configure commission percentages for Field Agents, Agents, and Super Agents for each plan.</p>
-        
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {Object.keys(commissions).map((planName) => (
             <div key={planName} className="border border-[#c3c6d6]/30 p-5 rounded-xl space-y-4 bg-white shadow-sm hover:shadow-md transition-shadow">
               <h4 className="font-extrabold text-[#003d9b] text-base capitalize">{planName} Plan</h4>
-              
               <div className="space-y-2 text-sm mt-4">
                 <div className="flex justify-between items-center">
                   <span className="font-bold text-[#516161] text-xs">Field Agent</span>
@@ -312,7 +344,6 @@ export default function AdminAgentsPage() {
                   <span className="font-extrabold text-[#191b23]">{commissions[planName].superAgent}%</span>
                 </div>
               </div>
-
               <button
                 type="button"
                 onClick={() => startEditCommission(planName)}
@@ -325,7 +356,7 @@ export default function AdminAgentsPage() {
         </div>
       </div>
 
-      {/* Tabs + Search */}
+      {/* Tabs */}
       <div className="bg-white border border-[#c3c6d6]/20 rounded-2xl p-4 shadow-sm space-y-3">
         <div className="flex gap-2 flex-wrap">
           {TABS.map(tab => (
@@ -334,162 +365,225 @@ export default function AdminAgentsPage() {
               onClick={() => setTab(tab)}
               className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeTab === tab ? 'bg-[#003d9b] text-white shadow-sm' : 'bg-[#f5f8ff] text-[#434654] border border-[#c3c6d6]/30 hover:bg-[#f0f4ff]'}`}
             >
-              {tab} ({(tab === 'Pending Approval' ? pending : tab === 'Active Agents' ? active : blocked).length})
+              {tab}
             </button>
           ))}
         </div>
-        <div className="relative">
-          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#737685] text-[18px]">search</span>
-          <input
-            type="text"
-            placeholder="Search agents by name, mobile, or email…"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2.5 bg-[#f5f8ff] border border-[#c3c6d6]/40 rounded-xl text-sm focus:outline-none focus:border-[#003d9b]"
-          />
-        </div>
+        {activeTab !== 'Hierarchy' && (
+          <div className="flex gap-3 flex-wrap">
+            <div className="relative flex-1 min-w-[200px]">
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#737685] text-[18px]">search</span>
+              <input
+                type="text"
+                placeholder="Search by Name, Email, or Referral Code…"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="w-full pl-9 pr-4 py-2.5 bg-[#f5f8ff] border border-[#c3c6d6]/40 rounded-xl text-sm focus:outline-none focus:border-[#003d9b]"
+              />
+            </div>
+            <input
+              type="text"
+              placeholder="District"
+              value={filterDistrict}
+              onChange={e => setFilterDistrict(e.target.value)}
+              className="w-40 px-4 py-2.5 bg-[#f5f8ff] border border-[#c3c6d6]/40 rounded-xl text-sm focus:outline-none focus:border-[#003d9b]"
+            />
+            <input
+              type="text"
+              placeholder="City"
+              value={filterCity}
+              onChange={e => setFilterCity(e.target.value)}
+              className="w-40 px-4 py-2.5 bg-[#f5f8ff] border border-[#c3c6d6]/40 rounded-xl text-sm focus:outline-none focus:border-[#003d9b]"
+            />
+          </div>
+        )}
       </div>
 
-      {/* Table */}
+      {/* Tab Content */}
       <div className="bg-white border border-[#c3c6d6]/20 rounded-2xl shadow-sm overflow-hidden">
-        <div className="px-5 py-4 border-b border-[#c3c6d6]/20 flex items-center justify-between">
-          <h3 className="font-extrabold text-[#191b23]">
-            {activeTab} <span className="text-sm font-semibold text-[#516161]">({listByTab(activeTab).length})</span>
-          </h3>
-          {actionLoading && (
-            <div className="flex items-center gap-1 text-xs text-[#003d9b] font-semibold">
-              <span className="material-symbols-outlined animate-spin text-sm">progress_activity</span>
-              Processing…
-            </div>
-          )}
-        </div>
-        <div className="overflow-x-auto">
-          {loading ? (
-            <div className="flex items-center justify-center py-16 text-[#516161] text-sm gap-2">
-              <span className="material-symbols-outlined animate-spin">progress_activity</span>
-              Loading agents…
-            </div>
-          ) : (
-            <table className="w-full text-sm text-left">
-              <thead>
-                <tr className="bg-[#faf8ff] text-[#737685] text-xs font-bold border-b border-[#c3c6d6]/20">
-                  <th className="px-5 py-3">Agent Name</th>
-                  <th className="px-5 py-3">Contact</th>
-                  {activeTab !== 'Pending Approval' && <th className="px-5 py-3">Role</th>}
-                  {activeTab !== 'Pending Approval' && <th className="px-5 py-3">Referral Code</th>}
-                  {activeTab === 'Active Agents' && <th className="px-5 py-3">Sales / Earnings</th>}
-                  <th className="px-5 py-3 text-center">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#c3c6d6]/10">
-                {listByTab(activeTab).map(agent => (
-                  <tr key={agent._id} className="hover:bg-[#faf8ff]/60 transition-colors">
-                    <td className="px-5 py-3.5">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-full bg-[#dae2ff] text-[#003d9b] font-bold text-xs flex items-center justify-center shrink-0">
-                          {agent.fullName?.charAt(0) || 'A'}
-                        </div>
-                        <div>
-                          <p className="font-bold text-[#191b23]">{agent.fullName}</p>
-                          {agent.agentId && <p className="text-[10px] text-[#737685] font-mono">{agent.agentId}</p>}
-                        </div>
+        {activeTab === 'Hierarchy' ? (
+          <div className="p-6">
+            <h3 className="font-extrabold text-[#191b23] mb-6 flex items-center gap-2">
+              <span className="material-symbols-outlined text-[#003d9b]">account_tree</span>
+              Agent Hierarchy Visualization
+            </h3>
+            {loading ? (
+              <div className="text-sm text-[#516161]">Loading hierarchy...</div>
+            ) : buildHierarchy().length === 0 ? (
+              <div className="text-sm text-[#516161]">No hierarchy structure found. Add a Super Agent to begin.</div>
+            ) : (
+              <div className="space-y-6">
+                {buildHierarchy().map(sa => (
+                  <details key={sa._id} className="group bg-[#f5f8ff] border border-[#c3c6d6]/30 rounded-xl overflow-hidden" open>
+                    <summary className="flex items-center gap-3 p-4 cursor-pointer hover:bg-[#ebf0fe] transition-colors select-none">
+                      <span className="material-symbols-outlined transition-transform group-open:rotate-90 text-[#003d9b]">chevron_right</span>
+                      <div className="w-8 h-8 rounded-full bg-purple-100 text-purple-700 font-bold text-xs flex items-center justify-center shrink-0">SA</div>
+                      <div>
+                        <p className="font-bold text-[#191b23]">{sa.fullName}</p>
+                        <p className="text-xs text-[#516161]">{sa.district || 'Unassigned District'}</p>
                       </div>
-                    </td>
-                    <td className="px-5 py-3.5 text-xs">
-                      <p className="font-semibold text-[#191b23]">{agent.mobileNumber}</p>
-                      <p className="text-[#737685]">{agent.email}</p>
-                    </td>
-                    {activeTab !== 'Pending Approval' && (
+                      <div className="ml-auto flex gap-3 text-xs font-semibold text-[#516161]">
+                        <span><span className="text-blue-700">{sa.totalAgents}</span> Agents</span>
+                        <span><span className="text-[#003d9b]">{sa.totalFieldAgents}</span> Field Agents</span>
+                      </div>
+                    </summary>
+                    <div className="px-6 pb-6 pt-2 bg-white">
+                      {sa.children.length === 0 ? (
+                        <p className="text-xs text-[#737685] italic pl-8">No Agents under this Super Agent.</p>
+                      ) : (
+                        <div className="space-y-4 pl-4 border-l-2 border-purple-100 ml-4">
+                          {sa.children.map(ma => (
+                            <details key={ma._id} className="group/agent" open>
+                              <summary className="flex items-center gap-3 py-2 cursor-pointer hover:text-[#003d9b] transition-colors select-none">
+                                <span className="material-symbols-outlined transition-transform group-open/agent:rotate-90 text-[#737685] text-sm">chevron_right</span>
+                                <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-700 font-bold text-[10px] flex items-center justify-center shrink-0">AG</div>
+                                <div>
+                                  <p className="font-bold text-[#191b23] text-sm">{ma.fullName}</p>
+                                  <p className="text-[10px] text-[#516161]">{ma.city || 'Unassigned City'} • {ma.totalFieldAgents} Field Agents</p>
+                                </div>
+                              </summary>
+                              <div className="pl-6 pt-2">
+                                {ma.children.length === 0 ? (
+                                  <p className="text-[10px] text-[#737685] italic pl-6">No Field Agents under this Agent.</p>
+                                ) : (
+                                  <div className="space-y-2 pl-4 border-l-2 border-blue-100 ml-2">
+                                    {ma.children.map(fa => (
+                                      <div key={fa._id} className="flex items-center gap-2 py-1 pl-2 hover:bg-[#faf8ff] rounded-md transition-colors">
+                                        <div className="w-5 h-5 rounded-full bg-[#dae2ff] text-[#003d9b] font-bold text-[9px] flex items-center justify-center shrink-0">FA</div>
+                                        <div>
+                                          <p className="font-semibold text-[#191b23] text-xs">{fa.fullName}</p>
+                                          <p className="text-[9px] text-[#516161]">{fa.area || 'Unassigned Area'}</p>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            </details>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </details>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            {loading ? (
+              <div className="flex items-center justify-center py-16 text-[#516161] text-sm gap-2">
+                <span className="material-symbols-outlined animate-spin">progress_activity</span>
+                Loading...
+              </div>
+            ) : (
+              <table className="w-full text-sm text-left">
+                <thead>
+                  <tr className="bg-[#faf8ff] text-[#737685] text-xs font-bold border-b border-[#c3c6d6]/20">
+                    <th className="px-5 py-3">Agent Details</th>
+                    <th className="px-5 py-3">Location</th>
+                    <th className="px-5 py-3">Referral Code</th>
+                    {activeTab !== 'Super Agents' && <th className="px-5 py-3">Parent Agent</th>}
+                    <th className="px-5 py-3 text-center">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#c3c6d6]/10">
+                  {listByTab(activeTab).map(agent => (
+                    <tr key={agent._id} className="hover:bg-[#faf8ff]/60 transition-colors">
                       <td className="px-5 py-3.5">
-                        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${ROLE_COLORS[agent.role] || 'bg-gray-100 text-gray-700'}`}>
-                          {agent.role}
-                        </span>
+                        <div className="flex items-center gap-2.5">
+                          <div className={`w-8 h-8 rounded-full font-bold text-xs flex items-center justify-center shrink-0 ${ROLE_COLORS[agent.role] || 'bg-gray-100 text-gray-700'}`}>
+                            {agent.fullName?.charAt(0) || 'A'}
+                          </div>
+                          <div>
+                            <p className="font-bold text-[#191b23]">{agent.fullName}</p>
+                            <p className="text-[10px] text-[#737685] font-mono">{agent.mobileNumber}</p>
+                          </div>
+                        </div>
                       </td>
-                    )}
-                    {activeTab !== 'Pending Approval' && (
+                      <td className="px-5 py-3.5 text-xs">
+                        {agent.district || agent.city || agent.area ? (
+                          <>
+                            <p className="font-semibold text-[#191b23]">{agent.district || '—'}</p>
+                            <p className="text-[#737685]">{agent.city || '—'} {agent.area ? `(${agent.area})` : ''}</p>
+                          </>
+                        ) : (
+                          <span className="text-[#737685] italic">Not Provided</span>
+                        )}
+                      </td>
                       <td className="px-5 py-3.5 font-mono text-xs font-bold text-[#0052cc]">
                         {agent.referralCode || '—'}
                       </td>
-                    )}
-                    {activeTab === 'Active Agents' && (
-                      <td className="px-5 py-3.5 text-xs">
-                        <p className="font-bold text-[#191b23]">{agent.salesCount || 0} sales</p>
-                        <p className="text-green-700 font-semibold">₹{(agent.earnings || 0).toLocaleString('en-IN')}</p>
+                      {activeTab !== 'Super Agents' && (
+                        <td className="px-5 py-3.5 text-xs">
+                          {agent.reportingManagerName ? (
+                            <span className="bg-[#f0f4ff] text-[#003d9b] px-2 py-1 rounded-md font-semibold">{agent.reportingManagerName}</span>
+                          ) : (
+                            <span className="text-[#737685]">None</span>
+                          )}
+                        </td>
+                      )}
+                      <td className="px-5 py-3.5">
+                        <div className="flex gap-1.5 justify-center flex-wrap">
+                          <button onClick={() => setDetailsAgent(agent)} className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-2.5 py-1.5 rounded-lg text-xs font-bold cursor-pointer">View</button>
+                          
+                          {activeTab === 'Pending Requests' && (
+                            <>
+                              <button
+                                onClick={() => { setApproving(agent); setRole('Field Agent'); setManager(''); }}
+                                disabled={actionLoading}
+                                className="bg-[#003d9b] hover:bg-[#0052cc] text-white px-2.5 py-1.5 rounded-lg text-xs font-bold cursor-pointer disabled:opacity-60"
+                              >
+                                Approve
+                              </button>
+                              <button
+                                onClick={() => handleReject(agent)}
+                                disabled={actionLoading}
+                                className="border border-red-200 text-red-600 hover:bg-red-50 px-2.5 py-1.5 rounded-lg text-xs font-bold cursor-pointer disabled:opacity-60"
+                              >
+                                Reject
+                              </button>
+                            </>
+                          )}
+                          {activeTab !== 'Pending Requests' && agent.status !== 'Rejected' && (
+                            <button onClick={() => blockToggle(agent)} disabled={actionLoading} className="border border-red-200 text-red-600 hover:bg-red-50 px-2.5 py-1.5 rounded-lg text-xs font-bold cursor-pointer disabled:opacity-60">
+                              {agent.status === 'Blocked' ? 'Unblock' : 'Block'}
+                            </button>
+                          )}
+                        </div>
                       </td>
-                    )}
-                    <td className="px-5 py-3.5">
-                      <div className="flex gap-1.5 justify-center flex-wrap">
-                        {activeTab === 'Pending Approval' && (
-                          <>
-                            <button
-                              onClick={() => { setApproving(agent); setRole('Field Agent'); setManager(''); }}
-                              disabled={actionLoading}
-                              className="bg-[#003d9b] hover:bg-[#0052cc] text-white px-2.5 py-1.5 rounded-lg text-xs font-bold cursor-pointer disabled:opacity-60"
-                            >
-                              Assign & Approve
-                            </button>
-                            <button
-                              onClick={() => handleReject(agent)}
-                              disabled={actionLoading}
-                              className="border border-red-200 text-red-600 hover:bg-red-50 px-2.5 py-1.5 rounded-lg text-xs font-bold cursor-pointer disabled:opacity-60"
-                            >
-                              Reject
-                            </button>
-                          </>
-                        )}
-                        {activeTab === 'Active Agents' && (
-                          <>
-                            {agent.role === 'Field Agent' && (
-                              <button onClick={() => promote(agent, 'Agent')} disabled={actionLoading} className="bg-[#f0f4ff] hover:bg-[#dae2ff] text-[#003d9b] px-2.5 py-1.5 rounded-lg text-xs font-bold cursor-pointer disabled:opacity-60">→ Agent</button>
-                            )}
-                            {agent.role === 'Agent' && (
-                              <button onClick={() => promote(agent, 'Super Agent')} disabled={actionLoading} className="bg-purple-50 hover:bg-purple-100 text-purple-700 px-2.5 py-1.5 rounded-lg text-xs font-bold cursor-pointer disabled:opacity-60">→ Super Agent</button>
-                            )}
-                            <button onClick={() => blockToggle(agent)} disabled={actionLoading} className="border border-red-200 text-red-600 hover:bg-red-50 px-2.5 py-1.5 rounded-lg text-xs font-bold cursor-pointer disabled:opacity-60">Block</button>
-                          </>
-                        )}
-                        {activeTab === 'Blocked' && (
-                          <button onClick={() => blockToggle(agent)} disabled={actionLoading} className="border border-green-300 text-green-700 hover:bg-green-50 px-2.5 py-1.5 rounded-lg text-xs font-bold cursor-pointer disabled:opacity-60">Unblock</button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-                {listByTab(activeTab).length === 0 && (
-                  <tr>
-                    <td colSpan={6} className="text-center py-12 text-[#516161] text-sm">
-                      <span className="material-symbols-outlined text-3xl block mb-2 text-[#c3c6d6]">badge</span>
-                      No agents in this category.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          )}
-        </div>
+                    </tr>
+                  ))}
+                  {listByTab(activeTab).length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="text-center py-12 text-[#516161] text-sm">
+                        <span className="material-symbols-outlined text-3xl block mb-2 text-[#c3c6d6]">badge</span>
+                        No agents found in this category.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            )}
+          </div>
+        )}
       </div>
 
       {/* ── Approve Modal ──────────────────────────────────────── */}
-      {approvingAgent && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setApproving(null)}>
+      {approvingAgent && createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in" onClick={() => setApproving(null)}>
           <form
             onSubmit={handleApprove}
-            className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-5 animate-fade-in"
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-5 max-h-[90vh] overflow-y-auto"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex justify-between items-center border-b border-[#c3c6d6]/20 pb-3">
               <div>
-                <h3 className="font-extrabold text-[#003d9b]">Assign Role</h3>
-                <p className="text-xs text-[#516161] mt-0.5">{approvingAgent.fullName} — {approvingAgent.mobileNumber}</p>
+                <h3 className="font-extrabold text-[#003d9b]">Approve Agent Registration</h3>
+                <p className="text-xs text-[#516161] mt-0.5">{approvingAgent.fullName}</p>
               </div>
               <button type="button" onClick={() => setApproving(null)} className="material-symbols-outlined text-[#737685] cursor-pointer text-xl">close</button>
             </div>
-
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-600 text-xs font-bold p-3 rounded-lg flex items-center gap-2">
-                <span className="material-symbols-outlined text-sm">error</span>{error}
-              </div>
-            )}
 
             <div className="space-y-1">
               <label className="text-xs font-bold text-[#516161] uppercase tracking-wider">Designation</label>
@@ -498,39 +592,48 @@ export default function AdminAgentsPage() {
                 onChange={e => { setRole(e.target.value); setManager(''); }}
                 className="w-full bg-[#f5f8ff] border border-[#c3c6d6]/40 rounded-xl px-3 py-3 text-sm focus:outline-none cursor-pointer"
               >
-                <option>Super Agent</option>
-                <option>Agent</option>
-                <option>Field Agent</option>
+                <option value="Super Agent">Super Agent (Manages District)</option>
+                <option value="Agent">Agent (Manages City)</option>
+                <option value="Field Agent">Field Agent (Manages Area)</option>
               </select>
             </div>
 
-            {assignedRole !== 'Super Agent' && getPotentialManagers(assignedRole).length > 0 && (
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-[#516161] uppercase tracking-wider">Custom Referral Code (Optional)</label>
+              <input
+                type="text"
+                placeholder="Leave blank to auto-generate"
+                value={customCode}
+                onChange={e => setCustomCode(e.target.value)}
+                className="w-full bg-[#f5f8ff] border border-[#c3c6d6]/40 rounded-xl px-3 py-3 text-sm focus:outline-none"
+              />
+            </div>
+
+            {assignedRole !== 'Super Agent' && (
               <div className="space-y-1">
-                <label className="text-xs font-bold text-[#516161] uppercase tracking-wider">Reporting Manager</label>
+                <label className="text-xs font-bold text-[#516161] uppercase tracking-wider">Assign Parent</label>
                 <select
                   value={assignedManager}
                   onChange={e => setManager(e.target.value)}
                   className="w-full bg-[#f5f8ff] border border-[#c3c6d6]/40 rounded-xl px-3 py-3 text-sm focus:outline-none cursor-pointer"
+                  required
                 >
-                  <option value="">Select Reporting Manager (Optional)</option>
+                  <option value="">Select Reporting Manager...</option>
                   {getPotentialManagers(assignedRole).map(m => (
-                    <option key={m._id} value={m._id}>{m.fullName} ({m.role})</option>
+                    <option key={m._id} value={m._id}>{m.fullName} ({m.district || m.city || 'No Location'})</option>
                   ))}
                 </select>
+                {getPotentialManagers(assignedRole).length === 0 && (
+                  <p className="text-xs text-red-500 mt-1">No suitable managers found. Please create one first.</p>
+                )}
               </div>
-            )}
-
-            {assignedRole !== 'Super Agent' && getPotentialManagers(assignedRole).length === 0 && (
-              <p className="text-xs text-[#737685] bg-[#f5f8ff] p-3 rounded-xl">
-                ℹ️ No {assignedRole === 'Field Agent' ? 'Agents' : 'Super Agents'} available yet. Agent will have no reporting manager.
-              </p>
             )}
 
             <div className="bg-[#f0f4ff] rounded-xl p-3 text-xs text-[#434654] space-y-1">
               <p className="font-bold text-[#003d9b]">Auto-generated on approval:</p>
-              <p>🪪 Agent ID: <span className="font-mono font-bold">MC-XXXXX</span> (unique)</p>
-              <p>🔗 Referral Code: <span className="font-mono font-bold">{assignedRole === 'Super Agent' ? 'SA' : assignedRole === 'Agent' ? 'TL' : 'FIELD'}XX</span></p>
-              <p>💰 Commission Rate: <span className="font-bold">{assignedRole === 'Super Agent' ? '1.0%' : assignedRole === 'Agent' ? '1.5%' : '2.5%'}</span></p>
+              <p>🪪 Agent ID: <span className="font-mono font-bold">MC-XXXXX</span></p>
+              <p>🔗 Referral Code Prefix: <span className="font-mono font-bold">{assignedRole === 'Super Agent' ? 'SA' : assignedRole === 'Agent' ? 'AG' : 'FA'}XX</span></p>
+              <p>💰 Default Commission: <span className="font-bold">{assignedRole === 'Super Agent' ? '3%' : assignedRole === 'Agent' ? '4%' : '12%'}</span></p>
             </div>
 
             <div className="flex gap-3 pt-2">
@@ -543,78 +646,149 @@ export default function AdminAgentsPage() {
               </button>
               <button
                 type="submit"
-                disabled={actionLoading}
+                disabled={actionLoading || (assignedRole !== 'Super Agent' && !assignedManager)}
                 className="flex-1 bg-[#003d9b] hover:bg-[#0052cc] text-white py-2.5 rounded-xl text-xs font-bold cursor-pointer disabled:opacity-70 flex items-center justify-center gap-1"
               >
-                {actionLoading
-                  ? <><span className="material-symbols-outlined animate-spin text-sm">progress_activity</span> Approving…</>
-                  : 'Approve Registration'
-                }
+                {actionLoading ? 'Approving...' : 'Approve Registration'}
               </button>
             </div>
           </form>
-        </div>
+        </div>,
+        document.body
+      )}
+
+      {/* ── Details Modal ──────────────────────────────────────── */}
+      {detailsAgent && createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in" onClick={() => setDetailsAgent(null)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 space-y-6 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-start border-b border-[#c3c6d6]/20 pb-4">
+              <div className="flex items-center gap-3">
+                <div className={`w-12 h-12 rounded-full font-bold text-lg flex items-center justify-center shrink-0 ${ROLE_COLORS[detailsAgent.role] || 'bg-gray-100 text-gray-700'}`}>
+                  {detailsAgent.fullName?.charAt(0) || 'A'}
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-[#191b23] text-lg">{detailsAgent.fullName}</h3>
+                  <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${ROLE_COLORS[detailsAgent.role] || 'bg-gray-100 text-gray-700'}`}>
+                    {detailsAgent.role}
+                  </span>
+                </div>
+              </div>
+              <button onClick={() => setDetailsAgent(null)} className="material-symbols-outlined text-[#737685] cursor-pointer hover:text-black">close</button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <p className="text-xs text-[#737685] font-semibold">Mobile Number</p>
+                <p className="font-bold text-[#191b23]">{detailsAgent.mobileNumber}</p>
+              </div>
+              <div>
+                <p className="text-xs text-[#737685] font-semibold">Email</p>
+                <p className="font-bold text-[#191b23]">{detailsAgent.email}</p>
+              </div>
+              <div>
+                <p className="text-xs text-[#737685] font-semibold">Referral Code</p>
+                <p className="font-bold text-[#0052cc] font-mono">{detailsAgent.referralCode || 'N/A'}</p>
+              </div>
+              <div>
+                <p className="text-xs text-[#737685] font-semibold">Status</p>
+                <p className="font-bold text-[#191b23]">{detailsAgent.status}</p>
+              </div>
+              <div className="col-span-2 border-t border-[#c3c6d6]/20 pt-4 mt-2">
+                <p className="text-xs font-bold text-[#003d9b] uppercase tracking-wider mb-2">Location Information</p>
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <p className="text-[10px] text-[#737685] font-semibold">District</p>
+                    <p className="font-semibold text-xs text-[#191b23]">{detailsAgent.district || '—'}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-[#737685] font-semibold">City</p>
+                    <p className="font-semibold text-xs text-[#191b23]">{detailsAgent.city || '—'}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-[#737685] font-semibold">Area</p>
+                    <p className="font-semibold text-xs text-[#191b23]">{detailsAgent.area || '—'}</p>
+                  </div>
+                </div>
+              </div>
+              <div className="col-span-2 border-t border-[#c3c6d6]/20 pt-4">
+                <p className="text-xs font-bold text-[#003d9b] uppercase tracking-wider mb-2">Hierarchy</p>
+                <div className="bg-[#f5f8ff] p-3 rounded-lg flex justify-between items-center">
+                  <div>
+                    <p className="text-[10px] text-[#737685] font-semibold">Parent Agent Name</p>
+                    <p className="font-bold text-sm text-[#191b23]">{detailsAgent.reportingManagerName || 'None'}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-[#737685] font-semibold text-right">Registration Date</p>
+                    <p className="font-semibold text-xs text-[#191b23]">{new Date(detailsAgent.createdAt).toLocaleDateString()}</p>
+                  </div>
+                </div>
+              </div>
+
+              {detailsAgent.status === 'Pending Approval' && (
+                <div className="col-span-2 flex gap-3 pt-4 border-t border-[#c3c6d6]/20">
+                  <button
+                    onClick={() => {
+                      setDetailsAgent(null);
+                      handleReject(detailsAgent);
+                    }}
+                    className="flex-1 bg-red-50 text-red-600 hover:bg-red-100 py-2.5 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                  >
+                    Reject Application
+                  </button>
+                  <button
+                    onClick={() => {
+                      setDetailsAgent(null);
+                      setApproving(detailsAgent);
+                    }}
+                    className="flex-1 bg-[#003d9b] hover:bg-[#0052cc] text-white py-2.5 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                  >
+                    Approve Application
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
 
       {/* Edit Commission Modal */}
-      {editingPlan && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 space-y-6 animate-fade-in" onClick={e => e.stopPropagation()}>
+      {editingPlan && createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in" onClick={() => setEditingPlan(null)}>
+          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 space-y-6 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <h3 className="font-extrabold text-[#003d9b] text-lg border-b border-[#c3c6d6]/20 pb-3 capitalize">
               Configure {editingPlan} Rates
             </h3>
-
             <div className="space-y-4 text-sm">
               <div className="space-y-1">
                 <label className="text-xs font-semibold text-[#516161]">Field Agent (%)</label>
                 <input 
-                  type="number" 
-                  step="0.1"
-                  value={editFa} 
-                  onChange={(e) => setEditFa(e.target.value)} 
+                  type="number" step="0.1" value={editFa} onChange={(e) => setEditFa(e.target.value)} 
                   className="w-full bg-[#f3f3fd] border border-[#c3c6d6]/40 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#003d9b] font-bold"
                 />
               </div>
               <div className="space-y-1">
                 <label className="text-xs font-semibold text-[#516161]">Agent (%)</label>
                 <input 
-                  type="number" 
-                  step="0.1"
-                  value={editTl} 
-                  onChange={(e) => setEditTl(e.target.value)} 
+                  type="number" step="0.1" value={editTl} onChange={(e) => setEditTl(e.target.value)} 
                   className="w-full bg-[#f3f3fd] border border-[#c3c6d6]/40 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#003d9b] font-bold"
                 />
               </div>
               <div className="space-y-1">
                 <label className="text-xs font-semibold text-[#516161]">Super Agent (%)</label>
                 <input 
-                  type="number" 
-                  step="0.1"
-                  value={editSa} 
-                  onChange={(e) => setEditSa(e.target.value)} 
+                  type="number" step="0.1" value={editSa} onChange={(e) => setEditSa(e.target.value)} 
                   className="w-full bg-[#f3f3fd] border border-[#c3c6d6]/40 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#003d9b] font-bold"
                 />
               </div>
             </div>
-
             <div className="flex gap-3 justify-end pt-3">
-              <button
-                type="button"
-                onClick={() => setEditingPlan(null)}
-                className="text-[#003d9b] font-bold text-xs hover:bg-[#f3f3fd] px-4 py-2.5 rounded-xl cursor-pointer transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={saveCommissionConfig}
-                className="bg-[#003d9b] text-white font-bold text-xs hover:bg-[#0052cc] px-6 py-2.5 rounded-xl cursor-pointer transition-colors shadow-md"
-              >
-                Save Rates
-              </button>
+              <button type="button" onClick={() => setEditingPlan(null)} className="text-[#003d9b] font-bold text-xs hover:bg-[#f3f3fd] px-4 py-2.5 rounded-xl cursor-pointer">Cancel</button>
+              <button type="button" onClick={saveCommissionConfig} className="bg-[#003d9b] text-white font-bold text-xs hover:bg-[#0052cc] px-6 py-2.5 rounded-xl cursor-pointer shadow-md">Save Rates</button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

@@ -17,6 +17,8 @@ import AdminTransactionsPage from '../pages/AdminTransactionsPage';
 import AdminSecurityPage from '../pages/AdminSecurityPage';
 import AdminSupportPage from '../pages/AdminSupportPage';
 import AdminSettingsPage from '../pages/AdminSettingsPage';
+import AdminProductsPage from '../pages/AdminProductsPage';
+import AdminOrdersPage from '../pages/AdminOrdersPage';
 
 export default function AdminRoutes() {
   return (
@@ -29,6 +31,8 @@ export default function AdminRoutes() {
       <Route element={<AdminLayout />}>
         <Route path="/admin/dashboard"      element={<AdminDashboardPage />} />
         <Route path="/admin/users"          element={<AdminUsersPage />} />
+        <Route path="/admin/products"       element={<AdminProductsPage />} />
+        <Route path="/admin/orders"         element={<AdminOrdersPage />} />
         <Route path="/admin/family-cards"   element={<AdminFamilyCardsPage />} />
         <Route path="/admin/claims"         element={<AdminClaimsPage />} />
         <Route path="/admin/loans"          element={<AdminLoansPage />} />

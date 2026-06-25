@@ -50,6 +50,7 @@ export const ENDPOINTS = {
   AGENT_DASHBOARD: '/agent/profile/dashboard',
   AGENT_CUSTOMERS: '/agent/customers',
   AGENT_ONBOARD_CUSTOMER: '/agent/customers/onboard',
+  AGENT_REFERRALS: '/agent/customers/referrals',
   AGENT_WALLET: '/agent/wallet',
   AGENT_WALLET_TRANSACTIONS: '/agent/wallet/transactions',
   AGENT_WALLET_WITHDRAW: '/agent/wallet/withdraw',
@@ -106,6 +107,15 @@ export const ENDPOINTS = {
   ADMIN_PLANS_UPDATE: '/plans/settings',
   ADMIN_PLAN_CREATE: '/plans',
   ADMIN_PLAN_DELETE: (id) => `/plans/${id}`,
+
+  // ADMIN - PRODUCTS
+  ADMIN_PRODUCTS: '/admin/products',
+  ADMIN_PRODUCT_UPDATE: (id) => `/admin/products/${id}`,
+  ADMIN_PRODUCT_DELETE: (id) => `/admin/products/${id}`,
+
+  // ADMIN - ORDERS
+  ADMIN_ORDERS: '/admin/orders',
+  ADMIN_ORDER_UPDATE: (id) => `/admin/orders/${id}/status`,
 
   // HOSPITALS
   HOSPITALS: '/hospitals',

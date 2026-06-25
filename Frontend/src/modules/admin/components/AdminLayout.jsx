@@ -9,6 +9,8 @@ const menuGroups = [
       { label: 'Dashboard',       icon: 'dashboard',             route: '/admin/dashboard' },
       { label: 'User Management', icon: 'manage_accounts',       route: '/admin/users' },
       { label: 'Family Cards',    icon: 'family_history',        route: '/admin/family-cards' },
+      { label: 'Products',        icon: 'inventory_2',           route: '/admin/products' },
+      { label: 'Orders',          icon: 'local_shipping',        route: '/admin/orders' },
       { label: 'Agents',          icon: 'badge',                 route: '/admin/agents' },
       { label: 'Hospitals',       icon: 'local_hospital',        route: '/admin/hospitals' },
     ]
@@ -37,6 +39,8 @@ const menuGroups = [
 const PAGE_TITLES = {
   '/admin/dashboard':     'Admin Dashboard',
   '/admin/users':         'User Management',
+  '/admin/products':      'Product Catalog',
+  '/admin/orders':        'Product Orders',
   '/admin/family-cards':  'Family Card Management',
   '/admin/claims':        'Claim Management',
   '/admin/loans':         'Loan Eligibility Monitor',
@@ -76,7 +80,7 @@ export default function AdminLayout() {
   const title = PAGE_TITLES[location.pathname] || 'Admin Panel';
 
   const SidebarNav = ({ onNav }) => (
-    <nav className="flex-grow py-6 px-4 overflow-y-auto space-y-6">
+    <nav className="flex-grow py-6 px-4 overflow-y-auto space-y-6 hide-scrollbar">
       {menuGroups.map((group, i) => (
         <div key={i} className="space-y-1">
           <p className="px-4 text-[10px] font-bold text-[#737685] uppercase tracking-widest mb-2">{group.title}</p>

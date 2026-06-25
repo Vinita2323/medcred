@@ -166,50 +166,79 @@ export const confirmPayment = async (req, res) => {
       verifiedAt: now,
     });
 
-    // 7. Credit Agent wallet/commission (Phase 4)
+    // 7. Credit Agent wallet/commission (MLM Payout)
     if (order.agentId) {
-      const commissionAmount = 500; // Flat ₹500 commission for card sale
-      
-      // 7a. Get or create Wallet
-      let wallet = await Wallet.findOne({ ownerId: order.agentId, ownerType: 'Agent' });
-      if (!wallet) {
-        wallet = new Wallet({
-          ownerId: order.agentId,
-          ownerType: 'Agent',
-          totalEarnings: 0,
-          withdrawableBalance: 0,
-          pendingCommissions: 0,
-          paidEarnings: 0,
-        });
-      }
-      
-      // 7b. Update Wallet balances (Instantly withdrawable)
-      wallet.totalEarnings += commissionAmount;
-      wallet.withdrawableBalance += commissionAmount;
-      await wallet.save();
-      
-      // 7c. Update Agent sales count
-      await Agent.findByIdAndUpdate(order.agentId, {
-        $inc: { 
-          salesCount: 1,
-          earnings: commissionAmount
+      // Helper function to pay an agent
+      const payAgentCommission = async (agentId, percentage, description) => {
+        const commissionAmount = (order.finalAmount * percentage) / 100;
+        if (commissionAmount <= 0) return;
+
+        let wallet = await Wallet.findOne({ ownerId: agentId, ownerType: 'Agent' });
+        if (!wallet) {
+          wallet = new Wallet({
+            ownerId: agentId,
+            ownerType: 'Agent',
+            totalEarnings: 0,
+            withdrawableBalance: 0,
+            pendingCommissions: 0,
+            paidEarnings: 0,
+          });
         }
-      });
-      
-      // 7d. Create Transaction record
-      await Transaction.create({
-        transactionId: `TXN-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-        walletId: wallet._id,
-        ownerId: order.agentId,
-        ownerType: 'Agent',
-        type: 'credit',
-        category: 'agent_commission',
-        amount: commissionAmount,
-        relatedEntityId: order._id,
-        relatedEntityType: 'Order',
-        sourceDescription: 'Card Sale Commission',
-        detailDescription: `Flat commission for ${order.planName} sale (User: ${req.user.name || req.user.fullName || 'User'})`,
-      });
+
+        wallet.totalEarnings += commissionAmount;
+        wallet.withdrawableBalance += commissionAmount;
+        await wallet.save();
+
+        await Agent.findByIdAndUpdate(agentId, {
+          $inc: {
+            salesCount: 1, // We increment sales count for everyone in the chain
+            earnings: commissionAmount
+          }
+        });
+
+        await Transaction.create({
+          transactionId: `TXN-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
+          walletId: wallet._id,
+          ownerId: agentId,
+          ownerType: 'Agent',
+          type: 'credit',
+          category: 'agent_commission',
+          amount: commissionAmount,
+          relatedEntityId: order._id,
+          relatedEntityType: 'Order',
+          sourceDescription: 'Card Sale Commission',
+          detailDescription: `${description} for ${order.planName} sale (User: ${req.user.name || req.user.fullName || 'User'})`,
+        });
+      };
+
+      // 7a. Direct Seller always gets 12%
+      const directSeller = await Agent.findById(order.agentId);
+      if (directSeller) {
+        await payAgentCommission(directSeller._id, 12, 'Direct Sale 12% commission');
+
+        // 7b. Check for Upline 1 (Parent Agent)
+        if (directSeller.reportingManagerId) {
+          const parentAgent = await Agent.findById(directSeller.reportingManagerId);
+          
+          if (parentAgent) {
+            // Pay Parent Agent depending on their role
+            if (parentAgent.role === 'Agent') {
+              await payAgentCommission(parentAgent._id, 4, 'Upline Agent 4% override');
+            } else if (parentAgent.role === 'Super Agent') {
+              // If direct seller's parent is immediately a Super Agent
+              await payAgentCommission(parentAgent._id, 3, 'Upline Super Agent 3% override');
+            }
+
+            // 7c. Check for Upline 2 (Grandparent Super Agent)
+            if (parentAgent.reportingManagerId && parentAgent.role !== 'Super Agent') {
+              const grandParentAgent = await Agent.findById(parentAgent.reportingManagerId);
+              if (grandParentAgent && grandParentAgent.role === 'Super Agent') {
+                await payAgentCommission(grandParentAgent._id, 3, 'Upline Super Agent 3% override');
+              }
+            }
+          }
+        }
+      }
     }
 
     res.status(200).json({

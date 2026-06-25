@@ -17,7 +17,7 @@ const generateAgentId = async () => {
 const generateReferralCode = async (role) => {
   const prefix =
     role === 'Super Agent' ? 'SA' :
-    role === 'Agent' ? 'TL' : 'FIELD';
+    role === 'Agent' ? 'AG' : 'FA';
   let code;
   let isUnique = false;
   while (!isUnique) {
@@ -31,9 +31,9 @@ const generateReferralCode = async (role) => {
 
 // ── Helper: Commission rate by role ──────────────────────────────
 const getCommissionRate = (role) => {
-  if (role === 'Super Agent') return 1.0;
-  if (role === 'Agent') return 1.5;
-  return 2.5; // Field Agent
+  if (role === 'Super Agent') return 3;
+  if (role === 'Agent') return 4;
+  return 12; // Field Agent
 };
 
 // ── Helper: Initial rank by role ───────────────────────────────
@@ -94,7 +94,7 @@ export const getAgentById = async (req, res) => {
 // ─────────────────────────────────────────────────────────────────
 export const approveAgent = async (req, res) => {
   try {
-    const { role, reportingManagerId, reportingManagerName } = req.body;
+    const { role, reportingManagerId, reportingManagerName, customReferralCode } = req.body;
 
     if (!role) {
       return res.status(400).json({ success: false, message: 'Role is required to approve an agent.' });
@@ -109,9 +109,19 @@ export const approveAgent = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Agent is already approved.' });
     }
 
-    // Auto-generate unique agentId and referralCode
+    // Auto-generate unique agentId and referralCode (or use custom)
     const agentId = await generateAgentId();
-    const referralCode = await generateReferralCode(role);
+    let referralCode;
+    if (customReferralCode && customReferralCode.trim() !== '') {
+      const code = customReferralCode.trim().toUpperCase();
+      const existing = await Agent.findOne({ referralCode: code });
+      if (existing) {
+        return res.status(400).json({ success: false, message: 'Custom referral code is already in use.' });
+      }
+      referralCode = code;
+    } else {
+      referralCode = await generateReferralCode(role);
+    }
 
     agent.status = 'Approved';
     agent.role = role;

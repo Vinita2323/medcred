@@ -36,7 +36,8 @@ export default function AgentLayout() {
       { label: 'Register Customer', icon: 'person_add', route: '/agent/register-customer' },
       { label: 'Apply Loan', icon: 'payments', route: '/agent/apply-loan' },
       { label: 'Customer Directory', icon: 'group', route: '/agent/customers' },
-      { label: 'Team Management', icon: 'partner_exchange', route: '/agent/team' }
+      { label: 'Team Management', icon: 'partner_exchange', route: '/agent/team' },
+      { label: 'Refer & Earn', icon: 'share', route: '/agent/referrals' }
     ];
 
     baseItems.push(
@@ -81,6 +82,8 @@ export default function AgentLayout() {
         return 'Team Management';
       case '/agent/admin':
         return 'Roster & Approvals';
+      case '/agent/referrals':
+        return 'Refer & Earn';
       default:
         return 'Agent Portal';
     }
