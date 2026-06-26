@@ -69,11 +69,11 @@ export default function AgentProfilePage() {
   const getRankBadgeInfo = (rank) => {
     switch (rank) {
       case 'Platinum':
-        return { label: 'Platinum Partner', style: 'bg-purple-100 text-purple-800 border-purple-300', desc: 'Top Tier override of 4.5% network sales.' };
+        return { label: 'Platinum Partner', style: 'bg-purple-100 text-purple-800 border-purple-300', desc: 'Top Tier override of network sales.' };
       case 'Gold':
-        return { label: 'Gold Partner', style: 'bg-yellow-100 text-yellow-800 border-yellow-300', desc: 'Overriding commissions of 3.0% network sales.' };
+        return { label: 'Gold Partner', style: 'bg-yellow-100 text-yellow-800 border-yellow-300', desc: 'Eligible for overriding commissions on network sales.' };
       case 'Silver':
-        return { label: 'Silver Partner', style: 'bg-gray-100 text-gray-800 border-gray-300', desc: 'Standard 2.5% commission override.' };
+        return { label: 'Silver Partner', style: 'bg-gray-100 text-gray-800 border-gray-300', desc: 'Standard commission override on team sales.' };
       default:
         return { label: 'Bronze Partner', style: 'bg-amber-100 text-amber-800 border-amber-300', desc: 'Entry rank. Upgrade by generating sales & referrals.' };
     }
@@ -141,24 +141,37 @@ export default function AgentProfilePage() {
           <div className="border-b border-[#c3c6d6]/20 pb-3">
             <h3 className="font-bold text-[#191b23] flex items-center gap-2 text-sm">
               <span className="material-symbols-outlined text-[#003d9b] text-[18px]">percent</span>
-              <span>Card Selling Commissions</span>
+              <span>Commissions & Earnings Model</span>
             </h3>
             <p className="text-[11px] text-[#737685] mt-1 ml-6">
-              Earned when customers apply your Referral Code during membership purchase.
+              Shows your direct sale commissions and overriding team commissions (if applicable).
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
             {plans.map((plan) => {
-              let rate = 0;
-              if (currentUser.role === 'Field Agent') rate = plan.fieldAgentCommissionPct || 12;
-              else if (currentUser.role === 'Agent') rate = plan.agentCommissionPct || 4;
-              else if (currentUser.role === 'Super Agent') rate = plan.superAgentCommissionPct || 3;
+              const directRate = plan.fieldAgentCommissionPct || 12;
+              let overrideRate = null;
+              if (currentUser.role === 'Agent') overrideRate = plan.agentCommissionPct || 4;
+              else if (currentUser.role === 'Super Agent') overrideRate = plan.superAgentCommissionPct || 3;
               
               return (
                 <div key={plan.planId} className="bg-[#f3f3fd] rounded-xl p-4 flex flex-col items-center justify-center text-center border border-[#003d9b]/10">
-                  <p className="text-[#516161] font-semibold text-xs uppercase tracking-wider mb-1">{plan.name}</p>
-                  <p className="text-2xl font-extrabold text-[#0c56d0]">{rate}%</p>
-                  <p className="text-[10px] text-[#737685] mt-1">Per {plan.name} Card Sold</p>
+                  <p className="text-[#516161] font-semibold text-xs uppercase tracking-wider mb-2">{plan.name}</p>
+                  
+                  <div className="flex flex-col items-center">
+                    <p className="text-2xl font-extrabold text-[#0c56d0] leading-none">{directRate}%</p>
+                    <p className="text-[10px] text-[#737685] font-semibold uppercase mt-1">Direct Sale</p>
+                  </div>
+                  
+                  {overrideRate && (
+                    <>
+                      <div className="w-2/3 h-px bg-[#c3c6d6]/40 my-3"></div>
+                      <div className="flex flex-col items-center">
+                        <p className="text-xl font-bold text-green-700 leading-none">{overrideRate}%</p>
+                        <p className="text-[10px] text-[#737685] font-semibold uppercase mt-1">Team Override</p>
+                      </div>
+                    </>
+                  )}
                 </div>
               );
             })}

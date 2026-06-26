@@ -211,10 +211,11 @@ export const confirmPayment = async (req, res) => {
         });
       };
 
-      // 7a. Direct Seller always gets 12%
+      // 7a. Direct Seller always gets base commission (fieldAgentCommissionPct)
       const directSeller = await Agent.findById(order.agentId);
       if (directSeller) {
-        await payAgentCommission(directSeller._id, 12, 'Direct Sale 12% commission');
+        const baseComm = plan.fieldAgentCommissionPct || 12;
+        await payAgentCommission(directSeller._id, baseComm, `Direct Sale ${baseComm}% commission`);
 
         // 7b. Check for Upline 1 (Parent Agent)
         if (directSeller.reportingManagerId) {
@@ -223,17 +224,20 @@ export const confirmPayment = async (req, res) => {
           if (parentAgent) {
             // Pay Parent Agent depending on their role
             if (parentAgent.role === 'Agent') {
-              await payAgentCommission(parentAgent._id, 4, 'Upline Agent 4% override');
+              const agentComm = plan.agentCommissionPct || 4;
+              await payAgentCommission(parentAgent._id, agentComm, `Upline Agent ${agentComm}% override`);
             } else if (parentAgent.role === 'Super Agent') {
               // If direct seller's parent is immediately a Super Agent
-              await payAgentCommission(parentAgent._id, 3, 'Upline Super Agent 3% override');
+              const saComm = plan.superAgentCommissionPct || 3;
+              await payAgentCommission(parentAgent._id, saComm, `Upline Super Agent ${saComm}% override`);
             }
 
             // 7c. Check for Upline 2 (Grandparent Super Agent)
             if (parentAgent.reportingManagerId && parentAgent.role !== 'Super Agent') {
               const grandParentAgent = await Agent.findById(parentAgent.reportingManagerId);
               if (grandParentAgent && grandParentAgent.role === 'Super Agent') {
-                await payAgentCommission(grandParentAgent._id, 3, 'Upline Super Agent 3% override');
+                const saComm = plan.superAgentCommissionPct || 3;
+                await payAgentCommission(grandParentAgent._id, saComm, `Upline Super Agent ${saComm}% override`);
               }
             }
           }

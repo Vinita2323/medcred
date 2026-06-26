@@ -31,6 +31,7 @@ import HospitalsPage from '../pages/HospitalsPage';
 import PrivacyPolicyPage from '../pages/PrivacyPolicyPage';
 import TermsConditionsPage from '../pages/TermsConditionsPage';
 import ProductDetailsPage from '../pages/ProductDetailsPage';
+import ProductsPage from '../pages/ProductsPage';
 import CheckoutPage from '../pages/CheckoutPage';
 import OrdersPage from '../pages/OrdersPage';
 
@@ -70,6 +71,9 @@ export default function UserRoutes() {
         <Route path="/hospitals"  element={<HospitalsPage />} />
         <Route path="/privacy"    element={<PrivacyPolicyPage />} />
         <Route path="/terms"      element={<TermsConditionsPage />} />
+        
+        {/* ── Products & E-commerce ─────────────────────────────── */}
+        <Route path="/products"   element={<ProductsPage />} />
         <Route path="/product-details" element={<ProductDetailsPage />} />
         <Route path="/checkout"   element={<CheckoutPage />} />
         <Route path="/orders"     element={<OrdersPage />} />

@@ -61,7 +61,7 @@ export default function DashboardPage() {
       try {
         const res = await api.get(ENDPOINTS.PRODUCTS);
         if (res.data.success) {
-          setProducts(res.data.data.slice(0, 6)); // Display max 6
+          setProducts(res.data.data); // Store all products to check length
         }
       } catch (err) {
         console.error('Failed to fetch products:', err);
@@ -221,7 +221,10 @@ export default function DashboardPage() {
                 <span className="material-symbols-outlined text-[#00A86B] text-[12px]">schedule</span>
                 <span className="text-[9px] font-bold text-[#00A86B]">Available 24/7</span>
               </div>
-              <button className="bg-[#0A4DBF] text-white text-[10px] font-bold py-1.5 px-2 rounded-lg flex items-center gap-0.5 active:scale-95 transition-all shadow-[0_4px_12px_rgba(10,77,191,0.2)] cursor-pointer whitespace-nowrap">
+              <button 
+                onClick={() => navigate('/support')}
+                className="bg-[#0A4DBF] text-white text-[10px] font-bold py-1.5 px-2 rounded-lg flex items-center gap-0.5 active:scale-95 transition-all shadow-[0_4px_12px_rgba(10,77,191,0.2)] cursor-pointer whitespace-nowrap"
+              >
                 Start Chat
                 <span className="material-symbols-outlined text-[12px] font-bold">arrow_forward</span>
               </button>
@@ -235,12 +238,15 @@ export default function DashboardPage() {
             <h3 className="text-sm font-bold text-on-surface flex items-center gap-2">
               Medical Equipment
             </h3>
-            <button className="text-xs font-bold text-primary active:scale-95 transition-all cursor-pointer">
+            <button 
+              onClick={() => navigate('/products')}
+              className="text-xs font-bold text-primary active:scale-95 transition-all cursor-pointer"
+            >
               View All
             </button>
           </div>
           <div className="grid grid-cols-3 gap-3">
-            {products.map((item) => (
+            {products.slice(0, 6).map((item) => (
               <button 
                 key={item.productId}
                 onClick={() => navigate('/product-details', { state: { product: item } })}
