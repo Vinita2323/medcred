@@ -3,6 +3,116 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../../../services/api';
 import { ENDPOINTS, SERVER_URL } from '../../../services/types';
 
+const RequirementSection = ({ title, showName, data, files, onDataChange, onFileChange }) => (
+  <section className="bg-white border border-outline-variant/50 rounded-2xl p-5 shadow-sm space-y-4">
+    <h3 className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{title}</h3>
+    
+    <div className="grid grid-cols-2 gap-3">
+      {showName && (
+        <div className="space-y-1 col-span-2">
+          <label className="text-[10px] font-bold text-on-surface-variant">Full Name <span className="text-error">*</span></label>
+          <input 
+            type="text"
+            value={data.name || ''}
+            onChange={(e) => onDataChange('name', e.target.value)}
+            placeholder="Enter full name"
+            className="w-full bg-surface-container-low border border-outline-variant/50 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+            required
+          />
+        </div>
+      )}
+      <div className="space-y-1">
+        <label className="text-[10px] font-bold text-on-surface-variant">Aadhaar No. <span className="text-error">*</span></label>
+        <input 
+          type="text"
+          value={data.aadhaarNumber || ''}
+          onChange={(e) => onDataChange('aadhaarNumber', e.target.value)}
+          placeholder="12-digit no."
+          className="w-full bg-surface-container-low border border-outline-variant/50 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+          maxLength={12}
+          required
+        />
+      </div>
+      <div className="space-y-1">
+        <label className="text-[10px] font-bold text-on-surface-variant">PAN No. <span className="text-error">*</span></label>
+        <input 
+          type="text"
+          value={data.panNumber || ''}
+          onChange={(e) => onDataChange('panNumber', e.target.value)}
+          placeholder="10-char PAN"
+          className="w-full bg-surface-container-low border border-outline-variant/50 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all uppercase"
+          maxLength={10}
+          required
+        />
+      </div>
+      <div className="space-y-1">
+        <label className="text-[10px] font-bold text-on-surface-variant">Bank A/C No. <span className="text-error">*</span></label>
+        <input 
+          type="text"
+          value={data.bankAccountNumber || ''}
+          onChange={(e) => onDataChange('bankAccountNumber', e.target.value)}
+          placeholder="Account Number"
+          className="w-full bg-surface-container-low border border-outline-variant/50 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+          required
+        />
+      </div>
+      <div className="space-y-1">
+        <label className="text-[10px] font-bold text-on-surface-variant">IFSC Code <span className="text-error">*</span></label>
+        <input 
+          type="text"
+          value={data.ifscCode || ''}
+          onChange={(e) => onDataChange('ifscCode', e.target.value)}
+          placeholder="IFSC Code"
+          className="w-full bg-surface-container-low border border-outline-variant/50 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all uppercase"
+          required
+        />
+      </div>
+      <div className="space-y-1 col-span-2">
+        <label className="text-[10px] font-bold text-on-surface-variant">CIBIL Score <span className="text-error">*</span></label>
+        <input 
+          type="number"
+          value={data.cibilScore || ''}
+          onChange={(e) => onDataChange('cibilScore', e.target.value)}
+          placeholder="Enter CIBIL Score"
+          className="w-full bg-surface-container-low border border-outline-variant/50 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+          required
+        />
+      </div>
+    </div>
+
+    <div className="space-y-3 pt-2">
+      <p className="text-[10px] font-bold text-on-surface-variant">Mandatory Documents <span className="text-error">*</span></p>
+      <div className="grid grid-cols-3 gap-2">
+        {[
+          { label: '1. Aadhaar', field: 'aadhaarCardFile' },
+          { label: '2. Photo', field: 'photoFile' },
+          { label: '3. PAN Card', field: 'panCardFile' },
+          { label: '4. 6M Bank Stmt', field: 'bankStatementFile' },
+          { label: '5. Address Proof', field: 'addressProofFile' },
+          { label: '8. Cheque', field: 'chequeFile' },
+          { label: '9. CIBIL Report', field: 'cibilScoreFile' },
+        ].map(({ label, field }) => (
+          <label key={field} className="border border-dashed border-outline-variant rounded-xl p-2 flex flex-col items-center justify-center gap-1 bg-surface-container-lowest hover:bg-surface-container-low transition-colors cursor-pointer relative overflow-hidden text-center h-20">
+            <input 
+              type="file" 
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              accept=".jpg,.jpeg,.png,.pdf"
+              onChange={(e) => onFileChange(e, field)}
+              required={!files[field]}
+            />
+            <span className={`material-symbols-outlined text-base ${files[field] ? 'text-primary' : 'text-on-surface-variant'}`}>
+              {files[field] ? 'check_circle' : 'upload_file'}
+            </span>
+            <p className={`text-[8px] font-bold leading-tight ${files[field] ? 'text-primary line-clamp-2' : 'text-on-surface'}`}>
+              {files[field] ? files[field].name : label}
+            </p>
+          </label>
+        ))}
+      </div>
+    </div>
+  </section>
+);
+
 export default function LoanApplicationFormPage() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -49,7 +159,54 @@ export default function LoanApplicationFormPage() {
   const [applicantData, setApplicantData] = useState({
     aadhaarNumber: '',
     panNumber: '',
+    bankAccountNumber: '',
+    ifscCode: '',
+    cibilScore: '',
   });
+
+  const [applicantFiles, setApplicantFiles] = useState({
+    aadhaarCardFile: null,
+    photoFile: null,
+    panCardFile: null,
+    bankStatementFile: null,
+    addressProofFile: null,
+    chequeFile: null,
+    cibilScoreFile: null,
+  });
+
+  const handleApplicantFileChange = (e, field) => {
+    if (e.target.files && e.target.files[0]) {
+      setApplicantFiles(prev => ({
+        ...prev,
+        [field]: e.target.files[0]
+      }));
+    }
+  };
+
+  const initialGuarantorData = { name: '', aadhaarNumber: '', panNumber: '', bankAccountNumber: '', ifscCode: '', cibilScore: '' };
+  const initialGuarantorFiles = { aadhaarCardFile: null, photoFile: null, panCardFile: null, bankStatementFile: null, addressProofFile: null, chequeFile: null, cibilScoreFile: null };
+
+  const [guarantorsData, setGuarantorsData] = useState([ { ...initialGuarantorData }, { ...initialGuarantorData } ]);
+  const [guarantorsFiles, setGuarantorsFiles] = useState([ { ...initialGuarantorFiles }, { ...initialGuarantorFiles } ]);
+
+  const handleGuarantorDataChange = (index, field, value) => {
+    setGuarantorsData(prev => {
+      const copy = [...prev];
+      copy[index] = { ...copy[index], [field]: value };
+      return copy;
+    });
+  };
+
+  const handleGuarantorFileChange = (index, e, field) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setGuarantorsFiles(prev => {
+        const copy = [...prev];
+        copy[index] = { ...copy[index], [field]: file };
+        return copy;
+      });
+    }
+  };
 
   const [loanAmount, setLoanAmount] = useState(state.limit);
   const [tenure, setTenure] = useState(12);
@@ -151,9 +308,27 @@ export default function LoanApplicationFormPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!applicantData.aadhaarNumber || !applicantData.panNumber) {
-      alert('Please fill out your identity details.');
+    if (!applicantData.aadhaarNumber || !applicantData.panNumber || !applicantData.bankAccountNumber || !applicantData.ifscCode || !applicantData.cibilScore) {
+      alert('Please fill out all applicant identity and bank details.');
       return;
+    }
+
+    if (!applicantFiles.aadhaarCardFile || !applicantFiles.photoFile || !applicantFiles.panCardFile || !applicantFiles.bankStatementFile || !applicantFiles.addressProofFile || !applicantFiles.chequeFile || !applicantFiles.cibilScoreFile) {
+      alert('Please upload all required applicant loan papers.');
+      return;
+    }
+
+    for (let i = 0; i < 2; i++) {
+      const g = guarantorsData[i];
+      if (!g.name || !g.aadhaarNumber || !g.panNumber || !g.bankAccountNumber || !g.ifscCode || !g.cibilScore) {
+        alert(`Please fill out all identity and bank details for Guarantor ${i + 1}.`);
+        return;
+      }
+      const gf = guarantorsFiles[i];
+      if (!gf.aadhaarCardFile || !gf.photoFile || !gf.panCardFile || !gf.bankStatementFile || !gf.addressProofFile || !gf.chequeFile || !gf.cibilScoreFile) {
+        alert(`Please upload all required loan papers for Guarantor ${i + 1}.`);
+        return;
+      }
     }
     
     for (let id of activePatientIds) {
@@ -173,8 +348,34 @@ export default function LoanApplicationFormPage() {
       const formData = new FormData();
       formData.append('aadhaarNumber', applicantData.aadhaarNumber);
       formData.append('panNumber', applicantData.panNumber);
+      formData.append('bankAccountNumber', applicantData.bankAccountNumber);
+      formData.append('ifscCode', applicantData.ifscCode);
+      formData.append('cibilScore', applicantData.cibilScore);
       formData.append('loanAmount', loanAmount);
       formData.append('tenure', tenure);
+
+      Object.keys(applicantFiles).forEach(key => {
+        if (applicantFiles[key]) {
+          formData.append(`applicant_${key}`, applicantFiles[key]);
+        }
+      });
+
+      guarantorsData.forEach((g, i) => {
+        formData.append(`guarantor${i+1}_name`, g.name);
+        formData.append(`guarantor${i+1}_aadhaarNumber`, g.aadhaarNumber);
+        formData.append(`guarantor${i+1}_panNumber`, g.panNumber);
+        formData.append(`guarantor${i+1}_bankAccountNumber`, g.bankAccountNumber);
+        formData.append(`guarantor${i+1}_ifscCode`, g.ifscCode);
+        formData.append(`guarantor${i+1}_cibilScore`, g.cibilScore);
+      });
+
+      guarantorsFiles.forEach((gf, i) => {
+        Object.keys(gf).forEach(key => {
+          if (gf[key]) {
+            formData.append(`guarantor${i+1}_${key}`, gf[key]);
+          }
+        });
+      });
 
       // We need to pass patients as a JSON string, and files mapped to them
       const patientsPayload = activePatientIds.map(id => ({
@@ -436,37 +637,35 @@ export default function LoanApplicationFormPage() {
             })}
 
             {/* Identity Details of Primary Borrower */}
-            <section className="bg-white border border-outline-variant/50 rounded-2xl p-5 shadow-sm space-y-4">
-              <h3 className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Your Identity Details (Applicant)</h3>
-              
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-on-surface-variant">Aadhaar Card Number <span className="text-error">*</span></label>
-                <input 
-                  type="text"
-                  name="aadhaarNumber"
-                  value={applicantData.aadhaarNumber}
-                  onChange={handleApplicantChange}
-                  placeholder="Enter 12-digit Aadhaar number"
-                  className="w-full bg-surface-container-low border border-outline-variant/50 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
-                  maxLength={12}
-                  required
-                />
-              </div>
+            <RequirementSection
+              title="Loan Papers Requirement (Applicant)"
+              showName={false}
+              data={applicantData}
+              files={applicantFiles}
+              onDataChange={(field, val) => setApplicantData({ ...applicantData, [field]: val })}
+              onFileChange={handleApplicantFileChange}
+            />
 
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-on-surface-variant">PAN Card Number <span className="text-error">*</span></label>
-                <input 
-                  type="text"
-                  name="panNumber"
-                  value={applicantData.panNumber}
-                  onChange={handleApplicantChange}
-                  placeholder="Enter 10-character PAN number"
-                  className="w-full bg-surface-container-low border border-outline-variant/50 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all uppercase"
-                  maxLength={10}
-                  required
-                />
-              </div>
-            </section>
+            {/* Guarantor 1 Details */}
+            <RequirementSection
+              title="Guarantor 1 Details & Papers"
+              showName={true}
+              data={guarantorsData[0]}
+              files={guarantorsFiles[0]}
+              onDataChange={(field, val) => handleGuarantorDataChange(0, field, val)}
+              onFileChange={(e, field) => handleGuarantorFileChange(0, e, field)}
+            />
+
+            {/* Guarantor 2 Details */}
+            <RequirementSection
+              title="Guarantor 2 Details & Papers"
+              showName={true}
+              data={guarantorsData[1]}
+              files={guarantorsFiles[1]}
+              onDataChange={(field, val) => handleGuarantorDataChange(1, field, val)}
+              onFileChange={(e, field) => handleGuarantorFileChange(1, e, field)}
+            />
+
 
             {/* Loan Configuration */}
             <section className="bg-white border border-outline-variant/50 rounded-2xl p-5 shadow-sm space-y-5">

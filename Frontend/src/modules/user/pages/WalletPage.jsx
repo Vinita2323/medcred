@@ -101,23 +101,7 @@ export default function WalletPage() {
                   <p className="text-[10px] opacity-75 uppercase tracking-wider font-semibold">Available Wallet Balance</p>
                   <p className="text-3xl font-black mt-1">₹{balance.toLocaleString('en-IN')}</p>
                 </div>
-                
-                <div className="flex gap-4">
-                  <button 
-                    onClick={() => setShowAddMoney(true)}
-                    className="flex-1 bg-white text-primary text-xs font-bold py-2.5 rounded-xl shadow-md cursor-pointer hover:bg-surface-container-high transition-colors flex items-center justify-center gap-1.5"
-                  >
-                    <span className="material-symbols-outlined text-base">add_circle</span>
-                    Add Money
-                  </button>
-                  <button 
-                    onClick={() => alert("Money transfers are enabled for approved hospital bill payouts only.")}
-                    className="flex-1 bg-white/20 text-white border border-white/30 text-xs font-bold py-2.5 rounded-xl cursor-pointer hover:bg-white/30 transition-colors flex items-center justify-center gap-1.5"
-                  >
-                    <span className="material-symbols-outlined text-base">send</span>
-                    Transfer
-                  </button>
-                </div>
+
               </div>
             </section>
 

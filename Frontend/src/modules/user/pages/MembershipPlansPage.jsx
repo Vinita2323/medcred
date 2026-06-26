@@ -13,6 +13,7 @@ const planGradients = {
 export default function MembershipPlansPage() {
   const navigate = useNavigate();
   const location = useLocation();
+
   const fromRenew = location.state?.renew;
 
   const [plans, setPlans] = useState([]);

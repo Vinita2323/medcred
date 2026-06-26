@@ -140,6 +140,54 @@ export default function AdminSettingsPage() {
     }
   };
 
+  const handlePlanChange = (planId, field, value) => {
+    setPlans({
+      ...plans,
+      [planId]: { ...plans[planId], [field]: value }
+    });
+  };
+
+  const toggleHidePlan = (planId) => {
+    setPlans({
+      ...plans,
+      [planId]: { ...plans[planId], isHidden: !plans[planId].isHidden }
+    });
+  };
+
+  const deletePlan = (planId) => {
+    if (window.confirm(`Are you sure you want to delete the ${plans[planId].name}?`)) {
+      const newPlans = { ...plans };
+      delete newPlans[planId];
+      setPlans(newPlans);
+    }
+  };
+
+  const handleAddPlan = (e) => {
+    e.preventDefault();
+    const id = newPlan.name.toLowerCase().replace(/\s+/g, '-');
+    const planToAdd = {
+      id,
+      name: newPlan.name,
+      price: Number(newPlan.price),
+      validity: newPlan.validity,
+      members: Number(newPlan.members),
+      coverage: newPlan.coverage,
+      features: newPlan.features.split(',').map(f => f.trim()).filter(f => f),
+      color: 'plan-custom',
+      isHidden: false
+    };
+    
+    setPlans({
+      ...plans,
+      [id]: planToAdd
+    });
+    
+    setNewPlan({
+      name: '', price: '', validity: '1 Year', members: 1, coverage: '₹1,00,000', features: ''
+    });
+    setIsAddingPlan(false);
+  };
+
   return (
     <div className="space-y-6 animate-fade-in pb-10">
       <section className="bg-gradient-to-r from-[#003d9b] to-[#0052cc] text-white rounded-2xl p-6 shadow-md relative overflow-hidden">
@@ -337,7 +385,6 @@ export default function AdminSettingsPage() {
             {isSavingSettings ? 'Saving...' : 'Save Platform Settings'}
           </button>
         </div>
-
       </form>
 
       {/* Create Plan Modal */}

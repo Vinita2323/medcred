@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Lottie from 'lottie-react';
 import membershipActivAnim from '../../../assets/Lotties/membershipActiv.json';
-import { PLANS, saveMembership, getMembership, updateUser } from '../utils/storage';
+import { saveMembership, getMembership, updateUser } from '../utils/storage';
 import api from '../../../services/api';
 import { ENDPOINTS } from '../../../services/types';
 
@@ -20,11 +20,11 @@ export default function PaymentPage() {
   const planId = location.state?.planId || 'family';
   const planObjId = location.state?.planObjId || null;
   const plan = {
-    name: location.state?.planName || (PLANS[planId]?.name || 'Health Plan'),
-    price: location.state?.price || (PLANS[planId]?.price || 999),
-    validity: location.state?.validity || (PLANS[planId]?.validity || '1 Year'),
-    members: location.state?.members || (PLANS[planId]?.members || 1),
-    coverage: location.state?.coverage || (PLANS[planId]?.coverage || '2L')
+    name: location.state?.planName || 'Health Plan',
+    price: location.state?.price || 999,
+    validity: location.state?.validity || '1 Year',
+    members: location.state?.members || 1,
+    coverage: location.state?.coverage || '2L'
   };
   const finalPrice = location.state?.price || plan.price;
   const agentDetail = location.state?.agentDetail || null;

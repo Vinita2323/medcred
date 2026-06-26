@@ -280,9 +280,6 @@ export default function ProfilePage() {
           arrow_back
         </button>
         <h1 className="flex-1 text-center text-lg font-bold text-on-surface">My Profile</h1>
-        <button onClick={handleEditClick} className="material-symbols-outlined text-primary hover:bg-surface-variant p-2 rounded-full -mr-2 transition-colors cursor-pointer">
-          edit
-        </button>
       </header>
 
       {/* Main Content */}
@@ -416,14 +413,6 @@ export default function ProfilePage() {
                 <h3 className="text-sm font-bold text-on-surface">Health Information</h3>
               </div>
               <div className="flex items-center gap-2">
-                {openSection === 'health' && (
-                  <span
-                    onClick={handleEditHealthClick}
-                    className="material-symbols-outlined text-primary bg-primary/10 p-1.5 rounded-full hover:bg-primary/20 transition-colors text-sm"
-                  >
-                    edit
-                  </span>
-                )}
                 <span className={`material-symbols-outlined text-outline transition-transform duration-300 ${openSection === 'health' ? 'rotate-180' : ''}`}>
                   expand_more
                 </span>
@@ -533,50 +522,7 @@ export default function ProfilePage() {
             )}
           </div>
 
-          {/* Insurance & Card Details */}
-          <div className="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden shadow-sm">
-            <SectionHeader icon="health_and_safety" title="Insurance & Coverage" section="insurance" />
-            {openSection === 'insurance' && (
-              <div className="p-4 pt-2 border-t border-outline-variant/30 space-y-3">
-                <div className="bg-gradient-to-br from-primary to-secondary rounded-xl p-4 text-white">
-                  <div className="flex justify-between items-start mb-3">
-                    <div>
-                      <p className="text-[9px] opacity-70 uppercase font-semibold tracking-wider">Policy Type</p>
-                      <p className="text-sm font-bold capitalize">{card?.planName || 'No Active Policy'}</p>
-                    </div>
-                    <span className="material-symbols-outlined text-2xl opacity-80">health_and_safety</span>
-                  </div>
-                  {card && (
-                    <div className="grid grid-cols-2 gap-3 text-xs">
-                      <div>
-                        <p className="opacity-70 text-[9px] uppercase">Sum Insured</p>
-                        <p className="font-bold">₹{card?.creditLimit?.toLocaleString('en-IN') || '0'}</p>
-                      </div>
-                      <div>
-                        <p className="opacity-70 text-[9px] uppercase">Premium</p>
-                        <p className="font-bold capitalize">{card?.cardType || 'N/A'}</p>
-                      </div>
-                      <div>
-                        <p className="opacity-70 text-[9px] uppercase">Policy No.</p>
-                        <p className="font-mono font-bold">{card?.cardNumber || 'N/A'}</p>
-                      </div>
-                      <div>
-                        <p className="opacity-70 text-[9px] uppercase">Valid Till</p>
-                        <p className="font-bold">{card?.validTill ? new Date(card.validTill).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A'}</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-                <button
-                  onClick={() => navigate('/insurance')}
-                  className="w-full text-xs font-bold text-primary flex items-center justify-center gap-1 py-2 hover:underline cursor-pointer"
-                >
-                  <span className="material-symbols-outlined text-sm">open_in_new</span>
-                  View Full Insurance Details
-                </button>
-              </div>
-            )}
-          </div>
+
 
           {/* Card Details */}
           <div className="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden shadow-sm">
@@ -666,6 +612,33 @@ export default function ProfilePage() {
                   <div className="flex justify-between items-center py-2">
                     <span className="text-on-surface-variant">Verification Level</span>
                     <span className="text-on-surface font-bold">Tier 1 (Basic)</span>
+                  </div>
+
+                  {/* Aadhaar Images */}
+                  <div className="pt-3 border-t border-outline-variant/30">
+                    <p className="text-on-surface-variant font-semibold uppercase tracking-wider text-[10px] mb-2">Aadhaar Documents</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[9px] font-bold text-on-surface-variant text-center">Front</span>
+                        <div className="w-full aspect-[1.58/1] bg-surface-container rounded-xl overflow-hidden border border-outline-variant/50 flex items-center justify-center">
+                          {user?.kyc?.aadhaarFrontUrl || user?.aadhaarFrontUrl ? (
+                            <img src={getImageUrl(user?.kyc?.aadhaarFrontUrl || user?.aadhaarFrontUrl)} alt="Aadhaar Front" className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="material-symbols-outlined text-outline text-2xl">badge</span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[9px] font-bold text-on-surface-variant text-center">Back</span>
+                        <div className="w-full aspect-[1.58/1] bg-surface-container rounded-xl overflow-hidden border border-outline-variant/50 flex items-center justify-center">
+                          {user?.kyc?.aadhaarBackUrl || user?.aadhaarBackUrl ? (
+                            <img src={getImageUrl(user?.kyc?.aadhaarBackUrl || user?.aadhaarBackUrl)} alt="Aadhaar Back" className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="material-symbols-outlined text-outline text-2xl">credit_card</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

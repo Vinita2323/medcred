@@ -14,8 +14,8 @@ export const STORAGE_KEYS = {
   USER_DATA: 'medcred_user_data',
 };
 
-export const SERVER_URL = 'https://medcred.onrender.com';
-export const API_BASE_URL = 'https://medcred.onrender.com/api/v1';
+export const SERVER_URL = 'http://localhost:5000';
+export const API_BASE_URL = 'http://localhost:5000/api/v1';
 
 // API Endpoints Mapping
 export const ENDPOINTS = {
@@ -50,6 +50,7 @@ export const ENDPOINTS = {
   AGENT_DASHBOARD: '/agent/profile/dashboard',
   AGENT_CUSTOMERS: '/agent/customers',
   AGENT_ONBOARD_CUSTOMER: '/agent/customers/onboard',
+  AGENT_REFERRALS: '/agent/customers/referrals',
   AGENT_WALLET: '/agent/wallet',
   AGENT_WALLET_TRANSACTIONS: '/agent/wallet/transactions',
   AGENT_WALLET_WITHDRAW: '/agent/wallet/withdraw',
@@ -89,7 +90,7 @@ export const ENDPOINTS = {
   // ADMIN — AGENT MANAGEMENT
   ADMIN_AGENTS: '/admin/agents',
   ADMIN_AGENT_APPROVE: (id) => `/admin/agents/${id}/approve`,
-  ADMIN_AGENT_STATUS:  (id) => `/admin/agents/${id}/status`,
+  ADMIN_AGENT_STATUS: (id) => `/admin/agents/${id}/status`,
   ADMIN_AGENT_PROMOTE: (id) => `/admin/agents/${id}/promote`,
 
   // KYC Endpoints
@@ -107,6 +108,15 @@ export const ENDPOINTS = {
   ADMIN_PLAN_CREATE: '/plans',
   ADMIN_PLAN_DELETE: (id) => `/plans/${id}`,
 
+  // ADMIN - PRODUCTS
+  ADMIN_PRODUCTS: '/admin/products',
+  ADMIN_PRODUCT_UPDATE: (id) => `/admin/products/${id}`,
+  ADMIN_PRODUCT_DELETE: (id) => `/admin/products/${id}`,
+
+  // ADMIN - ORDERS
+  ADMIN_ORDERS: '/admin/orders',
+  ADMIN_ORDER_UPDATE: (id) => `/admin/orders/${id}/status`,
+
   // HOSPITALS
   HOSPITALS: '/hospitals',
 
@@ -118,14 +128,14 @@ export const ENDPOINTS = {
   ORDERS_CONFIRM: (id) => `/orders/${id}/confirm`,
   MY_ORDERS: '/orders/my-orders',
   MY_CARD: '/cards/my-card',
-  
+
   PRODUCTS: '/products',
-  
+
   // Family
   FAMILY_MEMBERS: '/family/members',
   FAMILY_ADD: '/family/add',
   FAMILY_REMOVE: (id) => `/family/${id}`,
-  
+
   // ADMIN - FAMILY MANAGEMENT
   ADMIN_KYC: '/admin/kyc',
   ADMIN_KYC_UPDATE: (id) => `/admin/kyc/${id}`,
@@ -136,7 +146,7 @@ export const ENDPOINTS = {
   LOAN_ELIGIBILITY: '/loans/eligibility',
   LOAN_APPLY: '/loans/apply',
   MY_LOAN: '/loans/my-loan',
-  
+
   // ADMIN - LOANS
   ADMIN_LOANS: '/admin/loans',
   ADMIN_LOAN_UPDATE: (id) => `/admin/loans/${id}`,

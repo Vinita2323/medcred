@@ -11,6 +11,9 @@ export default function LoanPage() {
   const [applied, setApplied] = useState(false);
   const [isApplying, setIsApplying] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [loanType, setLoanType] = useState('Hospitalization');
+  const [showModal, setShowModal] = useState(false);
+  const [modalData, setModalData] = useState(null);
 
   // Backend state
   const [isMember, setIsMember] = useState(false);
@@ -66,11 +69,15 @@ export default function LoanPage() {
   };
 
   const calculateEMI = () => {
-    return Math.round(loanAmount / tenure);
+    // 12% annual interest rate -> 1% monthly
+    const r = 12 / 12 / 100;
+    const n = tenure;
+    const emi = (loanAmount * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+    return Math.round(emi);
   };
 
   const handleApply = () => {
-    navigate('/loan-application-form', { state: { type: 'Medical', limit: maxLimit } });
+    navigate('/loan-application-form', { state: { type: loanType, limit: maxLimit, amount: loanAmount, tenure } });
   };
 
   if (loading) {
@@ -182,8 +189,20 @@ export default function LoanPage() {
             <section className="grid grid-cols-2 gap-3">
               {/* Home Treatment Card */}
               <div 
-                onClick={() => navigate('/loan-details', { state: { type: 'Home Treatment', limit: 100000 } })}
-                className="bg-gradient-to-br from-[#0A4DBF] to-[#1976D2] rounded-2xl p-4 text-white shadow-lg relative overflow-hidden flex flex-col justify-between cursor-pointer hover:shadow-xl transition-all hover:scale-[1.02]"
+                onClick={() => {
+                  setLoanType('Home Treatment');
+                  setMaxLimit(100000);
+                  if (loanAmount > 100000) setLoanAmount(100000);
+                  setModalData({
+                    title: 'Home Treatment',
+                    maxLimit: 100000,
+                    interestRate: '12% p.a.',
+                    procFee: '₹0',
+                    desc: 'Ideal for treatments that do not require hospitalization, such as diagnostic tests, dental work, and post-operative home care.',
+                  });
+                  setShowModal(true);
+                }}
+                className={`bg-gradient-to-br from-[#0A4DBF] to-[#1976D2] rounded-2xl p-4 text-white shadow-lg relative overflow-hidden flex flex-col justify-between cursor-pointer transition-all hover:scale-[1.02] ${loanType === 'Home Treatment' ? 'ring-4 ring-primary ring-offset-2' : ''}`}
               >
                 <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -mr-10 -mt-10 blur-xl"></div>
                 <div className="relative z-10">
@@ -196,7 +215,7 @@ export default function LoanPage() {
                 <div className="relative z-10 flex justify-between items-end mt-4 pt-3 border-t border-white/20">
                   <div>
                     <p className="text-[8px] opacity-70">Interest Rate</p>
-                    <p className="font-bold text-[11px] mt-0.5">0%</p>
+                    <p className="font-bold text-[11px] mt-0.5">12%</p>
                   </div>
                   <div>
                     <p className="text-[8px] opacity-70">Proc. Fee</p>
@@ -207,8 +226,19 @@ export default function LoanPage() {
 
               {/* Hospitalization Card */}
               <div 
-                onClick={() => navigate('/loan-details', { state: { type: 'Hospitalization', limit: 200000 } })}
-                className="bg-gradient-to-br from-primary to-secondary rounded-2xl p-4 text-white shadow-lg relative overflow-hidden flex flex-col justify-between cursor-pointer hover:shadow-xl transition-all hover:scale-[1.02]"
+                onClick={() => {
+                  setLoanType('Hospitalization');
+                  setMaxLimit(200000);
+                  setModalData({
+                    title: 'Hospitalization',
+                    maxLimit: 200000,
+                    interestRate: '12% p.a.',
+                    procFee: '₹0',
+                    desc: 'Covers major surgical procedures, extended hospital stays, and comprehensive emergency care treatments.',
+                  });
+                  setShowModal(true);
+                }}
+                className={`bg-gradient-to-br from-primary to-secondary rounded-2xl p-4 text-white shadow-lg relative overflow-hidden flex flex-col justify-between cursor-pointer transition-all hover:scale-[1.02] ${loanType === 'Hospitalization' ? 'ring-4 ring-primary ring-offset-2' : ''}`}
               >
                 <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -mr-10 -mt-10 blur-xl"></div>
                 <div className="relative z-10">
@@ -221,7 +251,7 @@ export default function LoanPage() {
                 <div className="relative z-10 flex justify-between items-end mt-4 pt-3 border-t border-white/20">
                   <div>
                     <p className="text-[8px] opacity-70">Interest Rate</p>
-                    <p className="font-bold text-[11px] mt-0.5">0%</p>
+                    <p className="font-bold text-[11px] mt-0.5">12%</p>
                   </div>
                   <div>
                     <p className="text-[8px] opacity-70">Proc. Fee</p>
@@ -260,18 +290,23 @@ export default function LoanPage() {
               <div className="space-y-2">
                 <span className="text-xs text-on-surface-variant">Repayment Tenure</span>
                 <div className="grid grid-cols-4 gap-2">
-                  {[3, 6, 12, 18].map((m) => (
+                  {[
+                    { val: 6, label: '6 Mo' },
+                    { val: 12, label: '1 Yr' },
+                    { val: 24, label: '2 Yr' },
+                    { val: 36, label: '3 Yr' }
+                  ].map((m) => (
                     <button
-                      key={m}
+                      key={m.val}
                       type="button"
-                      onClick={() => setTenure(m)}
+                      onClick={() => setTenure(m.val)}
                       className={`py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
-                        tenure === m 
+                        tenure === m.val 
                           ? 'bg-primary text-white shadow-sm' 
                           : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high'
                       }`}
                     >
-                      {m} Mo
+                      {m.label}
                     </button>
                   ))}
                 </div>
@@ -280,16 +315,16 @@ export default function LoanPage() {
               {/* EMI Calculation Summary Box */}
               <div className="bg-surface-container-low p-4 rounded-xl space-y-2 border border-outline-variant/30 text-xs">
                 <div className="flex justify-between items-center">
-                  <span className="text-on-surface-variant">Monthly EMI (Principal)</span>
+                  <span className="text-on-surface-variant">Monthly EMI</span>
                   <span className="font-extrabold text-on-surface text-sm">₹{calculateEMI().toLocaleString('en-IN')} / mo</span>
                 </div>
                 <div className="flex justify-between items-center text-[10px] text-outline">
-                  <span>Interest Charges (0%)</span>
-                  <span className="font-bold text-tertiary">₹0</span>
+                  <span>Interest Charges (12% p.a.)</span>
+                  <span className="font-bold text-tertiary">₹{(calculateEMI() * tenure - loanAmount).toLocaleString('en-IN')}</span>
                 </div>
                 <div className="border-t border-outline-variant/30 pt-2 flex justify-between items-center font-bold text-on-surface">
                   <span>Total Repayable</span>
-                  <span className="text-primary text-sm">₹{loanAmount.toLocaleString('en-IN')}</span>
+                  <span className="text-primary text-sm">₹{(calculateEMI() * tenure).toLocaleString('en-IN')}</span>
                 </div>
               </div>
             </section>
@@ -332,6 +367,53 @@ export default function LoanPage() {
           </>
         )}
       </main>
+
+      {/* Details Modal */}
+      {showModal && modalData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+          <div className="bg-surface w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden animate-slide-up">
+            <div className="bg-primary p-5 text-white flex justify-between items-start">
+              <div>
+                <h3 className="font-black text-xl">{modalData.title}</h3>
+                <p className="text-xs opacity-80 mt-1">Loan Plan Details</p>
+              </div>
+              <button 
+                onClick={() => setShowModal(false)}
+                className="material-symbols-outlined text-white hover:bg-white/20 p-1.5 rounded-full cursor-pointer transition-colors"
+              >
+                close
+              </button>
+            </div>
+            <div className="p-5 space-y-4">
+              <p className="text-sm text-on-surface-variant leading-relaxed">
+                {modalData.desc}
+              </p>
+              
+              <div className="grid grid-cols-2 gap-3 mt-2">
+                <div className="bg-surface-container-lowest border border-outline-variant/50 p-3 rounded-xl">
+                  <span className="text-[10px] uppercase font-bold text-outline tracking-wider">Max Payout</span>
+                  <p className="font-black text-primary text-base mt-0.5">₹{modalData.maxLimit.toLocaleString('en-IN')}</p>
+                </div>
+                <div className="bg-surface-container-lowest border border-outline-variant/50 p-3 rounded-xl">
+                  <span className="text-[10px] uppercase font-bold text-outline tracking-wider">Interest Rate</span>
+                  <p className="font-black text-on-surface text-base mt-0.5">{modalData.interestRate}</p>
+                </div>
+                <div className="bg-surface-container-lowest border border-outline-variant/50 p-3 rounded-xl col-span-2 flex justify-between items-center">
+                  <span className="text-[10px] uppercase font-bold text-outline tracking-wider">Processing Fee</span>
+                  <p className="font-black text-on-surface text-base">{modalData.procFee}</p>
+                </div>
+              </div>
+              
+              <button 
+                onClick={() => setShowModal(false)}
+                className="w-full bg-primary text-white font-bold py-3.5 rounded-xl shadow-md hover:opacity-90 active:scale-95 transition-all mt-2 cursor-pointer"
+              >
+                Got It
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <BottomNavBar />
     </div>

@@ -13,7 +13,15 @@ import {
 import { upload } from '../middlewares/upload.middleware.js';
 
 // POST /api/v1/auth/register
-router.post('/register', upload.single('profilePic'), register);
+router.post(
+  '/register', 
+  upload.fields([
+    { name: 'profilePic', maxCount: 1 },
+    { name: 'aadhaarFront', maxCount: 1 },
+    { name: 'aadhaarBack', maxCount: 1 }
+  ]), 
+  register
+);
 
 // POST /api/v1/auth/verify-otp
 router.post('/verify-otp', verifyOtpHandler);

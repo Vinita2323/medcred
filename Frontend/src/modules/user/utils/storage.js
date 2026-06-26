@@ -88,7 +88,7 @@ export function isKycVerified() {
 }
 
 // ── Membership ────────────────────────────────────────────────────────────────
-export const PLANS = {
+export const DEFAULT_PLANS = {
   individual: {
     id: 'individual',
     name: 'Individual Plan',
@@ -104,6 +104,7 @@ export const PLANS = {
       'Emergency Ambulance',
       'Loan Eligibility (after 30 days)',
     ],
+    isHidden: false,
   },
   family: {
     id: 'family',
@@ -121,6 +122,7 @@ export const PLANS = {
       'Family Floater Coverage',
       'Higher Loan Eligibility',
     ],
+    isHidden: false,
   },
   premium: {
     id: 'premium',
@@ -137,11 +139,25 @@ export const PLANS = {
       'International Coverage',
       'Dedicated Health Manager',
     ],
+    isHidden: false,
   },
 };
 
+export function getPlatformPlans() {
+  try { 
+    const stored = JSON.parse(localStorage.getItem('medcred_platform_plans'));
+    if (stored && Object.keys(stored).length > 0) return stored;
+  } catch {}
+  return DEFAULT_PLANS;
+}
+
+export function savePlatformPlans(plansObj) {
+  localStorage.setItem('medcred_platform_plans', JSON.stringify(plansObj));
+}
+
 export function saveMembership(planId, paymentData = {}) {
-  const plan = PLANS[planId];
+  const plans = getPlatformPlans();
+  const plan = plans[planId];
   const now = new Date();
   const expiry = new Date(now);
   expiry.setFullYear(expiry.getFullYear() + 1);

@@ -37,6 +37,8 @@ import productRoutes from './routes/product.routes.js';
 import hospitalRoutes from './routes/hospital.routes.js';
 import supportRoutes from './routes/support.routes.js';
 import adminSupportRoutes from './routes/admin.support.routes.js';
+import adminProductRoutes from './routes/admin.product.routes.js';
+import adminOrderRoutes from './routes/admin.order.routes.js';
 
 const app = express();
 
@@ -108,6 +110,8 @@ app.use('/api/v1/admin/reports', adminReportsRoutes);
 app.use('/api/v1/admin/transactions', adminTransactionsRoutes);
 app.use('/api/v1/user/wallet', userWalletRoutes);
 app.use('/api/v1/products', productRoutes);
+app.use('/api/v1/admin/products', adminProductRoutes);
+app.use('/api/v1/admin/orders', adminOrderRoutes);
 app.use('/api/v1/hospitals', hospitalRoutes);
 app.use('/api/v1/support', supportRoutes);
 app.use('/api/v1/admin/support', adminSupportRoutes);

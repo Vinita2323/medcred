@@ -8,10 +8,23 @@ export default function AgentProfilePage() {
   const [currentUser, setCurrentUser] = useState(null);
 
   const [isLoading, setIsLoading] = useState(true);
+  const [plans, setPlans] = useState([]);
 
   useEffect(() => {
     fetchAgentProfile();
+    fetchPlans();
   }, []);
+
+  const fetchPlans = async () => {
+    try {
+      const response = await api.get(ENDPOINTS.PLANS);
+      if (response.data?.success) {
+        setPlans(response.data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching plans:', error);
+    }
+  };
 
   const fetchAgentProfile = async () => {
     try {
@@ -103,15 +116,15 @@ export default function AgentProfilePage() {
           </div>
           <div className="flex justify-between border-b border-[#faf8ff] pb-2 md:border-none">
             <span className="text-[#516161]">Reporting Manager</span>
-            <span className="font-semibold">{currentUser.reportingManager || 'System Administrator'}</span>
+            <span className="font-semibold">{currentUser.reportingManagerName || 'System Administrator'}</span>
           </div>
           <div className="flex justify-between border-b border-[#faf8ff] pb-2 md:border-none">
             <span className="text-[#516161]">Referral Code</span>
             <span className="font-mono font-bold text-[#0c56d0]">{currentUser.referralCode || '—'}</span>
           </div>
           <div className="flex justify-between border-b border-[#faf8ff] pb-2 md:border-none">
-            <span className="text-[#516161]">Commission Percentage</span>
-            <span className="font-semibold text-green-700">{currentUser.commissionRate}% override</span>
+            <span className="text-[#516161]">Base Commission Percentage</span>
+            <span className="font-semibold text-green-700">{currentUser.commissionRate}%</span>
           </div>
           <div className="flex justify-between border-b border-[#faf8ff] pb-2 md:border-none col-span-1 md:col-span-2">
             <span className="text-[#516161]">Onboarding Network Level</span>
@@ -121,6 +134,37 @@ export default function AgentProfilePage() {
           </div>
         </div>
       </section>
+
+      {/* Card Commission Rates */}
+      {plans.length > 0 && (
+        <section className="bg-white border border-[#c3c6d6]/30 rounded-2xl p-6 shadow-sm space-y-4">
+          <div className="border-b border-[#c3c6d6]/20 pb-3">
+            <h3 className="font-bold text-[#191b23] flex items-center gap-2 text-sm">
+              <span className="material-symbols-outlined text-[#003d9b] text-[18px]">percent</span>
+              <span>Card Selling Commissions</span>
+            </h3>
+            <p className="text-[11px] text-[#737685] mt-1 ml-6">
+              Earned when customers apply your Referral Code during membership purchase.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+            {plans.map((plan) => {
+              let rate = 0;
+              if (currentUser.role === 'Field Agent') rate = plan.fieldAgentCommissionPct || 12;
+              else if (currentUser.role === 'Agent') rate = plan.agentCommissionPct || 4;
+              else if (currentUser.role === 'Super Agent') rate = plan.superAgentCommissionPct || 3;
+              
+              return (
+                <div key={plan.planId} className="bg-[#f3f3fd] rounded-xl p-4 flex flex-col items-center justify-center text-center border border-[#003d9b]/10">
+                  <p className="text-[#516161] font-semibold text-xs uppercase tracking-wider mb-1">{plan.name}</p>
+                  <p className="text-2xl font-extrabold text-[#0c56d0]">{rate}%</p>
+                  <p className="text-[10px] text-[#737685] mt-1">Per {plan.name} Card Sold</p>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {/* Account Details */}
       <section className="bg-white border border-[#c3c6d6]/30 rounded-2xl p-6 shadow-sm space-y-4">

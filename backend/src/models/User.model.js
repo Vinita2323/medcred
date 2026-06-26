@@ -63,6 +63,14 @@ const userSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    aadhaarFrontUrl: {
+      type: String,
+      default: null,
+    },
+    aadhaarBackUrl: {
+      type: String,
+      default: null,
+    },
     kycStatus: {
       type: String,
       enum: ['pending', 'verified', 'rejected', 'not_submitted'],

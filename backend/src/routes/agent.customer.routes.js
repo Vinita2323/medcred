@@ -3,6 +3,7 @@ const router = express.Router();
 import {
   getAgentCustomers,
   onboardCustomer,
+  getReferrals,
 } from '../controllers/agent.customer.controller.js';
 import { protect, restrictTo } from '../middlewares/auth.middleware.js';
 import { upload } from '../middlewares/upload.middleware.js';
@@ -13,6 +14,9 @@ router.use(restrictTo('agent'));
 
 // GET /api/v1/agent/customers
 router.get('/', getAgentCustomers);
+
+// GET /api/v1/agent/customers/referrals
+router.get('/referrals', getReferrals);
 
 // POST /api/v1/agent/customers/onboard
 router.post(

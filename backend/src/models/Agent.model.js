@@ -27,6 +27,9 @@ const agentSchema = new mongoose.Schema(
       lowercase: true,
       trim: true,
     },
+    district: { type: String, trim: true },
+    city: { type: String, trim: true },
+    area: { type: String, trim: true },
     password: {
       type: String,
       required: [true, 'Password is required'],

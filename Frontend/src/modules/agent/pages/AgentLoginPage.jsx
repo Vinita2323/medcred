@@ -89,8 +89,8 @@ export default function AgentLoginPage() {
         <div className="w-full max-w-md">
           {/* Logo Section */}
           <div className="flex flex-col items-center mb-8">
-            <div className="w-16 h-16 bg-[#0052cc] rounded-xl flex items-center justify-center shadow-lg mb-4 cursor-pointer" onClick={() => navigate('/agent')}>
-              <span className="material-symbols-outlined text-white text-[40px]" style={{ fontVariationSettings: "'FILL' 1" }}>medical_services</span>
+            <div className="w-16 h-16 rounded-xl flex items-center justify-center mb-4 cursor-pointer bg-white border border-[#c3c6d6]/30 shadow-md p-1" onClick={() => navigate('/agent')}>
+              <img src="/Logo (5).png" alt="MedCred India" className="w-full h-full object-contain drop-shadow-sm" />
             </div>
             <h1 className="text-2xl md:text-3xl font-bold text-[#003d9b] tracking-tight">MedCred India</h1>
             <p className="text-xs font-semibold text-[#516161] uppercase tracking-widest mt-1">Agent Portal</p>

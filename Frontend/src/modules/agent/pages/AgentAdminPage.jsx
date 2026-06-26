@@ -146,7 +146,7 @@ export default function AgentAdminPage() {
     }
   };
 
-  // Get list of potential managers (Super Agents for Team Leaders, Team Leaders for Field Agents)
+  // Get list of potential managers (Super Agents for Agents, Agents for Field Agents)
   const getPotentialManagers = (role) => {
     if (role === 'Agent') {
       return agents.filter(a => a.role === 'Super Agent' && a.status === 'Approved');

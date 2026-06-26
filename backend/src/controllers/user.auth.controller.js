@@ -12,7 +12,7 @@ const register = async (req, res) => {
     const { name, mobile, email, dob, gender, aadhaar, address, consent, password } = req.body;
 
     // Validate required fields
-    if (!name || !mobile || !email || !dob || !gender || !aadhaar || !address || !password) {
+    if (!name || !mobile || !email || !dob || !gender || !address || !password) {
       return res.status(400).json({ success: false, message: 'All fields are required' });
     }
 
@@ -36,10 +36,21 @@ const register = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Email already registered' });
     }
 
-    // Handle profile photo if uploaded
+    // Handle file uploads
     let profilePhotoPath = null;
-    if (req.file) {
-      profilePhotoPath = `/uploads/${req.file.filename}`;
+    let aadhaarFrontUrl = null;
+    let aadhaarBackUrl = null;
+    
+    if (req.files) {
+      if (req.files.profilePic && req.files.profilePic[0]) {
+        profilePhotoPath = `/uploads/${req.files.profilePic[0].filename}`;
+      }
+      if (req.files.aadhaarFront && req.files.aadhaarFront[0]) {
+        aadhaarFrontUrl = `/uploads/${req.files.aadhaarFront[0].filename}`;
+      }
+      if (req.files.aadhaarBack && req.files.aadhaarBack[0]) {
+        aadhaarBackUrl = `/uploads/${req.files.aadhaarBack[0].filename}`;
+      }
     }
 
     // Save user (unverified)
@@ -51,7 +62,9 @@ const register = async (req, res) => {
       profilePhoto: profilePhotoPath,
       dob,
       gender,
-      aadhaarNumber: aadhaar.replace(/\s/g, ''),
+      aadhaarNumber: aadhaar ? aadhaar.replace(/\s/g, '') : undefined,
+      aadhaarFrontUrl,
+      aadhaarBackUrl,
       address,
       consentGiven: consent,
       consentGivenAt: new Date(),
