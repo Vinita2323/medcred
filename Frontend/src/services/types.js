@@ -14,8 +14,8 @@ export const STORAGE_KEYS = {
   USER_DATA: 'medcred_user_data',
 };
 
-export const SERVER_URL = 'http://localhost:5000';
-export const API_BASE_URL = 'http://localhost:5000/api/v1';
+export const SERVER_URL = "https://medcred.onrender.com"
+export const API_BASE_URL = "https://medcred.onrender.com/api/v1"
 
 // API Endpoints Mapping
 export const ENDPOINTS = {

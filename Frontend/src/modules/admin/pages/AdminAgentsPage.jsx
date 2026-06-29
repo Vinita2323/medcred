@@ -26,6 +26,10 @@ export default function AdminAgentsPage() {
   const [assignedManager, setManager] = useState('');
   const [customCode, setCustomCode] = useState('');
   
+  const [promotingAgent, setPromoting] = useState(null);
+  const [promoteRole, setPromoteRole] = useState('Agent');
+  const [promoteManager, setPromoteManager] = useState('');
+
   const [detailsAgent, setDetailsAgent] = useState(null);
 
   // Search & Filters
@@ -237,16 +241,47 @@ export default function AdminAgentsPage() {
   };
 
   const handleReject = async (agent) => {
-    if (!window.confirm(`Reject ${agent.fullName}'s registration?`)) return;
+    if (!window.confirm(`Are you sure you want to reject ${agent.fullName}?`)) return;
     try {
       setActionLoad(true);
       const res = await api.patch(ENDPOINTS.ADMIN_AGENT_STATUS(agent._id), { status: 'Rejected' });
-      if (res.data.success) {
+      if (res.data?.success) {
         setSuccessMsg(res.data.message);
-        await fetchAgents();
+        fetchAgents();
       }
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to reject agent.');
+    } finally {
+      setActionLoad(false);
+    }
+  };
+
+  const handlePromote = async (e) => {
+    e.preventDefault();
+    if (!promotingAgent) return;
+    try {
+      setActionLoad(true);
+      setError('');
+      
+      const payload = { newRole: promoteRole };
+      if (promoteManager) {
+        // active array doesn't exist here, use agents
+        const mgr = agents.find(a => a._id === promoteManager);
+        if (mgr) {
+          payload.reportingManagerId = mgr._id;
+          payload.reportingManagerName = mgr.fullName;
+        }
+      }
+
+      const res = await api.patch(`/admin/agents/${promotingAgent._id}/promote`, payload);
+      if (res.data?.success) {
+        setSuccessMsg(res.data.message || 'Agent promoted successfully!');
+        setPromoting(null);
+        setDetailsAgent(null);
+        fetchAgents();
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to promote agent');
     } finally {
       setActionLoad(false);
     }
@@ -746,6 +781,20 @@ export default function AdminAgentsPage() {
                   </button>
                 </div>
               )}
+              {detailsAgent.status === 'Approved' && detailsAgent.role !== 'Super Agent' && (
+                <div className="col-span-2 flex justify-end pt-4 border-t border-[#c3c6d6]/20 mt-4">
+                  <button
+                    onClick={() => {
+                      setPromoteRole(detailsAgent.role === 'Field Agent' ? 'Agent' : 'Super Agent');
+                      setPromoting(detailsAgent);
+                    }}
+                    className="bg-purple-100 text-purple-700 hover:bg-purple-200 px-4 py-2.5 rounded-xl text-xs font-bold transition-colors flex items-center gap-2 cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-sm font-bold">military_tech</span>
+                    Promote Agent
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>,
@@ -786,6 +835,65 @@ export default function AdminAgentsPage() {
               <button type="button" onClick={() => setEditingPlan(null)} className="text-[#003d9b] font-bold text-xs hover:bg-[#f3f3fd] px-4 py-2.5 rounded-xl cursor-pointer">Cancel</button>
               <button type="button" onClick={saveCommissionConfig} className="bg-[#003d9b] text-white font-bold text-xs hover:bg-[#0052cc] px-6 py-2.5 rounded-xl cursor-pointer shadow-md">Save Rates</button>
             </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Promote Agent Modal */}
+      {promotingAgent && createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in" onClick={() => setPromoting(null)}>
+          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 space-y-6 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <h3 className="font-extrabold text-[#191b23] text-lg border-b border-[#c3c6d6]/20 pb-3 flex items-center gap-2">
+              <span className="material-symbols-outlined text-[#003d9b]">military_tech</span>
+              Promote {promotingAgent.fullName}
+            </h3>
+            
+            <form onSubmit={handlePromote} className="space-y-4">
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-[#516161]">Current Role</label>
+                <div className="bg-[#f5f8ff] px-4 py-3 rounded-xl border border-[#c3c6d6]/40 text-sm font-bold text-[#191b23]">
+                  {promotingAgent.role}
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-[#516161]">New Role</label>
+                <select 
+                  value={promoteRole} 
+                  onChange={e => setPromoteRole(e.target.value)} 
+                  className="w-full bg-[#f3f3fd] border border-[#c3c6d6]/40 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#003d9b] font-bold"
+                  required
+                >
+                  {promotingAgent.role === 'Field Agent' && <option value="Agent">Agent</option>}
+                  <option value="Super Agent">Super Agent</option>
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-[#516161]">Assign Reporting Manager (Optional)</label>
+                <select 
+                  value={promoteManager} 
+                  onChange={e => setPromoteManager(e.target.value)} 
+                  className="w-full bg-[#f3f3fd] border border-[#c3c6d6]/40 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#003d9b] font-bold"
+                >
+                  <option value="">No Reporting Manager</option>
+                  {active.filter(a => promoteRole === 'Agent' ? a.role === 'Super Agent' : false).map(mgr => (
+                    <option key={mgr._id} value={mgr._id}>{mgr.fullName} ({mgr.role})</option>
+                  ))}
+                </select>
+                <p className="text-[10px] text-[#737685] mt-1 italic">
+                  {promoteRole === 'Super Agent' ? 'Super Agents do not have reporting managers.' : 'Select a Super Agent to manage this newly promoted Agent.'}
+                </p>
+              </div>
+
+              <div className="flex gap-3 justify-end pt-3">
+                <button type="button" onClick={() => setPromoting(null)} className="text-[#516161] font-bold text-xs hover:bg-[#f3f3fd] px-4 py-2.5 rounded-xl cursor-pointer">Cancel</button>
+                <button type="submit" disabled={actionLoading} className="bg-[#003d9b] text-white font-bold text-xs hover:bg-[#0052cc] px-6 py-2.5 rounded-xl cursor-pointer shadow-md disabled:opacity-50">
+                  {actionLoading ? 'Promoting...' : 'Confirm Promotion'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>,
         document.body

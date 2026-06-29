@@ -24,7 +24,7 @@ export default function AgentCustomersPage() {
           id: user.userId || 'Pending ID',
           relation: 'Self', // Backend currently doesn't store relation for primary
           age: user.mobile, // Fallback since age requires calculation
-          status: user.kycStatus === 'Approved' ? 'Approved' : 'Pending',
+          status: user.kycStatus === 'verified' ? 'Approved' : 'Pending',
           limit: user.planId ? 'Allocated' : '—',
           commission: user.planId ? 'Earned' : 'Pending',
           photo: user.profilePhoto 

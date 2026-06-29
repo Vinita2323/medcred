@@ -53,7 +53,7 @@ export default function AgentDashboardPage() {
             { label: 'Manage Team', icon: 'group', route: '/agent/team' },
             { label: 'Network Performance', icon: 'insights', route: '/agent/team' },
             { label: 'Wallet Payouts', icon: 'account_balance', route: '/agent/wallet' },
-            { label: 'Support Desk', icon: 'support_agent', route: '/agent/profile' },
+            { label: 'My Profile', icon: 'account_circle', route: '/agent/profile' },
           ]);
         } else if (agent.role === 'Agent') {
           const fas = agent.subordinateStats?.fieldAgents || 0;
@@ -69,7 +69,7 @@ export default function AgentDashboardPage() {
             { label: 'My Agents', icon: 'group', route: '/agent/team' },
             { label: 'Commission Wallet', icon: 'account_balance_wallet', route: '/agent/wallet' },
             { label: 'Apply Loan', icon: 'payments', route: '/agent/apply-loan' },
-            { label: 'Support Desk', icon: 'support_agent', route: '/agent/profile' },
+            { label: 'My Profile', icon: 'account_circle', route: '/agent/profile' },
           ]);
         } else {
           // Field Agent
@@ -100,12 +100,6 @@ export default function AgentDashboardPage() {
       </div>
     );
   }
-
-  const mockActivities = [
-    { title: 'New Customer Onboarded', desc: 'Amit Patel registered Priya Mehta successfully.', time: '10 mins ago', icon: 'person_add', bg: 'bg-[#dae2ff]', text: 'text-[#003d9b]' },
-    { title: 'Commission Credited', desc: '₹4,500 override credited for Sanjay Dutt\'s sale.', time: '2 hours ago', icon: 'payments', bg: 'bg-green-100', text: 'text-green-700' },
-    { title: 'Rank Promoted', desc: 'Amit Patel promoted to Silver Agent tier.', time: '1 day ago', icon: 'stars', bg: 'bg-yellow-100', text: 'text-yellow-700' },
-  ];
 
   return (
     <div className="space-y-6 md:space-y-8 animate-fade-in">
@@ -197,22 +191,16 @@ export default function AgentDashboardPage() {
 
           {currentUser.role === 'Field Agent' && (
             <>
-              <h3 className="text-base md:text-lg font-bold text-[#191b23]">Recent Team Activities</h3>
-              <div className="bg-white border border-[#c3c6d6]/30 rounded-xl p-4 shadow-sm divide-y divide-[#c3c6d6]/10 space-y-4">
-                {mockActivities.map((act, idx) => (
-                  <div key={idx} className="flex gap-4 pt-4 first:pt-0">
-                    <div className={`w-10 h-10 ${act.bg} ${act.text} rounded-full flex items-center justify-center flex-shrink-0`}>
-                      <span className="material-symbols-outlined text-[18px]">{act.icon}</span>
-                    </div>
-                    <div className="space-y-0.5">
-                      <div className="flex items-center justify-between w-full">
-                        <h4 className="font-bold text-xs text-[#191b23]">{act.title}</h4>
-                        <span className="text-[10px] text-[#737685] font-semibold">{act.time}</span>
-                      </div>
-                      <p className="text-[11px] text-[#516161] leading-relaxed">{act.desc}</p>
-                    </div>
-                  </div>
-                ))}
+              <div className="flex justify-between items-center">
+                <h3 className="text-base md:text-lg font-bold text-[#191b23]">Customer Onboarding</h3>
+                <button onClick={() => navigate('/agent/customers')} className="text-xs font-bold text-[#0052cc] hover:underline cursor-pointer">View Customers</button>
+              </div>
+              <div className="bg-white border border-[#c3c6d6]/30 p-6 rounded-xl text-center text-sm text-[#516161]">
+                <span className="material-symbols-outlined text-[#003d9b] text-3xl mb-1">person_add</span>
+                <p>Register new customers to start earning commissions!</p>
+                <button onClick={() => navigate('/agent/register-customer')} className="mt-4 bg-[#003d9b] text-white px-6 py-2 rounded-lg text-xs font-bold hover:bg-[#0052cc] transition-colors cursor-pointer">
+                  Register Customer
+                </button>
               </div>
             </>
           )}

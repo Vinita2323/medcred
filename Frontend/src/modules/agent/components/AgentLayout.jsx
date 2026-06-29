@@ -14,6 +14,13 @@ export default function AgentLayout() {
     const userJson = localStorage.getItem(STORAGE_KEYS.USER_DATA);
     if (userJson) {
       setCurrentUser(JSON.parse(userJson));
+      // Silently fetch latest profile data from DB so promotions/rank upgrades reflect immediately on refresh
+      api.get(ENDPOINTS.AGENT_PROFILE).then(res => {
+        if (res.data?.success) {
+          localStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(res.data.data));
+          setCurrentUser(res.data.data);
+        }
+      }).catch(err => console.error('Failed to refresh agent profile:', err));
     } else {
       setCurrentUser({ fullName: 'Mock Super Agent', role: 'Super Agent', rank: 'Platinum' });
     }
@@ -36,9 +43,12 @@ export default function AgentLayout() {
       { label: 'Register Customer', icon: 'person_add', route: '/agent/register-customer' },
       { label: 'Apply Loan', icon: 'payments', route: '/agent/apply-loan' },
       { label: 'Customer Directory', icon: 'group', route: '/agent/customers' },
-      { label: 'Team Management', icon: 'partner_exchange', route: '/agent/team' },
       { label: 'Refer & Earn', icon: 'share', route: '/agent/referrals' }
     ];
+
+    if (currentUser.role !== 'Field Agent') {
+      baseItems.splice(4, 0, { label: 'Team Management', icon: 'partner_exchange', route: '/agent/team' });
+    }
 
     baseItems.push(
       { label: 'Agent Wallet', icon: 'account_balance_wallet', route: '/agent/wallet' },

@@ -40,17 +40,17 @@ export default function AgentTeamPage() {
     try {
       setIsLoading(true);
       const res = await api.get(ENDPOINTS.AGENT_TEAM);
-      if (res.data?.success && (res.data.data.agents?.length > 0 || res.data.data.fieldAgents?.length > 0)) {
+      if (res.data?.success) {
         setAgents(res.data.data.agents || []);
         setFieldAgents(res.data.data.fieldAgents || []);
       } else {
-        setAgents(mockAgents);
-        setFieldAgents(mockFieldAgents);
+        setAgents([]);
+        setFieldAgents([]);
       }
     } catch (error) {
       console.error('Error fetching team data:', error);
-      setAgents(mockAgents);
-      setFieldAgents(mockFieldAgents);
+      setAgents([]);
+      setFieldAgents([]);
     } finally {
       setIsLoading(false);
     }

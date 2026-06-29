@@ -81,13 +81,25 @@ export default function OrdersPage() {
                 </div>
               </div>
 
-              {order.orderType === 'medical_equipment' && order.estimatedDelivery && (
-                <div className="bg-surface-container-low rounded-xl p-3 flex items-center gap-3 mt-2">
-                  <span className="material-symbols-outlined text-primary text-xl">local_shipping</span>
-                  <div>
-                    <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Delivery Estimate</p>
-                    <p className="font-bold text-xs">{new Date(order.estimatedDelivery).toLocaleDateString()}</p>
+              {order.orderType === 'medical_equipment' && (
+                <div className="bg-surface-container-low rounded-xl p-3 flex items-center justify-between gap-3 mt-2">
+                  <div className="flex items-center gap-3">
+                    <span className="material-symbols-outlined text-primary text-xl">
+                      {order.deliveryStatus === 'delivered' ? 'done_all' : order.deliveryStatus === 'shipped' ? 'local_shipping' : 'pending_actions'}
+                    </span>
+                    <div>
+                      <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Delivery Status</p>
+                      <p className={`font-bold text-xs capitalize ${order.deliveryStatus === 'delivered' ? 'text-green-600' : order.deliveryStatus === 'shipped' ? 'text-primary' : 'text-on-surface'}`}>
+                        {order.deliveryStatus || 'Pending'}
+                      </p>
+                    </div>
                   </div>
+                  {order.estimatedDelivery && (
+                    <div className="text-right border-l border-outline-variant/30 pl-3">
+                      <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Expected</p>
+                      <p className="font-bold text-xs text-on-surface">{new Date(order.estimatedDelivery).toLocaleDateString()}</p>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -132,7 +144,11 @@ export default function OrdersPage() {
             <div className="relative pl-6 space-y-6 pb-4">
               {/* Timeline Line */}
               <div className="absolute top-2 bottom-6 left-[13px] w-0.5 bg-outline-variant/50"></div>
-              <div className="absolute top-2 h-[45%] left-[13px] w-0.5 bg-primary"></div>
+              <div className={`absolute top-2 left-[13px] w-0.5 bg-primary ${
+                trackingOrder.deliveryStatus === 'delivered' ? 'h-full' : 
+                trackingOrder.deliveryStatus === 'shipped' ? 'h-[70%]' : 
+                'h-[20%]'
+              } transition-all duration-500 ease-in-out`}></div>
 
               {/* Step 1 */}
               <div className="relative z-10 flex gap-4 items-start">
@@ -147,32 +163,45 @@ export default function OrdersPage() {
               </div>
 
               {/* Step 2 */}
-              <div className="relative z-10 flex gap-4 items-start">
-                <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center shrink-0 border-2 border-white -ml-[23px] mt-0.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-white animate-pulse"></span>
+              <div className={`relative z-10 flex gap-4 items-start ${['shipped', 'delivered'].includes(trackingOrder.deliveryStatus) ? '' : trackingOrder.deliveryStatus === 'pending' ? '' : 'opacity-50'}`}>
+                <div className={`w-6 h-6 rounded-full ${['shipped', 'delivered', 'pending'].includes(trackingOrder.deliveryStatus) ? 'bg-primary' : 'bg-surface-container-highest'} flex items-center justify-center shrink-0 border-2 border-white -ml-[23px] mt-0.5`}>
+                  {['shipped', 'delivered'].includes(trackingOrder.deliveryStatus) ? (
+                    <span className="material-symbols-outlined text-white text-[12px] font-bold">check</span>
+                  ) : trackingOrder.deliveryStatus === 'pending' ? (
+                    <span className="w-2.5 h-2.5 rounded-full bg-white animate-pulse"></span>
+                  ) : null}
                 </div>
                 <div>
-                  <p className="font-bold text-sm text-primary">Processing</p>
+                  <p className={`font-bold text-sm ${trackingOrder.deliveryStatus === 'pending' ? 'text-primary' : 'text-on-surface'}`}>Processing</p>
                   <p className="text-xs text-on-surface-variant">Your item is being packed and prepared for dispatch.</p>
                 </div>
               </div>
 
               {/* Step 3 */}
-              <div className="relative z-10 flex gap-4 items-start opacity-50">
-                <div className="w-6 h-6 rounded-full bg-surface-container-highest border-2 border-white flex items-center justify-center shrink-0 -ml-[23px] mt-0.5">
+              <div className={`relative z-10 flex gap-4 items-start ${['shipped', 'delivered'].includes(trackingOrder.deliveryStatus) ? '' : 'opacity-50'}`}>
+                <div className={`w-6 h-6 rounded-full ${['shipped', 'delivered'].includes(trackingOrder.deliveryStatus) ? 'bg-primary' : 'bg-surface-container-highest'} flex items-center justify-center shrink-0 border-2 border-white -ml-[23px] mt-0.5`}>
+                  {trackingOrder.deliveryStatus === 'delivered' ? (
+                     <span className="material-symbols-outlined text-white text-[12px] font-bold">check</span>
+                  ) : trackingOrder.deliveryStatus === 'shipped' ? (
+                     <span className="w-2.5 h-2.5 rounded-full bg-white animate-pulse"></span>
+                  ) : null}
                 </div>
                 <div>
-                  <p className="font-bold text-sm text-on-surface">Shipped</p>
+                  <p className={`font-bold text-sm ${trackingOrder.deliveryStatus === 'shipped' ? 'text-primary' : 'text-on-surface'}`}>Shipped</p>
                   <p className="text-xs text-on-surface-variant">Item has been handed over to the courier partner.</p>
+                  {trackingOrder.trackingId && <p className="text-[10px] bg-surface-container-high px-2 py-1 mt-1 rounded inline-block text-on-surface font-mono">AWB: {trackingOrder.trackingId}</p>}
                 </div>
               </div>
 
               {/* Step 4 */}
-              <div className="relative z-10 flex gap-4 items-start opacity-50">
-                <div className="w-6 h-6 rounded-full bg-surface-container-highest border-2 border-white flex items-center justify-center shrink-0 -ml-[23px] mt-0.5">
+              <div className={`relative z-10 flex gap-4 items-start ${trackingOrder.deliveryStatus === 'delivered' ? '' : 'opacity-50'}`}>
+                <div className={`w-6 h-6 rounded-full ${trackingOrder.deliveryStatus === 'delivered' ? 'bg-primary' : 'bg-surface-container-highest'} border-2 border-white flex items-center justify-center shrink-0 -ml-[23px] mt-0.5`}>
+                  {trackingOrder.deliveryStatus === 'delivered' && (
+                     <span className="material-symbols-outlined text-white text-[12px] font-bold">check</span>
+                  )}
                 </div>
                 <div>
-                  <p className="font-bold text-sm text-on-surface">Delivered</p>
+                  <p className={`font-bold text-sm ${trackingOrder.deliveryStatus === 'delivered' ? 'text-primary' : 'text-on-surface'}`}>Delivered</p>
                   <p className="text-xs text-on-surface-variant">Expected by {new Date(trackingOrder.estimatedDelivery).toLocaleDateString()}</p>
                 </div>
               </div>
