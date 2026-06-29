@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import BottomNavBar from '../components/Navigation/BottomNavBar';
-import { getMembership, hasMembership, getMembershipDaysRemaining, getDaysActive, isLoanEligible, getDaysUntilLoanEligible, DEFAULT_PLANS as PLANS, getUser } from '../utils/storage';
+import { getMembership, hasMembership, getMembershipDaysRemaining, getDaysActive, isLoanEligible, getDaysUntilLoanEligible, DEFAULT_PLANS as PLANS, getUser, isLoggedIn } from '../utils/storage';
 import api from '../../../services/api';
 import { ENDPOINTS } from '../../../services/types';
 import imgBP from '../../../assets/Machine/Bloodpressure.webp';
@@ -30,8 +30,10 @@ export default function DashboardPage() {
   const active = user && user.cardId;
 
   useEffect(() => {
+    const loggedIn = isLoggedIn();
+
     // If user has a card ID, fetch it from backend
-    if (user && user.cardId) {
+    if (loggedIn && user && user.cardId) {
       const fetchCard = async () => {
         try {
           const res = await api.get(ENDPOINTS.MY_CARD);
@@ -45,17 +47,19 @@ export default function DashboardPage() {
       fetchCard();
     }
 
-    const fetchStats = async () => {
-      try {
-        const res = await api.get(ENDPOINTS.USER_DASHBOARD_STATS);
-        if (res.data.success) {
-          setStats(res.data.data);
+    if (loggedIn) {
+      const fetchStats = async () => {
+        try {
+          const res = await api.get(ENDPOINTS.USER_DASHBOARD_STATS);
+          if (res.data.success) {
+            setStats(res.data.data);
+          }
+        } catch (err) {
+          console.error('Failed to fetch dashboard stats:', err);
         }
-      } catch (err) {
-        console.error('Failed to fetch dashboard stats:', err);
-      }
-    };
-    fetchStats();
+      };
+      fetchStats();
+    }
 
     const fetchProducts = async () => {
       try {
@@ -110,7 +114,11 @@ export default function DashboardPage() {
       </header>
 
       {/* Main Dashboard Scroll Area */}
-      <main className="flex-grow overflow-y-auto p-4 space-y-5 animate-fade-in">
+      <main className="flex-grow overflow-y-auto p-4 md:p-6 lg:p-8 animate-fade-in">
+        <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-5 lg:gap-8">
+          
+          {/* Left Column / Sidebar */}
+          <div className="w-full lg:w-[340px] xl:w-[400px] flex-shrink-0 space-y-5">
 
         {/* ── Membership Status Banner ─────────────────────── */}
         {!active && (
@@ -231,6 +239,10 @@ export default function DashboardPage() {
             </div>
           </div>
         </section>
+        </div>
+
+        {/* Right Column / Main Content */}
+        <div className="w-full flex-1 space-y-5 lg:space-y-8 mt-5 lg:mt-0">
 
         {/* Medical Equipment Grid */}
         <section className="space-y-3 mt-4">
@@ -245,7 +257,7 @@ export default function DashboardPage() {
               View All
             </button>
           </div>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
             {products.slice(0, 6).map((item) => (
               <button 
                 key={item.productId}
@@ -261,7 +273,7 @@ export default function DashboardPage() {
         </section>
 
         {/* Summary Bento Grid */}
-        <section className="grid grid-cols-2 gap-2.5">
+        <section className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-2.5 md:gap-4">
           <div 
             onClick={() => navigate('/claims')}
             className="bg-surface-container-low p-2.5 rounded-xl border border-outline-variant hover:shadow-md transition-all cursor-pointer flex items-center gap-2.5"
@@ -370,6 +382,8 @@ export default function DashboardPage() {
             ))}
           </div>
         </section>
+          </div>
+        </div>
       </main>
 
       {/* Benefits Modal */}

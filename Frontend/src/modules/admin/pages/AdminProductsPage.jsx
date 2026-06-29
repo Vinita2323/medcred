@@ -16,6 +16,7 @@ export default function AdminProductsPage() {
     stockCount: '',
     brand: '',
     imageUrl: '',
+    image: null,
     isAvailable: true,
   });
 
@@ -45,6 +46,15 @@ export default function AdminProductsPage() {
     }));
   };
 
+  const handleFileChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      setFormData(prev => ({
+        ...prev,
+        image: e.target.files[0]
+      }));
+    }
+  };
+
   const openModal = (product = null) => {
     if (product) {
       setEditingProduct(product);
@@ -56,6 +66,7 @@ export default function AdminProductsPage() {
         stockCount: product.stockCount || 0,
         brand: product.brand || '',
         imageUrl: product.imageUrl || '',
+        image: null,
         isAvailable: product.isAvailable,
       });
     } else {
@@ -68,6 +79,7 @@ export default function AdminProductsPage() {
         stockCount: '',
         brand: '',
         imageUrl: '',
+        image: null,
         isAvailable: true,
       });
     }
@@ -82,10 +94,23 @@ export default function AdminProductsPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      const payload = new FormData();
+      Object.keys(formData).forEach(key => {
+        if (key === 'image' && formData[key]) {
+          payload.append('image', formData[key]);
+        } else if (key !== 'image' && formData[key] !== null && formData[key] !== undefined) {
+          payload.append(key, formData[key]);
+        }
+      });
+
       if (editingProduct) {
-        await api.put(ENDPOINTS.ADMIN_PRODUCT_UPDATE(editingProduct._id), formData);
+        await api.put(ENDPOINTS.ADMIN_PRODUCT_UPDATE(editingProduct._id), payload, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
       } else {
-        await api.post(ENDPOINTS.ADMIN_PRODUCTS, formData);
+        await api.post(ENDPOINTS.ADMIN_PRODUCTS, payload, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
       }
       fetchProducts();
       closeModal();
@@ -303,15 +328,26 @@ export default function AdminProductsPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-[#516161] uppercase tracking-wider mb-1">Image URL</label>
+                <label className="block text-xs font-bold text-[#516161] uppercase tracking-wider mb-1">Image Upload</label>
                 <input
-                  type="text"
-                  name="imageUrl"
-                  value={formData.imageUrl}
-                  onChange={handleInputChange}
-                  placeholder="https://example.com/image.jpg"
-                  className="w-full px-4 py-2 border border-[#c3c6d6] rounded-xl focus:outline-none focus:border-[#0c56d0] text-sm"
+                  type="file"
+                  name="image"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  className="w-full px-4 py-2 border border-[#c3c6d6] rounded-xl focus:outline-none focus:border-[#0c56d0] text-sm bg-white"
                 />
+                {formData.imageUrl && !formData.image && (
+                  <div className="mt-2 text-xs text-green-600 font-semibold flex items-center gap-1">
+                    <span className="material-symbols-outlined text-[14px]">check_circle</span>
+                    Current image uploaded
+                  </div>
+                )}
+                {formData.image && (
+                  <div className="mt-2 text-xs text-[#0c56d0] font-semibold flex items-center gap-1">
+                    <span className="material-symbols-outlined text-[14px]">photo</span>
+                    New file selected: {formData.image.name}
+                  </div>
+                )}
               </div>
 
               <div className="pt-4 flex justify-end gap-3">

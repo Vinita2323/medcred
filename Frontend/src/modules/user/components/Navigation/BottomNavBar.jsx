@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { isLoggedIn } from '../../utils/storage';
 
 export default function BottomNavBar() {
   const navigate = useNavigate();
@@ -57,7 +58,13 @@ export default function BottomNavBar() {
       </div>
 
       <div 
-        onClick={() => navigate('/profile')} 
+        onClick={() => {
+          if (isLoggedIn()) {
+            navigate('/profile');
+          } else {
+            navigate('/login');
+          }
+        }} 
         className={getTabClass(path === '/profile')}
       >
         <span className="material-symbols-outlined text-lg" style={{ fontVariationSettings: path === '/profile' ? "'FILL' 1" : "'FILL' 0" }}>person</span>

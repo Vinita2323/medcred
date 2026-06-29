@@ -1,41 +1,50 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api from '../../../services/api';
+import { ENDPOINTS } from '../../../services/types';
 export default function PurchaseCardPage() {
   const navigate = useNavigate();
   const [selectedCard, setSelectedCard] = useState(null);
+  const [plans, setPlans] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const cards = [
-    {
-      id: 'single',
-      title: 'Single Health Card',
-      icon: 'person',
-      price: '₹499/yr',
-      benefits: ['Individual Coverage', '10% off Pharmacy', '1 Free Consultation'],
-      colorFrom: 'from-primary',
-      colorTo: 'to-primary-container',
-      textColor: 'text-on-primary',
-    },
-    {
-      id: 'family',
-      title: 'Family Health Card',
-      icon: 'family_restroom',
-      price: '₹1499/yr',
-      benefits: ['Up to 4 Members', '20% off Pharmacy', '4 Free Consultations', 'Priority Support'],
-      colorFrom: 'from-tertiary',
-      colorTo: 'to-tertiary-container',
-      textColor: 'text-on-tertiary',
-    },
-    {
-      id: 'senior',
-      title: 'Senior Citizen Card',
-      icon: 'elderly',
-      price: '₹899/yr',
-      benefits: ['Special Care', 'Free Home Sample Collection', 'Dedicated Manager'],
-      colorFrom: 'from-secondary',
-      colorTo: 'to-secondary-container',
-      textColor: 'text-on-secondary',
+  useEffect(() => {
+    fetchPlans();
+  }, []);
+
+  const fetchPlans = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get(ENDPOINTS.PLANS);
+      if (res.data?.success) {
+        setPlans(res.data.data.filter(p => p.isActive));
+      }
+    } catch (err) {
+      console.error('Failed to fetch plans', err);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const THEMES = [
+    { bgColor: 'bg-[#1a73e8]', textColor: 'text-white' },
+    { bgColor: 'bg-[#002f87]', textColor: 'text-white' },
+    { bgColor: 'bg-[#0b1633]', textColor: 'text-white' },
   ];
+
+  const cards = plans.map((plan, index) => {
+    const theme = THEMES[index % THEMES.length];
+    return {
+      id: plan.planId || plan._id,
+      title: plan.name,
+      price: `₹${plan.price}`,
+      period: `/${plan.validity || 'yr'}`,
+      benefits: plan.features && plan.features.length > 0 ? plan.features : [`Hospital Cashless Claims • Coverage: ₹${plan.coverageAmount || 0}`],
+      bgColor: theme.bgColor,
+      textColor: theme.textColor,
+      isPopular: plan.isPopular !== undefined ? plan.isPopular : (index === 1),
+    };
+  });
 
   const handlePurchase = () => {
     if (!selectedCard) {
@@ -61,55 +70,62 @@ export default function PurchaseCardPage() {
         </div>
       </header>
 
-      <main className="flex-grow overflow-y-auto p-4 space-y-6 max-w-md mx-auto w-full animate-fade-in pb-24">
-        <div className="text-center space-y-2 mt-4 mb-8">
-          <h2 className="text-2xl font-bold text-on-surface">Choose Your Plan</h2>
-          <p className="text-sm text-on-surface-variant">Select a health card that fits your needs.</p>
+      <main className="flex-grow overflow-y-auto p-4 lg:p-8 space-y-6 max-w-md lg:max-w-5xl mx-auto w-full animate-fade-in pb-24">
+        <div className="text-left space-y-1 mt-2 mb-4 lg:mb-6">
+          <h2 className="text-lg lg:text-xl font-bold text-[#0b1633]">Recommended for You</h2>
         </div>
 
-        <div className="space-y-4">
-          {cards.map((card) => (
+        {loading ? (
+          <div className="flex justify-center items-center py-20">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
+            {cards.map((card) => (
             <div 
               key={card.id}
               onClick={() => setSelectedCard(card.id)}
               className={`relative overflow-hidden rounded-2xl cursor-pointer transition-all duration-300 transform active:scale-95 ${
                 selectedCard === card.id 
-                  ? 'ring-4 ring-primary scale-[1.02] shadow-lg' 
-                  : 'shadow-md hover:shadow-lg border border-outline-variant'
-              }`}
+                  ? 'ring-4 ring-offset-2 ring-primary scale-[1.02] shadow-2xl' 
+                  : 'shadow-md hover:shadow-xl'
+              } ${card.bgColor} ${card.textColor}`}
             >
-              <div className={`absolute inset-0 bg-gradient-to-br ${card.colorFrom} ${card.colorTo} opacity-10`}></div>
               
-              <div className="p-5 flex flex-col gap-4 relative z-10 bg-surface-container-lowest">
-                <div className="flex justify-between items-start">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center bg-gradient-to-br ${card.colorFrom} ${card.colorTo}`}>
-                      <span className={`material-symbols-outlined ${card.textColor}`}>{card.icon}</span>
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-bold text-on-surface">{card.title}</h3>
-                      <p className="text-xs font-semibold text-primary">{card.price}</p>
-                    </div>
+              <div className="p-5 flex flex-col justify-between h-full min-h-[180px]">
+                <div>
+                  <div className="flex justify-between items-start">
+                    <h3 className="text-[17px] font-bold">{card.title}</h3>
+                    {card.isPopular && (
+                      <span className="bg-[#22c55e] text-white text-[9px] font-black tracking-wider uppercase px-2 py-0.5 rounded">
+                        POPULAR
+                      </span>
+                    )}
                   </div>
-                  {selectedCard === card.id && (
-                    <span className="material-symbols-outlined text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>
-                      check_circle
-                    </span>
-                  )}
-                </div>
+                  
+                  <div className="mt-2 flex items-baseline gap-1">
+                    <span className="text-4xl font-black tracking-tight">{card.price}</span>
+                    <span className="text-sm font-medium opacity-90">{card.period}</span>
+                  </div>
 
-                <ul className="space-y-2 mt-2">
-                  {card.benefits.map((benefit, index) => (
-                    <li key={index} className="flex items-center gap-2 text-xs text-on-surface-variant">
-                      <span className="material-symbols-outlined text-[14px] text-tertiary">task_alt</span>
-                      {benefit}
-                    </li>
-                  ))}
-                </ul>
+                  <ul className="space-y-1 mt-4">
+                    {card.benefits.map((benefit, index) => (
+                      <li key={index} className="text-xs font-medium opacity-90 leading-relaxed">
+                        {benefit}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                
+                <div className="mt-6 flex items-center font-bold text-[11px] tracking-widest uppercase gap-1">
+                  VIEW PLAN DETAILS
+                  <span className="material-symbols-outlined text-base">arrow_forward</span>
+                </div>
               </div>
             </div>
           ))}
         </div>
+        )}
 
       </main>
 

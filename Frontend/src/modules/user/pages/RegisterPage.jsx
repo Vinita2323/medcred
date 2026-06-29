@@ -166,41 +166,44 @@ export default function RegisterPage() {
   const relationshipOptions = ['Spouse', 'Son', 'Daughter', 'Father', 'Mother', 'Brother', 'Sister', 'Other'];
 
   return (
-    <div className="flex-grow flex flex-col bg-surface text-on-surface font-body-md relative animate-fade-in">
+    <div className="flex-grow flex flex-col bg-surface lg:bg-[#F4F7FD] text-on-surface font-body-md relative animate-fade-in min-h-screen">
+      {/* Decorative desktop backgrounds */}
+      <div className="hidden lg:block absolute inset-0 pointer-events-none opacity-40 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4IiBoZWlnaHQ9IjgiPgo8cmVjdCB3aWR0aD0iOCIgaGVpZ2h0PSI4IiBmaWxsPSIjZmZmIj48L3JlY3Q+CjxjaXJjbGUgY3g9IjMiIGN5PSIzIiByPSIxIiBmaWxsPSIjZDVkOWU0Ij48L2NpcmNsZT4KPC9zdmc+')] [mask-image:radial-gradient(ellipse_at_top_left,black_20%,transparent_70%)]"></div>
+      
       {/* TopAppBar */}
-      <header className="flex justify-between items-center px-4 w-full h-16 sticky top-0 z-40 bg-surface shadow-sm border-b border-outline-variant/30">
-        <div className="flex items-center gap-3">
+      <header className="flex justify-between items-center px-4 lg:px-8 w-full h-16 lg:h-20 sticky top-0 z-40 bg-surface lg:bg-white shadow-sm border-b border-outline-variant/30">
+        <div className="flex items-center gap-3 lg:gap-5">
           <button
             onClick={() => navigate(-1)}
-            className="material-symbols-outlined text-primary hover:opacity-80 transition-opacity cursor-pointer"
+            className="material-symbols-outlined text-primary hover:opacity-80 transition-opacity cursor-pointer lg:bg-gray-50 lg:p-2 lg:rounded-full"
           >
             arrow_back
           </button>
-          <img src="/FinalLogo.png" alt="MedCred Logo" className="h-10 w-auto object-contain" />
+          <img src="/FinalLogo.png" alt="MedCred Logo" className="h-10 lg:h-12 w-auto object-contain" />
         </div>
-        <div className="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center text-primary cursor-pointer">
-          <span className="material-symbols-outlined">help_outline</span>
+        <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-surface-container-high lg:bg-blue-50 flex items-center justify-center text-primary cursor-pointer hover:bg-blue-100 transition-colors">
+          <span className="material-symbols-outlined lg:text-xl">help_outline</span>
         </div>
       </header>
 
-      <main className="flex-grow overflow-y-auto px-4 py-5 pb-8">
-        <form onSubmit={handleSubmit} className="space-y-5 max-w-md mx-auto">
+      <main className="flex-grow overflow-y-auto px-4 py-5 pb-8 lg:py-10 relative z-10 flex justify-center">
+        <form onSubmit={handleSubmit} className="space-y-5 lg:space-y-8 max-w-md lg:max-w-4xl w-full mx-auto lg:bg-white lg:shadow-xl lg:rounded-3xl lg:p-8 lg:border lg:border-blue-100">
 
           {/* ── Section 1: Personal Information ─────────────────── */}
           <div className="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm overflow-hidden">
             {/* Section Header */}
-            <div className="flex items-center gap-3 px-4 py-3 bg-primary/5 border-b border-outline-variant/30">
-              <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center shrink-0">
-                <span className="text-white text-xs font-black">1</span>
+            <div className="flex items-center gap-3 px-4 lg:px-6 py-3 lg:py-4 bg-primary/5 border-b border-outline-variant/30">
+              <div className="w-7 h-7 lg:w-8 lg:h-8 rounded-full bg-primary flex items-center justify-center shrink-0">
+                <span className="text-white text-xs lg:text-sm font-black">1</span>
               </div>
               <div>
-                <h2 className="text-sm font-bold text-on-surface">Personal Information</h2>
-                <p className="text-[10px] text-on-surface-variant">As per your Aadhaar card</p>
+                <h2 className="text-sm lg:text-base font-bold text-on-surface">Personal Information</h2>
+                <p className="text-[10px] lg:text-xs text-on-surface-variant">As per your Aadhaar card</p>
               </div>
-
             </div>
 
-            <div className="p-4 space-y-3.5">
+            <div className="p-4 lg:p-6 space-y-3.5 lg:space-y-5">
+              <div className="lg:grid lg:grid-cols-2 lg:gap-5 space-y-3.5 lg:space-y-0">
               {/* Full Name */}
               <div className="space-y-1">
                 <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider px-0.5">Full Name *</label>
@@ -239,13 +242,14 @@ export default function RegisterPage() {
 
               {/* Password */}
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider px-0.5">Create Password *</label>
+                <label className="text-[10px] lg:text-xs font-bold text-on-surface-variant uppercase tracking-wider px-0.5">Create Password *</label>
                 <input
-                  className="w-full h-11 px-3 bg-surface border border-outline-variant rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                  className="w-full h-11 lg:h-12 px-3 bg-surface border border-outline-variant rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                   placeholder="Minimum 6 characters"
                   type="password" name="password" value={formData.password}
                   onChange={handleInputChange} required minLength={6}
                 />
+              </div>
               </div>
 
               {/* DOB + Gender */}
@@ -323,7 +327,7 @@ export default function RegisterPage() {
 
               {/* Address */}
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider px-0.5">Permanent Address *</label>
+                <label className="text-[10px] lg:text-xs font-bold text-on-surface-variant uppercase tracking-wider px-0.5">Permanent Address *</label>
                 <textarea
                   className="w-full p-3 bg-surface border border-outline-variant rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none"
                   placeholder="Street name, Building, Area, City, PIN"
@@ -335,19 +339,19 @@ export default function RegisterPage() {
           </div>
 
           {/* ── Section 2: Family Members ────────────────────────── */}
-          <div className="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm overflow-hidden">
+          <div className="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm overflow-hidden lg:shadow-md">
             {/* Section Header */}
-            <div className="flex items-center gap-3 px-4 py-3 bg-secondary/5 border-b border-outline-variant/30">
-              <div className="w-7 h-7 rounded-full bg-secondary flex items-center justify-center shrink-0">
-                <span className="text-white text-xs font-black">2</span>
+            <div className="flex items-center gap-3 px-4 lg:px-6 py-3 lg:py-4 bg-secondary/5 border-b border-outline-variant/30">
+              <div className="w-7 h-7 lg:w-8 lg:h-8 rounded-full bg-secondary flex items-center justify-center shrink-0">
+                <span className="text-white text-xs lg:text-sm font-black">2</span>
               </div>
               <div>
-                <h2 className="text-sm font-bold text-on-surface">Family Members</h2>
-                <p className="text-[10px] text-on-surface-variant">Optional — add dependents to your plan</p>
+                <h2 className="text-sm lg:text-base font-bold text-on-surface">Family Members</h2>
+                <p className="text-[10px] lg:text-xs text-on-surface-variant">Optional — add dependents to your plan</p>
               </div>
             </div>
 
-            <div className="p-4 space-y-3">
+            <div className="p-4 lg:p-6 space-y-3 lg:space-y-4">
               {/* Added members list */}
               {familyMembers.length === 0 && !showAddMember && (
                 <div className="text-center py-4">

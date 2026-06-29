@@ -61,6 +61,7 @@ export default function ProfilePage() {
       fetchProfile();
     } else {
       setIsLoading(false);
+      navigate('/login');
     }
   }, []);
 
@@ -273,20 +274,25 @@ export default function ProfilePage() {
   );
 
   return (
-    <div className="flex-grow flex flex-col bg-surface text-on-surface font-body-md relative pb-24">
+    <div className="flex-grow flex flex-col bg-surface lg:bg-[#F4F7FD] text-on-surface font-body-md relative pb-24 lg:pb-0 min-h-screen">
+      {/* Decorative desktop backgrounds */}
+      <div className="hidden lg:block absolute inset-0 pointer-events-none opacity-40 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4IiBoZWlnaHQ9IjgiPgo8cmVjdCB3aWR0aD0iOCIgaGVpZ2h0PSI4IiBmaWxsPSIjZmZmIj48L3JlY3Q+CjxjaXJjbGUgY3g9IjMiIGN5PSIzIiByPSIxIiBmaWxsPSIjZDVkOWU0Ij48L2NpcmNsZT4KPC9zdmc+')] [mask-image:radial-gradient(ellipse_at_top_left,black_20%,transparent_70%)]"></div>
+
       {/* Profile Header */}
-      <header className="flex items-center px-4 w-full h-16 sticky top-0 z-40 bg-surface shadow-sm border-b border-outline-variant/30">
-        <button onClick={() => navigate(-1)} className="material-symbols-outlined text-on-surface hover:bg-surface-variant p-2 rounded-full -ml-2 transition-colors cursor-pointer">
+      <header className="flex items-center px-4 lg:px-8 w-full h-16 lg:h-20 sticky top-0 z-40 bg-surface lg:bg-white shadow-sm border-b border-outline-variant/30">
+        <button onClick={() => navigate(-1)} className="material-symbols-outlined text-on-surface hover:bg-surface-variant p-2 rounded-full lg:bg-gray-50 -ml-2 lg:ml-0 transition-colors cursor-pointer">
           arrow_back
         </button>
-        <h1 className="flex-1 text-center text-lg font-bold text-on-surface">My Profile</h1>
+        <h1 className="flex-1 text-center text-lg lg:text-xl font-bold text-on-surface mr-8 lg:mr-10">My Profile</h1>
       </header>
 
       {/* Main Content */}
-      <main className="flex-grow overflow-y-auto p-4 space-y-5 max-w-md mx-auto w-full animate-fade-in">
+      <main className="flex-grow overflow-y-auto p-4 lg:p-8 space-y-5 lg:space-y-0 max-w-md lg:max-w-6xl mx-auto w-full animate-fade-in relative z-10 lg:grid lg:grid-cols-12 lg:gap-8 lg:items-start">
 
+        {/* Left Column (Desktop) / Top (Mobile) */}
+        <div className="lg:col-span-4 lg:sticky lg:top-28 space-y-5">
         {/* Hero Profile Section */}
-        <section className="flex flex-col items-center text-center mt-2">
+        <section className="flex flex-col items-center text-center mt-2 lg:mt-0 lg:bg-white lg:p-8 lg:rounded-[32px] lg:shadow-xl lg:border lg:border-blue-100">
           <div className="relative inline-block">
             <div className="w-24 h-24 rounded-full p-1 bg-gradient-to-tr from-primary to-secondary shadow-lg relative cursor-pointer" onClick={() => fileInputRef.current?.click()}>
               {profilePic ? (
@@ -360,8 +366,34 @@ export default function ProfilePage() {
 
         </section>
 
+        {/* Account Actions (Desktop only) */}
+        <div className="hidden lg:block space-y-4 pt-2">
+          <button
+            onClick={() => {
+              clearUser();
+              navigate('/login');
+            }}
+            className="w-full border border-outline text-on-surface-variant text-xs font-bold py-3.5 rounded-xl hover:bg-surface-container-low active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm bg-white"
+          >
+            Logout
+            <span className="material-symbols-outlined text-base">logout</span>
+          </button>
+
+          <button
+            onClick={() => setIsDeleteModalOpen(true)}
+            className="w-full text-xs text-error font-bold py-3.5 rounded-xl border border-error/30 hover:bg-error/5 transition-all cursor-pointer flex items-center justify-center gap-2 bg-white"
+          >
+            <span className="material-symbols-outlined text-base">delete_forever</span>
+            Delete Account
+          </button>
+        </div>
+
+        </div>
+
+        {/* Right Column (Desktop) / Bottom (Mobile) */}
+        <div className="lg:col-span-8 lg:bg-white lg:p-8 lg:rounded-[32px] lg:shadow-xl lg:border lg:border-blue-100 space-y-5">
         {/* Expandable Sections */}
-        <section className="space-y-3">
+        <section className="space-y-3 lg:space-y-4">
 
           {/* Personal Information */}
           <div className="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden shadow-sm">
@@ -672,8 +704,8 @@ export default function ProfilePage() {
 
         </section>
 
-        {/* Account Actions */}
-        <div className="space-y-4 pt-2">
+        {/* Account Actions (Mobile Only) */}
+        <div className="space-y-4 pt-2 lg:hidden">
           <button
             onClick={() => {
               clearUser();
@@ -692,6 +724,7 @@ export default function ProfilePage() {
             <span className="material-symbols-outlined text-base">delete_forever</span>
             Delete Account
           </button>
+        </div>
         </div>
 
       </main>

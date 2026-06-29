@@ -12,8 +12,12 @@ export const getAdminProducts = async (req, res) => {
 
 export const createProduct = async (req, res) => {
   try {
+    const data = { ...req.body };
+    if (req.file) {
+      data.imageUrl = `/uploads/${req.file.filename}`;
+    }
     const product = await Product.create({
-      ...req.body,
+      ...data,
       productId: `PRD-${Date.now()}`
     });
     res.status(201).json({ success: true, data: product });
@@ -25,7 +29,11 @@ export const createProduct = async (req, res) => {
 
 export const updateProduct = async (req, res) => {
   try {
-    const product = await Product.findByIdAndUpdate(req.params.id, req.body, {
+    const data = { ...req.body };
+    if (req.file) {
+      data.imageUrl = `/uploads/${req.file.filename}`;
+    }
+    const product = await Product.findByIdAndUpdate(req.params.id, data, {
       new: true,
       runValidators: true,
     });

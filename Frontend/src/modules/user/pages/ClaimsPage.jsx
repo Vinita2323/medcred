@@ -138,22 +138,26 @@ export default function ClaimsPage() {
   }
 
   return (
-    <div className={`flex-grow flex flex-col bg-surface text-on-surface font-body-md relative ${isModalOpen ? 'h-screen overflow-hidden' : 'pb-24'}`}>
+    <div className={`flex-grow flex flex-col bg-surface lg:bg-[#F4F7FD] text-on-surface font-body-md relative min-h-screen ${isModalOpen ? 'h-screen overflow-hidden' : 'pb-24 lg:pb-0'}`}>
+      {/* Decorative desktop backgrounds */}
+      <div className="hidden lg:block absolute inset-0 pointer-events-none opacity-40 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4IiBoZWlnaHQ9IjgiPgo8cmVjdCB3aWR0aD0iOCIgaGVpZ2h0PSI4IiBmaWxsPSIjZmZmIj48L3JlY3Q+CjxjaXJjbGUgY3g9IjMiIGN5PSIzIiByPSIxIiBmaWxsPSIjZDVkOWU0Ij48L2NpcmNsZT4KPC9zdmc+')] [mask-image:radial-gradient(ellipse_at_top_left,black_20%,transparent_70%)]"></div>
+
       {!isModalOpen && (
-        <header className="flex justify-between items-center pl-2 pr-4 w-full h-20 sticky top-0 z-40 bg-surface shadow-sm border-b border-outline-variant/30">
+        <header className="flex justify-between items-center pl-2 pr-4 lg:px-8 w-full h-20 lg:h-20 sticky top-0 z-40 bg-surface lg:bg-white shadow-sm border-b border-outline-variant/30">
           <div className="flex items-center gap-4">
-            <img alt="MedCred Logo" className="h-16 w-auto object-contain" src="/FinalLogo.png" />
+            <img alt="MedCred Logo" className="h-16 lg:h-14 w-auto object-contain" src="/FinalLogo.png" />
           </div>
           <button
             onClick={() => navigate('/notifications')}
-            className="w-10 h-10 flex items-center justify-center rounded-full hover:opacity-80 cursor-pointer"
+            className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-variant transition-colors cursor-pointer"
           >
             <span className="material-symbols-outlined text-primary">notifications</span>
           </button>
         </header>
       )}
 
-      <main className={`flex-grow p-4 space-y-4 animate-fade-in ${isModalOpen ? 'overflow-hidden' : 'overflow-y-auto'}`}>
+      <main className={`flex-grow p-4 lg:p-8 space-y-4 lg:space-y-0 lg:max-w-6xl lg:mx-auto w-full animate-fade-in relative z-10 ${isModalOpen ? 'overflow-hidden' : 'overflow-y-auto'}`}>
+        <div className="lg:bg-white lg:shadow-xl lg:rounded-[32px] lg:p-8 lg:border lg:border-blue-100">
 
         {/* Membership / Card Gate */}
         {!hasCard && (
@@ -180,20 +184,23 @@ export default function ClaimsPage() {
 
         {hasCard && <>
           {/* Welcome & CTA */}
-          <section className="flex items-center justify-between gap-4 border-b border-slate-100 pb-3">
+          <section className="flex items-center justify-between gap-4 border-b border-outline-variant/30 pb-4 mb-4 lg:mb-6">
             <div>
-              <p className="text-[10px] text-secondary font-bold uppercase tracking-wider">Dashboard Overview</p>
-              <h2 className="text-xl font-bold text-on-surface mt-0.5">Manage Claims</h2>
+              <p className="text-[10px] lg:text-[11px] text-secondary font-bold uppercase tracking-wider">Dashboard Overview</p>
+              <h2 className="text-xl lg:text-2xl font-bold text-on-surface mt-0.5">Manage Claims</h2>
             </div>
             <button
               onClick={handleNewClaim}
-              className="bg-primary text-on-primary text-xs py-2.5 px-4 rounded-xl shadow-md hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-1.5 font-bold cursor-pointer"
+              className="bg-primary text-on-primary text-xs lg:text-sm py-2.5 px-4 lg:px-5 rounded-xl lg:rounded-2xl shadow-md hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-1.5 font-bold cursor-pointer"
             >
-              <span className="material-symbols-outlined text-base">add_circle</span>
+              <span className="material-symbols-outlined text-base lg:text-lg">add_circle</span>
               New Claim
             </button>
           </section>
 
+          <div className="lg:grid lg:grid-cols-12 lg:gap-8 lg:items-start space-y-4 lg:space-y-0">
+            {/* Left Column (Desktop) */}
+            <div className="lg:col-span-5 space-y-4 lg:space-y-6">
           {/* Stats */}
           <section className="grid grid-cols-2 gap-3">
             <div className="bg-surface-container-lowest border border-outline-variant p-3.5 rounded-xl shadow-sm">
@@ -260,6 +267,10 @@ export default function ClaimsPage() {
               </div>
             </aside>
           )}
+          </div>
+
+          {/* Right Column (Desktop) */}
+          <div className="lg:col-span-7 space-y-4 lg:space-y-6">
 
           {/* Claims List */}
           {claims.length === 0 ? (
@@ -303,18 +314,20 @@ export default function ClaimsPage() {
           )}
 
           {/* Support Card */}
-          <section className="bg-primary p-4 rounded-xl text-on-primary space-y-2 relative overflow-hidden shadow-md">
+          <section className="bg-primary p-4 lg:p-6 rounded-xl lg:rounded-2xl text-on-primary space-y-2 lg:space-y-3 relative overflow-hidden shadow-md">
             <div className="relative z-10 space-y-2">
-              <p className="text-sm font-bold">Need help?</p>
-              <p className="text-xs opacity-90 leading-normal">Talk to our medical claim experts for faster processing.</p>
+              <p className="text-sm lg:text-base font-bold">Need help?</p>
+              <p className="text-xs lg:text-sm opacity-90 leading-normal max-w-[80%]">Talk to our medical claim experts for faster processing.</p>
               <button
                 onClick={() => navigate('/support')}
-                className="bg-white text-primary text-xs font-bold px-3.5 py-1.5 rounded-lg cursor-pointer hover:bg-slate-100 transition-colors"
+                className="bg-white text-primary text-xs lg:text-sm font-bold px-4 py-2 rounded-lg lg:rounded-xl cursor-pointer hover:bg-slate-100 transition-colors shadow-sm"
               >
                 Contact Support
               </button>
             </div>
           </section>
+          </div>
+          </div>
 
           {/* New Claim Modal */}
           {isModalOpen && (
@@ -413,6 +426,7 @@ export default function ClaimsPage() {
             </div>
           )}
         </>}
+        </div>
       </main>
 
       {!isModalOpen && <BottomNavBar />}
