@@ -40,7 +40,7 @@ export default function Onboarding1() {
       </div>
 
       {/* Bottom nav */}
-      <div className="px-6 pb-10 space-y-4 mt-auto">
+      <div className="px-6 pb-10 space-y-4 mt-auto w-full md:max-w-md md:mx-auto">
         <button
           onClick={() => {
             console.log('Bypassing login, navigating directly to dashboard');
