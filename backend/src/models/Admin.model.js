@@ -42,6 +42,9 @@ const adminSchema = new mongoose.Schema(
       type: String,
       select: false,
     },
+    
+    // ── Push Notification Token ────────────────────────────────
+    fcmToken: String,
   },
   { timestamps: true }
 );

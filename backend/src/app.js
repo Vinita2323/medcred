@@ -39,7 +39,7 @@ import supportRoutes from './routes/support.routes.js';
 import adminSupportRoutes from './routes/admin.support.routes.js';
 import adminProductRoutes from './routes/admin.product.routes.js';
 import adminOrderRoutes from './routes/admin.order.routes.js';
-
+import notificationRoutes from './routes/notification.routes.js';
 const app = express();
 
 // ── Security Middleware ────────────────────────────────────────
@@ -115,6 +115,7 @@ app.use('/api/v1/admin/orders', adminOrderRoutes);
 app.use('/api/v1/hospitals', hospitalRoutes);
 app.use('/api/v1/support', supportRoutes);
 app.use('/api/v1/admin/support', adminSupportRoutes);
+app.use('/api/v1/notifications', notificationRoutes);
 
 // ── 404 Handler ────────────────────────────────────────────────
 app.use((req, res) => {
