@@ -10,7 +10,7 @@ import { generateAccessToken, generateRefreshToken } from '../utils/generateToke
 // ─────────────────────────────────────────────────────────────────
 const agentLogin = async (req, res) => {
   try {
-    const { mobileNumber, password } = req.body;
+    const { mobileNumber, password, token, platform } = req.body;
 
     if (!mobileNumber || !password) {
       return res.status(400).json({ success: false, message: 'Mobile number and password are required' });
@@ -56,6 +56,9 @@ const agentLogin = async (req, res) => {
     const refreshToken = generateRefreshToken(payload);
 
     agent.refreshToken = refreshToken;
+    if (token) {
+      agent.fcmToken = token;
+    }
     await agent.save({ validateBeforeSave: false });
 
     res.status(200).json({
@@ -91,7 +94,7 @@ const agentLogin = async (req, res) => {
 // ─────────────────────────────────────────────────────────────────
 const agentVerifyOtp = async (req, res) => {
   try {
-    const { mobileNumber, otp } = req.body;
+    const { mobileNumber, otp, token, platform } = req.body;
 
     if (!mobileNumber || !otp) {
       return res.status(400).json({ success: false, message: 'Mobile number and OTP are required' });
@@ -120,6 +123,9 @@ const agentVerifyOtp = async (req, res) => {
     const refreshToken = generateRefreshToken(payload);
 
     agent.refreshToken = refreshToken;
+    if (token) {
+      agent.fcmToken = token;
+    }
     await agent.save({ validateBeforeSave: false });
 
     res.status(200).json({

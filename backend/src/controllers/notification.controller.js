@@ -1,16 +1,18 @@
 export const saveFCMToken = async (req, res) => {
   try {
-    const { fcmToken } = req.body;
+    const { token, platform } = req.body;
 
-    if (!fcmToken) {
+    if (!token) {
       return res.status(400).json({
         success: false,
-        message: 'fcmToken is required',
+        message: 'token is required',
       });
     }
 
     // req.user could be a User, Agent, or Admin depending on the token
-    req.user.fcmToken = fcmToken;
+    req.user.fcmToken = token;
+    // Optionally save platform if we add it to the schema in the future
+    // req.user.platform = platform;
     await req.user.save();
 
     res.status(200).json({

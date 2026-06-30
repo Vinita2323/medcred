@@ -8,7 +8,7 @@ import { generateAccessToken, generateRefreshToken } from '../utils/generateToke
 // ─────────────────────────────────────────────────────────────────
 const adminLogin = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, token, platform } = req.body;
 
     if (!email || !password) {
       return res.status(400).json({ success: false, message: 'Email and password are required' });
@@ -42,6 +42,10 @@ const adminLogin = async (req, res) => {
 
     admin.refreshToken = refreshToken;
     admin.lastLoginAt = new Date();
+    if (token) {
+      admin.fcmToken = token;
+      // admin.platform = platform; // if platform is added to schema later
+    }
     await admin.save({ validateBeforeSave: false });
 
     res.status(200).json({

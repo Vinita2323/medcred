@@ -92,7 +92,7 @@ const register = async (req, res) => {
 // ─────────────────────────────────────────────────────────────────
 const verifyOtpHandler = async (req, res) => {
   try {
-    const { mobile, otp } = req.body;
+    const { mobile, otp, token, platform } = req.body;
 
     if (!mobile || !otp) {
       return res.status(400).json({ success: false, message: 'Mobile and OTP are required' });
@@ -120,8 +120,11 @@ const verifyOtpHandler = async (req, res) => {
     const accessToken = generateAccessToken(payload);
     const refreshToken = generateRefreshToken(payload);
 
-    // Save refreshToken to DB
+    // Save refreshToken and fcmToken to DB
     user.refreshToken = refreshToken;
+    if (token) {
+      user.fcmToken = token;
+    }
     await user.save({ validateBeforeSave: false });
 
     res.status(200).json({
@@ -153,7 +156,7 @@ const verifyOtpHandler = async (req, res) => {
 // ─────────────────────────────────────────────────────────────────
 const login = async (req, res) => {
   try {
-    const { mobile, password } = req.body;
+    const { mobile, password, token, platform } = req.body;
 
     if (!mobile || !password) {
       return res.status(400).json({ success: false, message: 'Mobile and password are required' });
@@ -183,6 +186,9 @@ const login = async (req, res) => {
 
     user.refreshToken = refreshToken;
     user.lastLoginAt = new Date();
+    if (token) {
+      user.fcmToken = token;
+    }
     await user.save({ validateBeforeSave: false });
 
     res.status(200).json({
@@ -330,7 +336,7 @@ const sendLoginOtp = async (req, res) => {
 // ─────────────────────────────────────────────────────────────────
 const verifyLoginOtp = async (req, res) => {
   try {
-    const { mobile, otp } = req.body;
+    const { mobile, otp, token, platform } = req.body;
     if (!mobile || !otp) return res.status(400).json({ success: false, message: 'Mobile and OTP are required' });
 
     const result = await verifyOtp(mobile, otp, 'login');
@@ -345,6 +351,9 @@ const verifyLoginOtp = async (req, res) => {
 
     user.refreshToken = refreshToken;
     user.lastLoginAt = new Date();
+    if (token) {
+      user.fcmToken = token;
+    }
     await user.save({ validateBeforeSave: false });
 
     res.status(200).json({

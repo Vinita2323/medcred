@@ -16,7 +16,7 @@ const usePushNotifications = () => {
             // api.js handles adding the bearer token automatically
             const hasAuthToken = localStorage.getItem('access_token');
             if (hasAuthToken) {
-              await api.put('/api/v1/notifications/fcm-token', { fcmToken: token });
+              await api.post('/api/v1/notifications/fcm-token', { token: token, platform: 'web' });
             }
           } else {
             console.log('No registration token available. Request permission to generate one.');
