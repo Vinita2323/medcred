@@ -59,7 +59,7 @@ export const onboardCustomer = async (req, res) => {
 
     // Get files if uploaded
     const profilePic = req.files?.profilePhoto ? req.files.profilePhoto[0].filename : undefined;
-    
+
     // Create new user
     const user = new User({
       fullName,
@@ -109,7 +109,7 @@ export const onboardCustomer = async (req, res) => {
 export const getReferrals = async (req, res) => {
   try {
     const { referralCode, customReferralCode } = req.user;
-    
+
     const queryCodes = [];
     if (referralCode) queryCodes.push(referralCode);
     if (customReferralCode) queryCodes.push(customReferralCode);

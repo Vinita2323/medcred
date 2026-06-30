@@ -27,8 +27,8 @@ export default function AgentCustomersPage() {
           status: user.kycStatus === 'verified' ? 'Approved' : 'Pending',
           limit: user.planId ? 'Allocated' : '—',
           commission: user.planId ? 'Earned' : 'Pending',
-          photo: user.profilePhoto 
-            ? `${SERVER_URL}/uploads/${user.profilePhoto}` 
+          photo: user.profilePhoto
+            ? `${SERVER_URL}/uploads/${user.profilePhoto}`
             : 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png' // Default user placeholder
         })));
       }
@@ -56,7 +56,7 @@ export default function AgentCustomersPage() {
         <div>
           <h3 className="text-[#516161] text-sm font-semibold">Manage and verify registered patient profiles</h3>
         </div>
-        <button 
+        <button
           onClick={() => navigate('/agent/register-customer')}
           className="bg-[#003d9b] text-white px-4 py-2 rounded-xl font-bold text-sm hover:bg-[#0052cc] transition-colors flex items-center gap-1.5 shadow-sm cursor-pointer"
         >
@@ -67,9 +67,9 @@ export default function AgentCustomersPage() {
       {/* Search Bar */}
       <div className="relative group">
         <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#737685] group-focus-within:text-[#003d9b] transition-colors">search</span>
-        <input 
-          className="w-full pl-12 pr-4 py-3 bg-[#ededf8] border border-[#c3c6d6]/40 rounded-xl focus:ring-2 focus:ring-[#003d9b] focus:border-transparent transition-all outline-none text-sm text-[#191b23]" 
-          placeholder="Search onboarded family members or ID..." 
+        <input
+          className="w-full pl-12 pr-4 py-3 bg-[#ededf8] border border-[#c3c6d6]/40 rounded-xl focus:ring-2 focus:ring-[#003d9b] focus:border-transparent transition-all outline-none text-sm text-[#191b23]"
+          placeholder="Search onboarded family members or ID..."
           type="text"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
@@ -82,11 +82,10 @@ export default function AgentCustomersPage() {
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
-              activeTab === tab 
-                ? 'bg-[#003d9b] text-white' 
+            className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${activeTab === tab
+                ? 'bg-[#003d9b] text-white'
                 : 'bg-white text-[#434654] border border-[#c3c6d6]/30 hover:bg-[#f3f3fd]'
-            }`}
+              }`}
           >
             {tab}
           </button>
@@ -122,11 +121,10 @@ export default function AgentCustomersPage() {
                     {customer.commission}
                   </p>
                 </div>
-                <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                  customer.status === 'Approved' 
-                    ? 'bg-green-100 text-green-800' 
+                <span className={`px-3 py-1 rounded-full text-xs font-bold ${customer.status === 'Approved'
+                    ? 'bg-green-100 text-green-800'
                     : 'bg-orange-100 text-orange-800'
-                }`}>
+                  }`}>
                   {customer.status}
                 </span>
               </div>
