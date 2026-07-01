@@ -17,6 +17,14 @@ export const STORAGE_KEYS = {
 export const SERVER_URL = import.meta.env.VITE_SERVER_URL || "https://medcred.onrender.com";
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || "https://medcred.onrender.com/api/v1";
 
+// Helper to resolve image paths from backend
+export const getImageUrl = (path) => {
+  if (!path) return '';
+  if (path.startsWith('http')) return path;
+  if (path.startsWith('/uploads')) return `${SERVER_URL}${path}`;
+  return path;
+};
+
 // API Endpoints Mapping
 export const ENDPOINTS = {
   // USER AUTH

@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../../services/api';
 import { ENDPOINTS } from '../../../services/types';
+import { compressImage } from '../../../utils/compressImage';
 
 export default function KycPage() {
   const navigate = useNavigate();
@@ -65,31 +66,34 @@ export default function KycPage() {
     setForm(prev => ({ ...prev, [name]: name === 'aadhaar' ? formatAadhaar(value) : value }));
   };
 
-  const handlePhoto = (e) => {
+  const handlePhoto = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setPhotoFile(file); // Store file for FormData
+    const compressed = await compressImage(file);
+    setPhotoFile(compressed);
     const reader = new FileReader();
     reader.onload = (ev) => setPhoto(ev.target.result);
-    reader.readAsDataURL(file);
+    reader.readAsDataURL(compressed);
   };
 
-  const handleAadhaarFront = (e) => {
+  const handleAadhaarFront = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setAadhaarFrontFile(file);
+    const compressed = await compressImage(file);
+    setAadhaarFrontFile(compressed);
     const reader = new FileReader();
     reader.onload = (ev) => setAadhaarFront(ev.target.result);
-    reader.readAsDataURL(file);
+    reader.readAsDataURL(compressed);
   };
 
-  const handleAadhaarBack = (e) => {
+  const handleAadhaarBack = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setAadhaarBackFile(file);
+    const compressed = await compressImage(file);
+    setAadhaarBackFile(compressed);
     const reader = new FileReader();
     reader.onload = (ev) => setAadhaarBack(ev.target.result);
-    reader.readAsDataURL(file);
+    reader.readAsDataURL(compressed);
   };
 
   const handleSubmit = async (e) => {

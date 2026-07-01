@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../../services/api';
-import { ENDPOINTS } from '../../../services/types';
+import { ENDPOINTS, getImageUrl } from '../../../services/types';
 
 export default function OrdersPage() {
   const navigate = useNavigate();
@@ -64,7 +64,7 @@ export default function OrdersPage() {
                 <div className="flex gap-4 items-center">
                   {order.orderType === 'medical_equipment' && order.productId?.imageUrl ? (
                     <div className="w-16 h-16 rounded-xl bg-surface-container-lowest border border-outline-variant/50 p-1 flex items-center justify-center shrink-0">
-                      <img src={order.productId.imageUrl} alt={order.productName} className="w-full h-full object-contain" />
+                      <img src={getImageUrl(order.productId.imageUrl)} alt={order.productName} className="w-full h-full object-contain" />
                     </div>
                   ) : (
                     <div className="w-16 h-16 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">

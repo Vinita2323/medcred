@@ -4,6 +4,7 @@ import BottomNavBar from '../components/Navigation/BottomNavBar';
 import { getUser, updateUser, getFamilyMembers, clearUser, formatDobDisplay, getAgeFromDob, isLoggedIn } from '../utils/storage';
 import api from '../../../services/api';
 import { ENDPOINTS, SERVER_URL } from '../../../services/types';
+import { compressImage } from '../../../utils/compressImage';
 
 const DEFAULT_AVATAR = null;
 
@@ -191,8 +192,9 @@ export default function ProfilePage() {
     if (!file) return;
 
     try {
+      const compressed = await compressImage(file);
       const formData = new FormData();
-      formData.append('profilePhoto', file);
+      formData.append('profilePhoto', compressed);
 
       const response = await api.patch(ENDPOINTS.USER_PROFILE, formData, {
         headers: {
@@ -400,6 +402,11 @@ export default function ProfilePage() {
             <SectionHeader icon="person" title="Personal Information" section="personal" />
             {openSection === 'personal' && (
               <div className="p-3 pt-2 border-t border-outline-variant/30">
+                <div className="flex justify-end mb-2">
+                  <button onClick={handleEditClick} className="text-xs text-primary font-bold flex items-center gap-1 hover:underline cursor-pointer bg-primary/5 px-2 py-1 rounded-lg">
+                    <span className="material-symbols-outlined text-[14px]">edit</span> Edit Details
+                  </button>
+                </div>
                 <div className="grid grid-cols-2 gap-x-2 gap-y-3 text-xs">
                   <InfoRow label="Full Name" value={profileName} />
                   <InfoRow label="Email Address" value={profileEmail} />
@@ -452,6 +459,11 @@ export default function ProfilePage() {
             </button>
             {openSection === 'health' && (
               <div className="p-4 pt-2 border-t border-outline-variant/30">
+                <div className="flex justify-end mb-2">
+                  <button onClick={handleEditHealthClick} className="text-xs text-primary font-bold flex items-center gap-1 hover:underline cursor-pointer bg-primary/5 px-2 py-1 rounded-lg">
+                    <span className="material-symbols-outlined text-[14px]">edit</span> Edit Health Profile
+                  </button>
+                </div>
                 <div className="grid grid-cols-2 gap-3 mb-3">
                   {[
                     { label: 'Height', value: user?.health?.height || "Not Set", icon: 'height', color: 'text-primary' },

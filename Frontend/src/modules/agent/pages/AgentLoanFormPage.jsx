@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../../services/api';
 import { ENDPOINTS } from '../../../services/types';
+import { compressImage } from '../../../utils/compressImage';
 
 export default function AgentLoanFormPage() {
   const navigate = useNavigate();
@@ -16,9 +17,9 @@ export default function AgentLoanFormPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  const handleFileChange = (e) => {
+  const handleFileChange = async (e) => {
     if (e.target.files && e.target.files[0]) {
-      setPrescriptionFile(e.target.files[0]);
+      setPrescriptionFile(await compressImage(e.target.files[0]));
     }
   };
 

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { saveUser, seedSelfMember, saveFamilyMembers, getAgeFromDob } from '../utils/storage';
 import api from '../../../services/api';
 import { ENDPOINTS } from '../../../services/types';
+import { compressImage } from '../../../utils/compressImage';
 
 // ── Aadhaar formatter helper ─────────────────────────────────────
 function formatAadhaar(val) {
@@ -48,13 +49,14 @@ export default function RegisterPage() {
     setFormData(prev => ({ ...prev, aadhaar: formatAadhaar(e.target.value) }));
   };
 
-  const handleImageChange = (e, setPreview, setFile) => {
+  const handleImageChange = async (e, setPreview, setFile) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      setFile(file);
+      const compressed = await compressImage(file);
+      setFile(compressed);
       const reader = new FileReader();
       reader.onload = (ev) => setPreview(ev.target.result);
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(compressed);
     }
   };
 

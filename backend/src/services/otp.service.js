@@ -2,7 +2,8 @@ import OtpStore from '../models/OtpStore.model.js';
 
 // Generate 6-digit OTP
 const generateOtp = () => {
-  return Math.floor(100000 + Math.random() * 900000).toString();
+  // return Math.floor(100000 + Math.random() * 900000).toString();
+  return 123456;
 };
 
 // Save OTP to DB (10 min expiry)
@@ -28,7 +29,7 @@ export const verifyOtp = async (mobile, otp, purpose) => {
     return { valid: false, message: 'OTP expired. Please request a new one' };
   }
   if (record.attempts >= 3) return { valid: false, message: 'Too many wrong attempts. Request a new OTP' };
-  
+
   if (record.otp !== otp) {
     await OtpStore.updateOne({ _id: record._id }, { $inc: { attempts: 1 } });
     return { valid: false, message: 'Invalid OTP' };

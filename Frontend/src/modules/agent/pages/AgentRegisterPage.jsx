@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../../../services/api';
 import { ENDPOINTS } from '../../../services/types';
+import { compressImage } from '../../../utils/compressImage';
 
 export default function AgentRegisterPage() {
   const navigate = useNavigate();
@@ -117,15 +118,16 @@ export default function AgentRegisterPage() {
     }
   }, []);
 
-  const handleImageChange = (e, setPreview, setFile) => {
+  const handleImageChange = async (e, setPreview, setFile) => {
     const file = e.target.files[0];
     if (file) {
-      setFile(file);
+      const compressed = await compressImage(file);
+      setFile(compressed);
       const reader = new FileReader();
       reader.onload = (event) => {
         setPreview(event.target.result);
       };
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(compressed);
     }
   };
 

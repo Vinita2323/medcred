@@ -101,7 +101,7 @@ export default function AgentLayout() {
 
   return (
     <div className="bg-[#faf8ff] text-[#191b23] min-h-screen font-body-md flex flex-col md:flex-row">
-      
+
       {/* Desktop Sidebar (hidden on mobile) */}
       <aside className="hidden md:flex flex-col w-64 bg-white border-r border-[#c3c6d6]/20 h-screen fixed top-0 left-0 z-40">
         {/* Brand/Logo */}
@@ -118,11 +118,10 @@ export default function AgentLayout() {
               <button
                 key={idx}
                 onClick={() => navigate(item.route)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 cursor-pointer ${
-                  isActive
-                    ? 'bg-[#003d9b] text-white shadow-sm'
-                    : 'text-[#434654] hover:bg-[#f3f3fd] hover:text-[#003d9b]'
-                }`}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 cursor-pointer ${isActive
+                  ? 'bg-[#003d9b] text-white shadow-sm'
+                  : 'text-[#434654] hover:bg-[#f3f3fd] hover:text-[#003d9b]'
+                  }`}
               >
                 <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: isActive ? "'FILL' 1" : "'FILL' 0" }}>
                   {item.icon}
@@ -186,9 +185,8 @@ export default function AgentLayout() {
                       setIsMobileDrawerOpen(false);
                       navigate(item.route);
                     }}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-semibold transition-all duration-200 ${
-                      isActive ? 'bg-[#003d9b] text-white' : 'text-[#434654] hover:bg-[#f3f3fd]'
-                    }`}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-semibold transition-all duration-200 ${isActive ? 'bg-[#003d9b] text-white' : 'text-[#434654] hover:bg-[#f3f3fd]'
+                      }`}
                   >
                     <span className="material-symbols-outlined text-[18px]">{item.icon}</span>
                     <span>{item.label}</span>
@@ -211,7 +209,7 @@ export default function AgentLayout() {
 
       {/* Main Content Area */}
       <div className="flex-grow flex flex-col md:pl-64 min-h-screen">
-        
+
         {/* Dynamic Top Header */}
         <header className="fixed top-0 left-0 md:left-64 right-0 w-auto z-30 flex justify-between items-center px-4 md:px-8 h-16 bg-white shadow-sm border-b border-[#c3c6d6]/20">
           <div className="flex items-center gap-3">
@@ -224,14 +222,14 @@ export default function AgentLayout() {
             </button>
             <h2 className="text-base md:text-lg font-bold text-[#191b23] tracking-tight">{getHeaderTitle()}</h2>
           </div>
-          
+
           <div className="flex items-center gap-4">
             <button className="p-2 rounded-full hover:bg-[#f3f3fd] transition-colors duration-200 relative cursor-pointer">
               <span className="material-symbols-outlined text-[#434654]">notifications</span>
               <span className="absolute top-1 right-1 w-2 h-2 bg-[#a33500] rounded-full"></span>
             </button>
-            <div 
-              onClick={() => navigate('/agent/profile')} 
+            <div
+              onClick={() => navigate('/agent/profile')}
               className="w-9 h-9 rounded-full bg-[#0052cc] flex items-center justify-center text-white font-bold cursor-pointer hover:opacity-90 transition-opacity text-sm shadow-sm"
             >
               {currentUser ? currentUser.fullName.charAt(0) : 'A'}
@@ -252,9 +250,8 @@ export default function AgentLayout() {
               <div
                 key={idx}
                 onClick={() => navigate(item.route)}
-                className={`flex flex-col items-center justify-center px-4 py-1 cursor-pointer transition-colors ${
-                  isActive ? 'text-[#003d9b]' : 'text-[#434654]'
-                }`}
+                className={`flex flex-col items-center justify-center px-4 py-1 cursor-pointer transition-colors ${isActive ? 'text-[#003d9b]' : 'text-[#434654]'
+                  }`}
               >
                 <span className="material-symbols-outlined" style={{ fontVariationSettings: isActive ? "'FILL' 1" : "'FILL' 0" }}>
                   {item.icon}

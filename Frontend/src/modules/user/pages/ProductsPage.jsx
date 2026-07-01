@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../../services/api';
-import { ENDPOINTS } from '../../../services/types';
+import { ENDPOINTS, getImageUrl } from '../../../services/types';
 
 export default function ProductsPage() {
   const navigate = useNavigate();
@@ -57,7 +57,7 @@ export default function ProductsPage() {
               >
                 <div className="relative h-32 bg-gray-50 p-4 flex items-center justify-center">
                   <img 
-                    src={item.imageUrl} 
+                    src={getImageUrl(item.imageUrl)} 
                     alt={item.name} 
                     className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300" 
                     onError={(e) => { e.target.src = 'https://placehold.co/400x300?text=Product' }}

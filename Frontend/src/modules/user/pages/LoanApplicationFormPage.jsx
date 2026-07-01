@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../../../services/api';
 import { ENDPOINTS, SERVER_URL } from '../../../services/types';
+import { compressImage } from '../../../utils/compressImage';
 
 const RequirementSection = ({ title, showName, data, files, onDataChange, onFileChange }) => (
   <section className="bg-white border border-outline-variant/50 rounded-2xl p-5 shadow-sm space-y-4">
@@ -174,11 +175,12 @@ export default function LoanApplicationFormPage() {
     cibilScoreFile: null,
   });
 
-  const handleApplicantFileChange = (e, field) => {
+  const handleApplicantFileChange = async (e, field) => {
     if (e.target.files && e.target.files[0]) {
+      const compressed = await compressImage(e.target.files[0]);
       setApplicantFiles(prev => ({
         ...prev,
-        [field]: e.target.files[0]
+        [field]: compressed
       }));
     }
   };
@@ -197,12 +199,12 @@ export default function LoanApplicationFormPage() {
     });
   };
 
-  const handleGuarantorFileChange = (index, e, field) => {
+  const handleGuarantorFileChange = async (index, e, field) => {
     if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
+      const compressed = await compressImage(e.target.files[0]);
       setGuarantorsFiles(prev => {
         const copy = [...prev];
-        copy[index] = { ...copy[index], [field]: file };
+        copy[index] = { ...copy[index], [field]: compressed };
         return copy;
       });
     }

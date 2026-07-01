@@ -32,5 +32,4 @@ typings/
 dist/
 build/
 
-# Uploaded files (KYC photos, claim docs)
-public/uploads/
+

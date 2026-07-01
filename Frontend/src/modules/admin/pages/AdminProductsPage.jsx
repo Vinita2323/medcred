@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../../services/api';
 import { ENDPOINTS } from '../../../services/types';
+import { compressImage } from '../../../utils/compressImage';
 
 export default function AdminProductsPage() {
   const [products, setProducts] = useState([]);
@@ -46,11 +47,12 @@ export default function AdminProductsPage() {
     }));
   };
 
-  const handleFileChange = (e) => {
+  const handleFileChange = async (e) => {
     if (e.target.files && e.target.files[0]) {
+      const compressed = await compressImage(e.target.files[0]);
       setFormData(prev => ({
         ...prev,
-        image: e.target.files[0]
+        image: compressed
       }));
     }
   };

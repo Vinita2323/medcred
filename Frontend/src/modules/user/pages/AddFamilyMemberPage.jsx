@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../../services/api';
 import { ENDPOINTS } from '../../../services/types';
+import { compressImage } from '../../../utils/compressImage';
 
 export default function AddFamilyMemberPage() {
   const navigate = useNavigate();
@@ -36,26 +37,27 @@ export default function AddFamilyMemberPage() {
     setFormData(prev => ({ ...prev, aadhaar: formatted }));
   };
 
-  const handleFileChange = (e) => {
+  const handleFileChange = async (e) => {
     if (e.target.files && e.target.files[0]) {
-      setProfileFile(e.target.files[0]);
+      const compressed = await compressImage(e.target.files[0]);
+      setProfileFile(compressed);
       const reader = new FileReader();
       reader.onload = (event) => {
         setProfilePic(event.target.result);
       };
-      reader.readAsDataURL(e.target.files[0]);
+      reader.readAsDataURL(compressed);
     }
   };
 
-  const handleAadhaarFrontChange = (e) => {
+  const handleAadhaarFrontChange = async (e) => {
     if (e.target.files && e.target.files[0]) {
-      setAadhaarFrontFile(e.target.files[0]);
+      setAadhaarFrontFile(await compressImage(e.target.files[0]));
     }
   };
 
-  const handleAadhaarBackChange = (e) => {
+  const handleAadhaarBackChange = async (e) => {
     if (e.target.files && e.target.files[0]) {
-      setAadhaarBackFile(e.target.files[0]);
+      setAadhaarBackFile(await compressImage(e.target.files[0]));
     }
   };
 

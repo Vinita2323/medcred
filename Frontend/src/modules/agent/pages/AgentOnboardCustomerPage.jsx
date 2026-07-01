@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../../services/api';
 import { ENDPOINTS } from '../../../services/types';
+import { compressImage } from '../../../utils/compressImage';
 
 export default function AgentOnboardCustomerPage() {
   const navigate = useNavigate();
@@ -35,15 +36,16 @@ export default function AgentOnboardCustomerPage() {
   const [backPreview, setBackPreview] = useState(null);
   const [backFile, setBackFile] = useState(null);
 
-  const handleImageChange = (e, setPreview, setFile) => {
+  const handleImageChange = async (e, setPreview, setFile) => {
     const file = e.target.files[0];
     if (file) {
-      setFile(file);
+      const compressed = await compressImage(file);
+      setFile(compressed);
       const reader = new FileReader();
       reader.onload = (event) => {
         setPreview(event.target.result);
       };
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(compressed);
     }
   };
 

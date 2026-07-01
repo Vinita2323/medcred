@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import BottomNavBar from '../components/Navigation/BottomNavBar';
 import api from '../../../services/api';
 import { ENDPOINTS } from '../../../services/types';
+import { compressImage } from '../../../utils/compressImage';
 
 const TYPE_META = {
   medical_services: { icon: 'medical_services', bg: 'bg-primary-fixed', text: 'text-primary' },
@@ -75,14 +76,15 @@ export default function ClaimsPage() {
     setIsModalOpen(true);
   };
 
-  const handleFileSelect = (e) => {
+  const handleFileSelect = async (e) => {
     if (e.target.files) {
       const filesArr = Array.from(e.target.files);
       if (selectedFiles.length + filesArr.length > 5) {
         alert("You can only upload up to 5 documents.");
         return;
       }
-      setSelectedFiles([...selectedFiles, ...filesArr]);
+      const compressed = await Promise.all(filesArr.map(f => compressImage(f)));
+      setSelectedFiles([...selectedFiles, ...compressed]);
     }
   };
 

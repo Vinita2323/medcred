@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 import api from '../../../services/api';
-import { ENDPOINTS } from '../../../services/types';
+import { ENDPOINTS, getImageUrl } from '../../../services/types';
 
 const METHODS = [
   { id: 'upi',     icon: 'smartphone',          label: 'UPI',         desc: 'Pay via any UPI app' },
@@ -217,7 +217,7 @@ export default function CheckoutPage() {
         {/* Order summary */}
         <div className="bg-white rounded-2xl border border-outline-variant p-4 shadow-sm flex items-center gap-4">
           {product.imageUrl ? (
-            <img src={product.imageUrl} alt={product.name} className="w-16 h-16 object-contain rounded-lg bg-surface-container-lowest" />
+            <img src={getImageUrl(product.imageUrl)} alt={product.name} className="w-16 h-16 object-contain rounded-lg bg-surface-container-lowest" />
           ) : (
             <div className="w-16 h-16 bg-surface-container rounded-lg flex items-center justify-center">
               <span className="material-symbols-outlined text-on-surface-variant text-2xl">medical_services</span>
