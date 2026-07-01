@@ -25,6 +25,7 @@ export default function DashboardPage() {
     loanStatus: 'Waiting'
   });
   const [products, setProducts] = useState([]);
+  const [dynamicPlans, setDynamicPlans] = useState([]);
 
   // Use user.cardId to instantly know if they have a plan to avoid flashing
   const active = user && user.cardId;
@@ -72,6 +73,19 @@ export default function DashboardPage() {
       }
     };
     fetchProducts();
+
+    const fetchPlans = async () => {
+      try {
+        const res = await api.get(ENDPOINTS.PLANS);
+        if (res.data.success) {
+          setDynamicPlans(res.data.data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch plans:', err);
+      }
+    };
+    fetchPlans();
+
   }, [user?._id, user?.cardId]);
 
   useEffect(() => {
@@ -357,9 +371,9 @@ export default function DashboardPage() {
             <section className="space-y-3">
               <h3 className="text-sm font-bold text-on-surface">Recommended for You</h3>
               <div className="flex gap-4 overflow-x-auto hide-scrollbar pb-2">
-                {Object.values(PLANS).map((plan, idx) => (
+                {(dynamicPlans.length > 0 ? dynamicPlans : Object.values(PLANS)).map((plan, idx) => (
                   <div
-                    key={plan.id}
+                    key={plan.planId || plan.id}
                     onClick={() => navigate('/membership-plans')}
                     className={`min-w-[260px] p-4 rounded-2xl flex flex-col justify-between h-36 cursor-pointer hover:shadow-md transition-all active:scale-[0.99] ${idx === 0 ? 'bg-[#1565C0] text-white' :
                         idx === 1 ? 'bg-[#062E8A] text-white' :
@@ -369,10 +383,10 @@ export default function DashboardPage() {
                     <div>
                       <div className="flex justify-between items-start">
                         <h4 className="text-sm font-bold">{plan.name}</h4>
-                        {plan.popular && <span className="text-[8px] bg-tertiary px-1.5 py-0.5 rounded font-black tracking-wider">POPULAR</span>}
+                        {plan.isPopular && <span className="text-[8px] bg-tertiary px-1.5 py-0.5 rounded font-black tracking-wider">POPULAR</span>}
                       </div>
-                      <p className="text-xl font-black mt-1">₹{plan.price.toLocaleString()}<span className="text-[10px] font-normal opacity-80 ml-1">/yr</span></p>
-                      <p className="text-[10px] opacity-80 mt-1 line-clamp-1">{plan.features[0]} • Coverage: {plan.coverage}</p>
+                      <p className="text-xl font-black mt-1">₹{plan.price.toLocaleString()}<span className="text-[10px] font-normal opacity-80 ml-1">/{plan.validity || 'yr'}</span></p>
+                      <p className="text-[10px] opacity-80 mt-1 line-clamp-1">{plan.features?.[0]} • Coverage: {plan.coverageAmount ? `₹${plan.coverageAmount.toLocaleString()}` : plan.coverage}</p>
                     </div>
                     <div className="text-[11px] font-bold flex items-center gap-1 uppercase tracking-wider cursor-pointer mt-2 opacity-90 hover:opacity-100">
                       View Plan Details <span className="material-symbols-outlined text-xs">arrow_forward</span>
