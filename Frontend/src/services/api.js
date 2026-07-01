@@ -60,6 +60,10 @@ api.interceptors.response.use(
 
     // If error is 401 and it's not the refresh token route itself
     if (error.response?.status === 401 && !originalRequest._retry && originalRequest.url !== ENDPOINTS.AUTH_REFRESH) {
+      // Don't intercept login or other public auth endpoints
+      if (originalRequest.url && originalRequest.url.includes('/auth/')) {
+        return Promise.reject(error);
+      }
       if (isRefreshing) {
         // If already refreshing, queue the request until refresh is done
         return new Promise(function (resolve, reject) {
@@ -77,8 +81,16 @@ api.interceptors.response.use(
 
       const refreshToken = getRefreshToken();
       if (!refreshToken) {
+        console.error('No refresh token found. Clearing auth and redirecting. Original error:', error.response?.status, originalRequest.url);
         clearAuth();
-        window.location.href = '/login'; // Redirect to login
+        const currentPath = window.location.pathname;
+        if (currentPath.startsWith('/admin')) {
+          window.location.href = '/admin/login';
+        } else if (currentPath.startsWith('/agent')) {
+          window.location.href = '/agent/login';
+        } else {
+          window.location.href = '/login';
+        }
         return Promise.reject(error);
       }
 
@@ -100,10 +112,18 @@ api.interceptors.response.use(
         processQueue(null, newAccessToken);
         return api(originalRequest);
       } catch (refreshError) {
+        console.error('Token refresh failed. Clearing auth and redirecting. Refresh error:', refreshError.response?.status, 'Original request:', originalRequest.url);
         // Refresh token expired or invalid
         processQueue(refreshError, null);
         clearAuth();
-        window.location.href = '/login';
+        const currentPath = window.location.pathname;
+        if (currentPath.startsWith('/admin')) {
+          window.location.href = '/admin/login';
+        } else if (currentPath.startsWith('/agent')) {
+          window.location.href = '/agent/login';
+        } else {
+          window.location.href = '/login';
+        }
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;

@@ -128,10 +128,10 @@ export default function AdminLayout() {
         <div className="p-4 border-t border-[#c3c6d6]/20 bg-[#faf8ff] shrink-0">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-9 h-9 rounded-full bg-[#003d9b] text-white font-bold text-sm flex items-center justify-center shrink-0">
-              {adminUser?.name?.charAt(0) || 'A'}
+              {adminUser?.fullName?.charAt(0) || adminUser?.name?.charAt(0) || 'A'}
             </div>
             <div className="min-w-0">
-              <p className="text-xs font-bold text-[#191b23] truncate">{adminUser?.name || 'Administrator'}</p>
+              <p className="text-xs font-bold text-[#191b23] truncate">{adminUser?.fullName || adminUser?.name || 'Administrator'}</p>
               <p className="text-[10px] text-[#0052cc] font-semibold">Super Admin</p>
             </div>
           </div>
@@ -210,7 +210,7 @@ export default function AdminLayout() {
               onClick={() => {}}
               className="w-9 h-9 rounded-full bg-[#003d9b] flex items-center justify-center text-white font-bold text-sm cursor-pointer hover:opacity-90 shadow-sm"
             >
-              {adminUser?.name?.charAt(0) || 'A'}
+              {adminUser?.fullName?.charAt(0) || adminUser?.name?.charAt(0) || 'A'}
             </div>
           </div>
         </header>

@@ -14,8 +14,8 @@ export const STORAGE_KEYS = {
   USER_DATA: 'medcred_user_data',
 };
 
-export const SERVER_URL = import.meta.env.VITE_SERVER_URL
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+export const SERVER_URL = import.meta.env.VITE_SERVER_URL || "https://medcred.onrender.com";
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || "https://medcred.onrender.com/api/v1";
 
 // API Endpoints Mapping
 export const ENDPOINTS = {
