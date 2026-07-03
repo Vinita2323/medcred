@@ -1,4 +1,7 @@
 import SupportTicket from '../models/SupportTicket.model.js';
+import User from '../models/User.model.js';
+import Agent from '../models/Agent.model.js';
+import Admin from '../models/Admin.model.js';
 
 // @route   POST /api/v1/support/tickets
 // @desc    Create a new support ticket
@@ -51,14 +54,41 @@ export const getMyTickets = async (req, res) => {
 // @access  Private (Admin)
 export const adminGetAllTickets = async (req, res) => {
   try {
-    const tickets = await SupportTicket.find()
-      .populate('userId', 'fullName email')
-      .sort({ createdAt: -1 });
+    const tickets = await SupportTicket.find().sort({ createdAt: -1 });
+
+    const populatedTickets = await Promise.all(
+      tickets.map(async (t) => {
+        let userObj = null;
+
+        // Try User
+        userObj = await User.findById(t.userId).select('fullName email');
+        if (userObj) {
+          userObj = { ...userObj._doc, role: 'user' };
+        } else {
+          // Try Agent
+          userObj = await Agent.findById(t.userId).select('fullName email');
+          if (userObj) {
+            userObj = { ...userObj._doc, role: 'agent' };
+          } else {
+            // Try Admin
+            userObj = await Admin.findById(t.userId).select('fullName email');
+            if (userObj) {
+              userObj = { ...userObj._doc, role: 'admin' };
+            }
+          }
+        }
+
+        return {
+          ...t._doc,
+          userId: userObj || { fullName: 'Unknown User', email: '' }
+        };
+      })
+    );
 
     res.status(200).json({
       success: true,
-      count: tickets.length,
-      data: tickets
+      count: populatedTickets.length,
+      data: populatedTickets
     });
   } catch (error) {
     console.error('Admin Get All Tickets Error:', error);

@@ -97,6 +97,11 @@ export const ENDPOINTS = {
   // ADMIN — SUPPORT
   ADMIN_SUPPORT_TICKETS: '/admin/support/tickets',
   ADMIN_SUPPORT_TICKET_UPDATE: (id) => `/admin/support/tickets/${id}`,
+  ADMIN_SUPPORT_CHAT_USERS: '/admin/support/chat/users',
+  ADMIN_SUPPORT_CHAT_HISTORY: (userId) => `/admin/support/chat/history/${userId}`,
+  ADMIN_SUPPORT_CHAT_SEND: '/admin/support/chat/send',
+  ADMIN_SUPPORT_FAQS: '/admin/support/faqs',
+  ADMIN_SUPPORT_FAQ_BY_ID: (id) => `/admin/support/faqs/${id}`,
 
   // ADMIN — AGENT MANAGEMENT
   ADMIN_AGENTS: '/admin/agents',
@@ -134,6 +139,9 @@ export const ENDPOINTS = {
 
   // SUPPORT
   SUPPORT_TICKETS: '/support/tickets',
+  SUPPORT_CHAT_SEND: '/support/chat/send',
+  SUPPORT_CHAT_HISTORY: '/support/chat/history',
+  SUPPORT_FAQS: '/support/faqs',
 
   ORDERS_CREATE: '/orders/create',
   PRODUCT_ORDER_CREATE: '/orders/product',
