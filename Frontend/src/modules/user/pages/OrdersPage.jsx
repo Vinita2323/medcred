@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import html2pdf from 'html2pdf.js';
+import { getUser } from '../utils/storage';
 import api from '../../../services/api';
 import { ENDPOINTS, getImageUrl } from '../../../services/types';
 
 export default function OrdersPage() {
   const navigate = useNavigate();
+  const user = getUser();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [trackingOrder, setTrackingOrder] = useState(null);
@@ -219,8 +222,8 @@ export default function OrdersPage() {
 
       {/* Invoice Modal */}
       {invoiceOrder && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-end justify-center animate-fade-in sm:items-center sm:p-4">
-          <div className="bg-[#F8FAFF] w-full max-w-md rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl animate-slide-up sm:animate-scale-up flex flex-col max-h-[90vh]">
+        <div className="fixed inset-0 z-50 bg-[rgba(0,0,0,0.4)] backdrop-blur-sm flex items-end justify-center animate-fade-in sm:items-center sm:p-4">
+          <div id="invoice-modal" className="bg-[#F8FAFF] w-full max-w-md rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl animate-slide-up sm:animate-scale-up flex flex-col max-h-[90vh]">
             <div className="flex justify-between items-start mb-6">
               <div>
                 <h3 className="font-black text-xl text-on-surface">Tax Invoice</h3>
@@ -228,19 +231,19 @@ export default function OrdersPage() {
               </div>
               <button
                 onClick={() => setInvoiceOrder(null)}
-                className="material-symbols-outlined text-outline hover:bg-surface-container-low p-2 rounded-full cursor-pointer transition-colors -mt-2 -mr-2"
+                className="material-symbols-outlined text-outline hover:bg-surface-container-low p-2 rounded-full cursor-pointer transition-colors -mt-2 -mr-2 no-print"
               >
                 close
               </button>
             </div>
 
             <div className="overflow-y-auto flex-grow -mx-6 px-6 pb-4">
-              <div className="bg-white rounded-2xl border border-outline-variant/50 p-4 shadow-sm mb-4">
-                <div className="grid grid-cols-2 gap-4 mb-4 pb-4 border-b border-outline-variant/30 text-xs">
+              <div className="bg-white rounded-2xl border border-[#E5E7EB] p-4 shadow-sm mb-4">
+                <div className="grid grid-cols-2 gap-4 mb-4 pb-4 border-b border-[#E5E7EB] text-xs">
                   <div>
                     <p className="text-[9px] text-on-surface-variant uppercase font-bold tracking-wider mb-1">Invoice To</p>
-                    <p className="font-bold text-on-surface">Arjun Mehta</p>
-                    <p className="text-on-surface-variant leading-relaxed">42, Shastri Nagar<br/>Bhopal, MP – 462001</p>
+                    <p className="font-bold text-on-surface">{user?.fullName || 'Customer'}</p>
+                    <p className="text-on-surface-variant leading-relaxed break-words pr-2">{invoiceOrder.deliveryAddress || 'Address not provided'}</p>
                   </div>
                   <div className="text-right">
                     <p className="text-[9px] text-on-surface-variant uppercase font-bold tracking-wider mb-1">Order Details</p>
@@ -249,53 +252,170 @@ export default function OrdersPage() {
                   </div>
                 </div>
 
-                <div className="space-y-3 mb-4">
-                  <div className="flex justify-between items-start">
-                    <div className="pr-4">
-                      <p className="font-bold text-sm text-on-surface leading-tight">{invoiceOrder.productName || invoiceOrder.planName || 'Item'}</p>
-                      <p className="text-[10px] text-on-surface-variant mt-0.5">Qty: 1 × ₹{invoiceOrder.baseAmount?.toLocaleString()}</p>
-                    </div>
-                    <p className="font-black text-on-surface whitespace-nowrap">₹{invoiceOrder.baseAmount?.toLocaleString()}</p>
-                  </div>
-                </div>
+                {(() => {
+                  const calculatedDiscount = invoiceOrder.discountAmount > 0 
+                    ? invoiceOrder.discountAmount 
+                    : (invoiceOrder.baseAmount > invoiceOrder.finalAmount ? invoiceOrder.baseAmount - invoiceOrder.finalAmount : 0);
 
-                <div className="border-t border-outline-variant/30 pt-4 space-y-2 text-xs">
-                  <div className="flex justify-between text-on-surface-variant">
-                    <span>Subtotal</span>
-                    <span className="font-bold text-on-surface">₹{invoiceOrder.baseAmount?.toLocaleString()}</span>
-                  </div>
-                  {invoiceOrder.discountAmount > 0 && (
-                    <div className="flex justify-between text-on-surface-variant">
-                      <span>Discount</span>
-                      <span className="font-bold text-[#0A9E58]">-₹{invoiceOrder.discountAmount?.toLocaleString()}</span>
-                    </div>
-                  )}
-                  {invoiceOrder.orderType === 'medical_equipment' && (
-                    <div className="flex justify-between text-on-surface-variant">
-                      <span>Shipping</span>
-                      <span className="font-bold text-[#0A9E58]">FREE</span>
-                    </div>
-                  )}
-                </div>
+                  return (
+                    <>
+                      <div className="space-y-3 mb-4">
+                        <div className="flex justify-between items-start">
+                          <div className="pr-4">
+                            <p className="font-bold text-sm text-on-surface leading-tight">{invoiceOrder.productName || invoiceOrder.planName || 'Item'}</p>
+                            <p className="text-[10px] text-on-surface-variant mt-0.5">Qty: 1 × ₹{invoiceOrder.baseAmount?.toLocaleString()}</p>
+                          </div>
+                          <p className="font-black text-on-surface whitespace-nowrap">₹{invoiceOrder.baseAmount?.toLocaleString()}</p>
+                        </div>
+                      </div>
+
+                      <div className="border-t border-[#E5E7EB] pt-4 space-y-2 text-xs">
+                        <div className="flex justify-between text-on-surface-variant">
+                          <span>Subtotal</span>
+                          <span className="font-bold text-on-surface">₹{invoiceOrder.baseAmount?.toLocaleString()}</span>
+                        </div>
+                        {calculatedDiscount > 0 && (
+                          <div className="flex justify-between text-on-surface-variant">
+                            <span>Discount</span>
+                            <span className="font-bold text-[#0A9E58]">-₹{calculatedDiscount.toLocaleString()}</span>
+                          </div>
+                        )}
+                        {invoiceOrder.orderType === 'medical_equipment' && (
+                          <div className="flex justify-between text-on-surface-variant">
+                            <span>Shipping</span>
+                            <span className="font-bold text-[#0A9E58]">FREE</span>
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
 
-              <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant/50 p-4 shadow-sm flex justify-between items-center">
+              <div className="bg-surface-container-lowest rounded-2xl border border-[#E5E7EB] p-4 shadow-sm flex justify-between items-center">
                 <span className="font-bold text-sm text-on-surface uppercase tracking-wider">Total Amount</span>
                 <span className="font-black text-xl text-primary">₹{invoiceOrder.finalAmount?.toLocaleString()}</span>
               </div>
             </div>
 
-            <div className="pt-4 border-t border-outline-variant/20 mt-auto">
+            <div className="pt-4 border-t border-[#E5E7EB] mt-auto no-print">
               <button
                 onClick={() => {
-                  alert('Invoice downloaded successfully to your device.');
-                  setInvoiceOrder(null);
+                  const element = document.getElementById('printable-invoice');
+
+                  const opt = {
+                    margin:       [0.4, 0],
+                    filename:     `Tax-Invoice-${invoiceOrder.orderId}.pdf`,
+                    image:        { type: 'jpeg', quality: 0.98 },
+                    html2canvas:  { scale: 2, useCORS: true },
+                    jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+                  };
+
+                  html2pdf().from(element).set(opt).save();
                 }}
                 className="w-full py-4 bg-primary text-white font-black rounded-xl shadow-lg hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-2 text-sm"
               >
                 <span className="material-symbols-outlined text-lg">download</span>
                 Download PDF
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Hidden A4 Printable Invoice Template */}
+      {invoiceOrder && (
+        <div style={{ position: 'absolute', top: '-9999px', left: '-9999px' }}>
+          <div id="printable-invoice" className="bg-white w-[800px] p-12 text-[#374151] font-sans">
+            {/* Header */}
+            <div className="flex justify-between items-start border-b-2 border-[#E5E7EB] pb-8 mb-8">
+              <div>
+                <img src="/FinalLogo.png" alt="MedCred Logo" className="h-16 object-contain" />
+              </div>
+              <div className="text-right">
+                <h2 className="text-3xl font-black text-[#111827] uppercase">Tax Invoice</h2>
+                <p className="text-sm font-semibold text-[#6B7280] mt-2">Date: {new Date().toLocaleDateString()}</p>
+                <p className="text-sm font-semibold text-[#6B7280]">Order ID: {invoiceOrder.orderId}</p>
+              </div>
+            </div>
+
+            {/* Bill To */}
+            <div className="flex justify-between mb-12">
+              <div className="w-1/2">
+                <h3 className="text-xs font-bold text-[#9CA3AF] uppercase tracking-wider mb-2">Billed To:</h3>
+                <p className="text-lg font-bold text-[#111827]">{invoiceOrder.userId?.fullName || invoiceOrder.userId?.name || user?.fullName || 'Customer'}</p>
+                <p className="text-sm text-[#4B5563] mt-1 leading-relaxed max-w-[250px]">{invoiceOrder.deliveryAddress || 'Address not provided'}</p>
+              </div>
+              <div className="w-1/2 text-right">
+                <h3 className="text-xs font-bold text-[#9CA3AF] uppercase tracking-wider mb-2">Order Date:</h3>
+                <p className="text-lg font-bold text-[#111827]">{new Date(invoiceOrder.createdAt).toLocaleDateString()}</p>
+              </div>
+            </div>
+
+            {/* Items Table */}
+            <table className="w-full text-left mb-12 border-collapse">
+              <thead>
+                <tr className="border-y-2 border-[#E5E7EB]">
+                  <th className="py-4 font-bold text-[#9CA3AF] uppercase text-xs tracking-wider">Item Description</th>
+                  <th className="py-4 font-bold text-[#9CA3AF] uppercase text-xs tracking-wider text-center">Qty</th>
+                  <th className="py-4 font-bold text-[#9CA3AF] uppercase text-xs tracking-wider text-right">Price</th>
+                  <th className="py-4 font-bold text-[#9CA3AF] uppercase text-xs tracking-wider text-right">Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-b border-[#E5E7EB]">
+                  <td className="py-6 font-bold text-[#111827] text-lg">{invoiceOrder.productName || invoiceOrder.planName || 'Item'}</td>
+                  <td className="py-6 font-medium text-[#4B5563] text-center text-lg">1</td>
+                  <td className="py-6 font-medium text-[#4B5563] text-right text-lg">₹{invoiceOrder.baseAmount?.toLocaleString()}</td>
+                  <td className="py-6 font-black text-[#111827] text-right text-lg">₹{invoiceOrder.baseAmount?.toLocaleString()}</td>
+                </tr>
+              </tbody>
+            </table>
+
+            {/* Totals */}
+            <div className="flex justify-end">
+              <div className="w-1/2">
+                <div className="space-y-4">
+                  <div className="flex justify-between text-base">
+                    <span className="font-semibold text-[#6B7280]">Subtotal</span>
+                    <span className="font-bold text-[#111827]">₹{invoiceOrder.baseAmount?.toLocaleString()}</span>
+                  </div>
+                  
+                  {(() => {
+                    const discount = invoiceOrder.discountAmount > 0 
+                      ? invoiceOrder.discountAmount 
+                      : (invoiceOrder.baseAmount > invoiceOrder.finalAmount ? invoiceOrder.baseAmount - invoiceOrder.finalAmount : 0);
+                    
+                    if (discount > 0) {
+                      return (
+                        <div className="flex justify-between text-base">
+                          <span className="font-semibold text-[#6B7280]">Discount</span>
+                          <span className="font-bold text-[#059669]">-₹{discount.toLocaleString()}</span>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
+
+                  {invoiceOrder.orderType === 'medical_equipment' && (
+                    <div className="flex justify-between text-base">
+                      <span className="font-semibold text-[#6B7280]">Shipping</span>
+                      <span className="font-bold text-[#059669]">FREE</span>
+                    </div>
+                  )}
+                  
+                  <div className="flex justify-between items-center border-t-2 border-[#111827] pt-4 mt-4">
+                    <span className="font-black text-xl text-[#111827] uppercase">Total Amount</span>
+                    <span className="font-black text-3xl text-[#0A4DBF]">₹{invoiceOrder.finalAmount?.toLocaleString()}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="mt-24 pt-8 border-t border-[#E5E7EB] text-center text-sm font-medium text-[#9CA3AF]">
+              <p>Thank you for choosing MedCred.</p>
+              <p className="mt-1">This is a computer-generated invoice and does not require a physical signature.</p>
             </div>
           </div>
         </div>

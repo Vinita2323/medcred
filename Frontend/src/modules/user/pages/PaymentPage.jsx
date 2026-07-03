@@ -151,7 +151,9 @@ export default function PaymentPage() {
         </head>
         <body>
           <div class="header">
-            <div class="logo">MedCred India</div>
+            <div class="logo" style="margin-bottom: 10px;">
+              <img src="${window.location.origin}/FinalLogo.png" alt="MedCred Logo" style="height: 45px; object-fit: contain; display: block;" />
+            </div>
             <div style="color: #666; margin-top: 5px;">Invoice #MC-${Math.floor(100000 + Math.random() * 900000)}</div>
             <div style="color: #666;">Date: ${new Date().toLocaleDateString()}</div>
           </div>

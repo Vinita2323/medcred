@@ -48,12 +48,11 @@ export default function PurchaseCardPage() {
 
   const handlePurchase = () => {
     if (!selectedCard) {
-      alert("Please select a card to proceed.");
+      alert("Please select a plan to proceed.");
       return;
     }
-    alert(`Proceeding to purchase: ${cards.find(c => c.id === selectedCard).title}`);
-    // Navigate to payment or digital card page after successful purchase
-    navigate('/card');
+    // Navigate to the real membership-plans page with the selected plan pre-selected
+    navigate('/membership-plans', { state: { preSelectedPlanId: selectedCard } });
   };
 
   return (
@@ -84,7 +83,7 @@ export default function PurchaseCardPage() {
             {cards.map((card) => (
             <div 
               key={card.id}
-              onClick={() => setSelectedCard(card.id)}
+              onClick={() => navigate('/membership-plans', { state: { preSelectedPlanId: card.id } })}
               className={`relative overflow-hidden rounded-2xl cursor-pointer transition-all duration-300 transform active:scale-95 ${
                 selectedCard === card.id 
                   ? 'ring-4 ring-offset-2 ring-primary scale-[1.02] shadow-2xl' 
@@ -118,7 +117,7 @@ export default function PurchaseCardPage() {
                 </div>
                 
                 <div className="mt-6 flex items-center font-bold text-[11px] tracking-widest uppercase gap-1">
-                  VIEW PLAN DETAILS
+                  SELECT &amp; PURCHASE
                   <span className="material-symbols-outlined text-base">arrow_forward</span>
                 </div>
               </div>
@@ -141,7 +140,7 @@ export default function PurchaseCardPage() {
                 : 'bg-surface-container-high text-on-surface-variant cursor-not-allowed opacity-70'
             }`}
           >
-            {selectedCard ? 'Proceed to Claim' : 'Select a Plan'}
+            {selectedCard ? 'View Selected Plan →' : 'Tap a Plan to Purchase'}
           </button>
         </div>
       </div>

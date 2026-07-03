@@ -4,6 +4,7 @@ import BottomNavBar from '../components/Navigation/BottomNavBar';
 import { getMembership, hasMembership, getMembershipDaysRemaining, getDaysActive, isLoanEligible, getDaysUntilLoanEligible, DEFAULT_PLANS as PLANS, getUser, isLoggedIn } from '../utils/storage';
 import api from '../../../services/api';
 import { ENDPOINTS, getImageUrl } from '../../../services/types';
+import { getProductImage } from '../../../utils/getProductImage';
 import imgBP from '../../../assets/Machine/Bloodpressure.webp';
 import imgGlucometer from '../../../assets/Machine/Glucometer.webp';
 import imgThermometer from '../../../assets/Machine/thermometer.jpg';
@@ -278,7 +279,7 @@ export default function DashboardPage() {
                     onClick={() => navigate('/product-details', { state: { product: item } })}
                     className="relative overflow-hidden bg-white rounded-xl border border-outline-variant active:scale-95 transition-all group cursor-pointer hover:shadow-md h-24"
                   >
-                    <img src={getImageUrl(item.imageUrl)} alt={item.name} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    <img src={getProductImage(item.imageUrl, item.category)} alt={item.name} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" onError={(e) => { e.target.onerror = null; e.target.src = getProductImage(null, item.category); }} />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent opacity-90"></div>
                     <span className="absolute bottom-2 inset-x-1 text-[10px] text-center font-bold text-white line-clamp-1 drop-shadow-md tracking-wide">{item.name}</span>
                   </button>
@@ -374,7 +375,7 @@ export default function DashboardPage() {
                 {(dynamicPlans.length > 0 ? dynamicPlans : Object.values(PLANS)).map((plan, idx) => (
                   <div
                     key={plan.planId || plan.id}
-                    onClick={() => navigate('/membership-plans')}
+                    onClick={() => navigate('/membership-plans', { state: { preSelectedPlanId: plan.planId || plan.id } })}
                     className={`min-w-[260px] p-4 rounded-2xl flex flex-col justify-between h-36 cursor-pointer hover:shadow-md transition-all active:scale-[0.99] ${idx === 0 ? 'bg-[#1565C0] text-white' :
                         idx === 1 ? 'bg-[#062E8A] text-white' :
                           'bg-[#0D1B3E] text-white'

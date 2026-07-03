@@ -26,10 +26,10 @@ export default function BottomNavBar() {
       </div>
 
       <div 
-        onClick={() => navigate('/purchase-card')} 
-        className={getTabClass(path === '/purchase-card')}
+        onClick={() => navigate('/membership-plans')} 
+        className={getTabClass(path === '/membership-plans')}
       >
-        <span className="material-symbols-outlined text-lg" style={{ fontVariationSettings: path === '/purchase-card' ? "'FILL' 1" : "'FILL' 0" }}>add_card</span>
+        <span className="material-symbols-outlined text-lg" style={{ fontVariationSettings: path === '/membership-plans' ? "'FILL' 1" : "'FILL' 0" }}>add_card</span>
         <span>Buy Card</span>
       </div>
 

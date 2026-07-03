@@ -15,6 +15,7 @@ export default function MembershipPlansPage() {
   const location = useLocation();
 
   const fromRenew = location.state?.renew;
+  const preSelectedPlanId = location.state?.preSelectedPlanId;
 
   const [plans, setPlans] = useState([]);
   const [selectedPlanId, setSelectedPlanId] = useState(null);
@@ -32,8 +33,10 @@ export default function MembershipPlansPage() {
         const res = await api.get(ENDPOINTS.PLANS);
         if (res.data.success) {
           setPlans(res.data.data);
-          // Auto-select family plan if available, else first plan
-          const defaultPlan = res.data.data.find(p => p.planId === 'family') || res.data.data[0];
+          // If a specific plan was passed via navigation, pre-select it; else default to family/first
+          const defaultPlan = preSelectedPlanId
+            ? res.data.data.find(p => p.planId === preSelectedPlanId) || res.data.data[0]
+            : res.data.data.find(p => p.planId === 'family') || res.data.data[0];
           if (defaultPlan) setSelectedPlanId(defaultPlan.planId);
         }
       } catch (err) {

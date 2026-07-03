@@ -12,31 +12,41 @@ export const getAdminProducts = async (req, res) => {
 
 export const createProduct = async (req, res) => {
   try {
-    const data = { ...req.body };
-    if (req.file) {
-      data.imageUrl = `/uploads/${req.file.filename}`;
-    }
+    // imageUrl is a base64 data string sent directly in the JSON body
+    const { name, category, price, discountedPrice, stockCount, brand, isAvailable, imageUrl } = req.body;
+
     const product = await Product.create({
-      ...data,
-      productId: `PRD-${Date.now()}`
+      productId: `PRD-${Date.now()}`,
+      name,
+      category,
+      price,
+      discountedPrice,
+      stockCount,
+      brand,
+      isAvailable,
+      imageUrl: imageUrl || '',
     });
+
     res.status(201).json({ success: true, data: product });
   } catch (error) {
     console.error('Error creating product:', error);
-    res.status(500).json({ success: false, message: 'Server error' });
+    res.status(500).json({ success: false, message: 'Server error', error: error.message });
   }
 };
 
 export const updateProduct = async (req, res) => {
   try {
-    const data = { ...req.body };
-    if (req.file) {
-      data.imageUrl = `/uploads/${req.file.filename}`;
-    }
-    const product = await Product.findByIdAndUpdate(req.params.id, data, {
+    const { name, category, price, discountedPrice, stockCount, brand, isAvailable, imageUrl } = req.body;
+
+    const updateData = { name, category, price, discountedPrice, stockCount, brand, isAvailable };
+    // Only update imageUrl if a new one was sent
+    if (imageUrl) updateData.imageUrl = imageUrl;
+
+    const product = await Product.findByIdAndUpdate(req.params.id, updateData, {
       new: true,
       runValidators: true,
     });
+
     if (!product) return res.status(404).json({ success: false, message: 'Product not found' });
     res.status(200).json({ success: true, data: product });
   } catch (error) {

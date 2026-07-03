@@ -50,10 +50,16 @@ export default function AdminProductsPage() {
   const handleFileChange = async (e) => {
     if (e.target.files && e.target.files[0]) {
       const compressed = await compressImage(e.target.files[0]);
-      setFormData(prev => ({
-        ...prev,
-        image: compressed
-      }));
+      // Convert to base64 so we can store it directly in MongoDB (no filesystem needed)
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData(prev => ({
+          ...prev,
+          image: compressed,
+          imageUrl: reader.result  // base64 data URL string
+        }));
+      };
+      reader.readAsDataURL(compressed);
     }
   };
 
@@ -96,23 +102,22 @@ export default function AdminProductsPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const payload = new FormData();
-      Object.keys(formData).forEach(key => {
-        if (key === 'image' && formData[key]) {
-          payload.append('image', formData[key]);
-        } else if (key !== 'image' && formData[key] !== null && formData[key] !== undefined) {
-          payload.append(key, formData[key]);
-        }
-      });
+      // Build a plain JSON payload — imageUrl is already a base64 string
+      const payload = {
+        name: formData.name,
+        category: formData.category,
+        price: formData.price,
+        discountedPrice: formData.discountedPrice,
+        stockCount: formData.stockCount,
+        brand: formData.brand,
+        isAvailable: formData.isAvailable,
+        ...(formData.imageUrl && { imageUrl: formData.imageUrl }),
+      };
 
       if (editingProduct) {
-        await api.put(ENDPOINTS.ADMIN_PRODUCT_UPDATE(editingProduct._id), payload, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        await api.put(ENDPOINTS.ADMIN_PRODUCT_UPDATE(editingProduct._id), payload);
       } else {
-        await api.post(ENDPOINTS.ADMIN_PRODUCTS, payload, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        await api.post(ENDPOINTS.ADMIN_PRODUCTS, payload);
       }
       fetchProducts();
       closeModal();

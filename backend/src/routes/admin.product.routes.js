@@ -6,7 +6,6 @@ import {
   deleteProduct,
 } from '../controllers/admin.product.controller.js';
 import { protect, restrictTo } from '../middlewares/auth.middleware.js';
-import { upload } from '../middlewares/upload.middleware.js';
 
 const router = express.Router();
 
@@ -14,9 +13,10 @@ const router = express.Router();
 router.use(protect);
 router.use(restrictTo('admin'));
 
+// No multer needed — images are sent as base64 strings in the JSON body
 router.get('/', getAdminProducts);
-router.post('/', upload.single('image'), createProduct);
-router.put('/:id', upload.single('image'), updateProduct);
+router.post('/', createProduct);
+router.put('/:id', updateProduct);
 router.delete('/:id', deleteProduct);
 
 export default router;

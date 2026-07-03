@@ -6,7 +6,7 @@ import { getProfile, updateProfile, getUserDashboardStats } from '../controllers
 const router = express.Router();
 
 router.use(protect);
-router.use(restrictTo('user'));
+router.use(restrictTo('user', 'admin'));
 
 router.get('/', getProfile);
 router.patch('/', upload.single('profilePhoto'), updateProfile);

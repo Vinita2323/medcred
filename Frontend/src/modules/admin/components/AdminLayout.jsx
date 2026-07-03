@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { STORAGE_KEYS } from '../../../services/types';
+import api from '../../../services/api';
+import { ENDPOINTS } from '../../../services/types';
 
 const menuGroups = [
   {
@@ -59,12 +61,33 @@ export default function AdminLayout() {
   const navigate   = useNavigate();
   const location   = useLocation();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
   const [adminUser, setAdminUser]   = useState(null);
 
   useEffect(() => {
     const raw = localStorage.getItem(STORAGE_KEYS.USER_DATA);
     if (raw) setAdminUser(JSON.parse(raw));
   }, []);
+
+  useEffect(() => {
+    // Initial fetch
+    fetchPendingCount();
+
+    // Poll every 10 seconds for new orders
+    const interval = setInterval(fetchPendingCount, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const fetchPendingCount = async () => {
+    try {
+      const res = await api.get(ENDPOINTS.ADMIN_ORDERS_PENDING_COUNT);
+      if (res.data?.success) {
+        setPendingCount(res.data.count);
+      }
+    } catch (err) {
+      console.error('Error fetching pending count:', err);
+    }
+  };
 
   if (!localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN)) {
     return <Navigate to="/admin/login" replace />;
@@ -202,9 +225,15 @@ export default function AdminLayout() {
             <button
               onClick={() => navigate('/admin/notifications')}
               className="p-2 rounded-full hover:bg-[#f3f3fd] transition-colors relative cursor-pointer"
+              title={pendingCount > 0 ? `${pendingCount} pending orders` : "No new orders"}
             >
               <span className="material-symbols-outlined text-[#434654]">notifications</span>
-              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
+              {pendingCount > 0 && (
+                <span className="absolute top-1 right-1 flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500 text-[8px] font-bold text-white items-center justify-center">{pendingCount}</span>
+                </span>
+              )}
             </button>
             <div
               onClick={() => {}}

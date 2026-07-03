@@ -28,3 +28,13 @@ export const updateOrderStatus = async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error' });
   }
 };
+
+export const getPendingOrdersCount = async (req, res) => {
+  try {
+    const count = await Order.countDocuments({ orderType: 'medical_equipment', deliveryStatus: 'pending' });
+    res.status(200).json({ success: true, count });
+  } catch (error) {
+    console.error('Error fetching pending orders count:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};

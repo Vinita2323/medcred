@@ -5,7 +5,7 @@ import { protect, restrictTo } from '../middlewares/auth.middleware.js';
 const router = express.Router();
 
 router.use(protect);
-router.use(restrictTo('user'));
+router.use(restrictTo('user', 'admin'));
 
 router.get('/my-card', getMyCard);
 

@@ -53,7 +53,7 @@ const orderSchema = new mongoose.Schema(
     },
     paymentMethod: {
       type: String,
-      enum: ['upi', 'card', 'netbank', null],
+      enum: ['upi', 'card', 'netbank', 'razorpay', null],
       default: null,
     },
     paymentDetails: {
@@ -67,7 +67,7 @@ const orderSchema = new mongoose.Schema(
     deliveryAddress: String,
     deliveryStatus: {
       type: String,
-      enum: ['pending', 'shipped', 'delivered', 'returned', null],
+      enum: ['pending', 'accepted', 'rejected', 'shipped', 'delivered', 'returned', null],
       default: 'pending'
     },
     trackingId: String,
@@ -77,6 +77,9 @@ const orderSchema = new mongoose.Schema(
       ref: 'Card',
       default: null,
     },
+    razorpayOrderId: String,
+    razorpayPaymentId: String,
+    razorpaySignature: String,
   },
   { timestamps: true }
 );

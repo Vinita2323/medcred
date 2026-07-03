@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../../services/api';
-import { ENDPOINTS, getImageUrl } from '../../../services/types';
+import { ENDPOINTS } from '../../../services/types';
+import { getProductImage } from '../../../utils/getProductImage';
 
 export default function ProductsPage() {
   const navigate = useNavigate();
@@ -57,10 +58,10 @@ export default function ProductsPage() {
               >
                 <div className="relative h-32 bg-gray-50 p-4 flex items-center justify-center">
                   <img 
-                    src={getImageUrl(item.imageUrl)} 
+                    src={getProductImage(item.imageUrl, item.category)} 
                     alt={item.name} 
                     className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300" 
-                    onError={(e) => { e.target.src = 'https://placehold.co/400x300?text=Product' }}
+                    onError={(e) => { e.target.onerror = null; e.target.src = getProductImage(null, item.category); }}
                   />
                   {item.stock <= 5 && item.stock > 0 && (
                     <span className="absolute top-2 right-2 bg-amber-100 text-amber-800 text-[9px] font-bold px-2 py-0.5 rounded-full">

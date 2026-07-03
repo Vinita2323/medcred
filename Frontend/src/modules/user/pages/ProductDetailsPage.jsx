@@ -1,7 +1,7 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { isLoggedIn } from '../utils/storage';
-import { getImageUrl } from '../../../services/types';
+import { getProductImage } from '../../../utils/getProductImage';
 
 export default function ProductDetailsPage() {
   const location = useLocation();
@@ -31,7 +31,7 @@ export default function ProductDetailsPage() {
       <main className="flex-grow overflow-y-auto animate-fade-in">
         {/* Product Image */}
         <div className="w-full bg-surface-container-lowest aspect-[4/3] max-h-[400px] relative border-b border-outline-variant/30 overflow-hidden">
-          <img src={getImageUrl(product.imageUrl)} alt={product.name} className="w-full h-full object-cover" />
+          <img src={getProductImage(product.imageUrl, product.category)} alt={product.name} className="w-full h-full object-cover" onError={(e) => { e.target.onerror = null; e.target.src = getProductImage(null, product.category); }} />
           <div className="absolute top-4 right-4 bg-[#0A9E58] text-white text-[10px] font-black px-2.5 py-1.5 rounded tracking-wider uppercase shadow-md">
             Best Seller
           </div>

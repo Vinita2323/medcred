@@ -7,6 +7,12 @@ import User from '../models/User.model.js';
 import FamilyMember from '../models/FamilyMember.model.js';
 import Wallet from '../models/Wallet.model.js';
 import Transaction from '../models/Transaction.model.js';
+import Razorpay from 'razorpay';
+import crypto from 'crypto';
+
+// Razorpay will be initialized inside the controller functions
+// to ensure process.env variables are loaded first.
+
 // ─────────────────────────────────────────────────────────────────
 // @route   POST /api/v1/orders/create
 // @desc    Create a new membership card order
@@ -268,17 +274,60 @@ export const createProductOrder = async (req, res) => {
   try {
     const { productId, deliveryAddress, paymentMethod, paymentDetails } = req.body;
 
-    const product = await Product.findById(productId);
+    // Accept both MongoDB ObjectId (_id) and the string productId (e.g. "PRD-1234567")
+    let product = null;
+    const isObjectId = /^[0-9a-fA-F]{24}$/.test(productId);
+    if (isObjectId) {
+      product = await Product.findById(productId);
+    }
+    // Fallback: find by string productId field
+    if (!product) {
+      product = await Product.findOne({ productId });
+    }
+
     if (!product || !product.isAvailable) {
+      console.error('Product not found:', productId);
       return res.status(404).json({ success: false, message: 'Product not found or unavailable.' });
     }
 
     const orderId = `ORD-${Date.now()}`;
     const finalAmount = product.discountedPrice || product.price;
 
-    // Calculate delivery (e.g., +5-7 days)
+    if (!finalAmount || finalAmount <= 0) {
+      console.error('Invalid amount:', finalAmount);
+      return res.status(400).json({ success: false, message: 'Invalid product price.' });
+    }
+
+    // Verify ENV vars
+    if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+      console.error('Razorpay keys missing from env:', { key: process.env.RAZORPAY_KEY_ID });
+      return res.status(500).json({ success: false, message: 'Razorpay configuration missing.' });
+    }
+
+    // Initialize Razorpay here to ensure env vars are loaded
+    const razorpay = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID,
+      key_secret: process.env.RAZORPAY_KEY_SECRET,
+    });
+
+    // Create Razorpay Order
+    const options = {
+      amount: Math.round(finalAmount * 100), // amount in the smallest currency unit (paise)
+      currency: "INR",
+      receipt: orderId,
+    };
+    
+    let razorpayOrder;
+    try {
+      razorpayOrder = await razorpay.orders.create(options);
+    } catch (rzpErr) {
+      console.error('Razorpay API Error:', rzpErr);
+      return res.status(500).json({ success: false, message: 'Payment gateway error.', error: rzpErr });
+    }
+
+    // Calculate delivery (+5-7 days)
     const estimatedDelivery = new Date();
-    estimatedDelivery.setDate(estimatedDelivery.getDate() + 5);
+    estimatedDelivery.setDate(estimatedDelivery.getDate() + 6);
 
     const newOrder = await Order.create({
       orderId,
@@ -287,24 +336,71 @@ export const createProductOrder = async (req, res) => {
       productId: product._id,
       productName: product.name,
       baseAmount: product.price,
-      finalAmount: finalAmount,
-      deliveryAddress,
+      finalAmount,
+      deliveryAddress: deliveryAddress || 'Not provided',
       estimatedDelivery,
-      paymentMethod,
-      paymentDetails,
-      paymentStatus: paymentMethod === 'cod' ? 'pending' : 'success', // Fake success for digital payments for now
-      paidAt: paymentMethod === 'cod' ? null : new Date(),
+      paymentMethod: paymentMethod || 'upi',
+      paymentDetails: paymentDetails || {},
+      paymentStatus: 'pending', // Initially pending
+      razorpayOrderId: razorpayOrder.id,
       invoiceNumber: `INV-${Math.floor(100000 + Math.random() * 900000)}`,
     });
 
     res.status(201).json({
       success: true,
-      message: 'Product order created successfully.',
-      data: newOrder,
+      message: 'Product order initialized successfully.',
+      data: {
+        order: newOrder,
+        razorpayOrder,
+        keyId: process.env.RAZORPAY_KEY_ID
+      },
     });
   } catch (error) {
-    console.error('Create Product Order Error:', error);
-    res.status(500).json({ success: false, message: 'Server error while creating product order.' });
+    console.error('Create Product Order General Error:', error);
+    res.status(500).json({ success: false, message: 'Server error while creating product order.', error: error.message });
+  }
+};
+
+// ─────────────────────────────────────────────────────────────────
+// @route   POST /api/v1/orders/product/verify
+// @desc    Verify Razorpay payment signature
+// @access  Private (User/Admin)
+// ─────────────────────────────────────────────────────────────────
+export const verifyProductPayment = async (req, res) => {
+  try {
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+
+    // Verify signature
+    const sign = razorpay_order_id + "|" + razorpay_payment_id;
+    const expectedSign = crypto
+      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+      .update(sign.toString())
+      .digest("hex");
+
+    if (razorpay_signature === expectedSign) {
+      // Update order status to success
+      const order = await Order.findOneAndUpdate(
+        { razorpayOrderId: razorpay_order_id },
+        {
+          paymentStatus: 'success',
+          razorpayPaymentId: razorpay_payment_id,
+          razorpaySignature: razorpay_signature,
+          paidAt: new Date()
+        },
+        { new: true }
+      );
+
+      if (!order) {
+        return res.status(404).json({ success: false, message: 'Order not found for this payment.' });
+      }
+
+      return res.status(200).json({ success: true, message: 'Payment verified successfully', data: order });
+    } else {
+      return res.status(400).json({ success: false, message: 'Invalid signature sent!' });
+    }
+  } catch (error) {
+    console.error('Verify Payment Error:', error.message);
+    res.status(500).json({ success: false, message: 'Server error while verifying payment.', error: error.message });
   }
 };
 
@@ -316,7 +412,8 @@ export const createProductOrder = async (req, res) => {
 export const getMyOrders = async (req, res) => {
   try {
     const orders = await Order.find({ userId: req.user._id })
-      .populate('productId', 'imageUrl category') // Bring image for UI
+      .populate('productId', 'imageUrl category')
+      .populate('userId', 'fullName name')
       .sort({ createdAt: -1 });
 
     res.status(200).json({

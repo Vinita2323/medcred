@@ -14,11 +14,11 @@ export async function compressImage(file) {
   if (!file.type.startsWith('image/')) return file;
 
   const options = {
-    maxSizeMB: 0.3,            // Max 300KB
-    maxWidthOrHeight: 1024,    // Max 1024px
+    maxSizeMB: 5,              // Max 5MB
+    maxWidthOrHeight: 2048,    // Max 2048px
     useWebWorker: true,        // Background thread - UI nahi rukegi
     fileType: 'image/webp',    // WebP format mein convert karo
-    initialQuality: 0.8,       // 80% quality (good balance)
+    initialQuality: 0.9,       // 90% quality
   };
 
   try {
