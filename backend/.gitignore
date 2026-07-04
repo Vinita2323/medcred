@@ -31,5 +31,5 @@ typings/
 .netlify
 dist/
 build/
-
+public/uploads/
 

@@ -108,6 +108,21 @@ export default function AdminUsersPage() {
     }
   };
 
+  const toggleLoanBypass = async (user) => {
+    try {
+      const res = await api.patch(ENDPOINTS.ADMIN_USER_TOGGLE_LOAN_BYPASS(user.dbId));
+      if (res.data?.success) {
+        fetchUsers();
+        if (drawer?.id === user.id) {
+          setDrawer({ ...drawer, bypassLoanWaitingPeriod: res.data.data.bypassLoanWaitingPeriod });
+        }
+      }
+    } catch (error) {
+      console.error('Failed to toggle urgent loan bypass status', error);
+      alert('Failed to update urgent loan bypass status');
+    }
+  };
+
   const filtered = users.filter(u => {
     const q = search.toLowerCase();
     const matchQ = !q || u.name.toLowerCase().includes(q) || u.mobile.includes(q) || u.email.toLowerCase().includes(q);
@@ -304,6 +319,7 @@ export default function AdminUsersPage() {
                   { label: 'Card',       value: drawer.cardStatus },
                   { label: 'Plan',       value: drawer.plan },
                   { label: 'Registered', value: drawer.registeredAt },
+                  { label: 'Loan Access', value: drawer.bypassLoanWaitingPeriod ? 'Urgent Access' : '30-Day Waiting' },
                 ].map((item, i) => (
                   <div key={i} className="bg-[#f5f8ff] rounded-lg p-2 border border-[#c3c6d6]/10">
                     <p className="text-[8px] text-[#737685] font-bold uppercase tracking-wider">{item.label}</p>
@@ -381,33 +397,49 @@ export default function AdminUsersPage() {
             </div>
 
             {/* Drawer Actions */}
-            <div className="sticky bottom-0 bg-white border-t border-[#c3c6d6]/20 p-3 flex gap-2">
-              {drawer.kyc === 'Pending' && (
-                <button
-                  onClick={() => verifyKYC(drawer)}
-                  className="flex-1 bg-green-600 hover:bg-green-700 text-white py-1.5 rounded-lg text-[11px] font-bold cursor-pointer transition-colors"
-                >
-                  Verify KYC
-                </button>
+            <div className="sticky bottom-0 bg-white border-t border-[#c3c6d6]/20 p-3 flex flex-col gap-2">
+              {(drawer.kyc === 'Pending' || drawer.cardStatus === 'Pending') && (
+                <div className="flex gap-2">
+                  {drawer.kyc === 'Pending' && (
+                    <button
+                      onClick={() => verifyKYC(drawer)}
+                      className="flex-1 bg-green-600 hover:bg-green-700 text-white py-1.5 rounded-lg text-[11px] font-bold cursor-pointer transition-colors"
+                    >
+                      Verify KYC
+                    </button>
+                  )}
+                  {drawer.cardStatus === 'Pending' && (
+                    <button
+                      onClick={() => activateCard(drawer)}
+                      className="flex-1 bg-[#003d9b] hover:bg-[#0052cc] text-white py-1.5 rounded-lg text-[11px] font-bold cursor-pointer transition-colors"
+                    >
+                      Activate Card
+                    </button>
+                  )}
+                </div>
               )}
-              {drawer.cardStatus === 'Pending' && (
+              <div className="flex gap-2">
                 <button
-                  onClick={() => activateCard(drawer)}
-                  className="flex-1 bg-[#003d9b] hover:bg-[#0052cc] text-white py-1.5 rounded-lg text-[11px] font-bold cursor-pointer transition-colors"
+                  onClick={() => toggleLoanBypass(drawer)}
+                  className={`flex-1 py-1.5 rounded-lg text-[11px] font-bold cursor-pointer transition-colors border ${
+                    drawer.bypassLoanWaitingPeriod
+                      ? 'border-yellow-300 text-yellow-700 bg-yellow-50 hover:bg-yellow-100'
+                      : 'border-blue-200 text-[#003d9b] hover:bg-blue-50'
+                  }`}
                 >
-                  Activate Card
+                  {drawer.bypassLoanWaitingPeriod ? 'Disable Urgent' : 'Enable Urgent'}
                 </button>
-              )}
-              <button
-                onClick={() => blockToggle(drawer)}
-                className={`flex-1 py-1.5 rounded-lg text-[11px] font-bold cursor-pointer transition-colors border ${
-                  drawer.status === 'Blocked'
-                    ? 'border-green-300 text-green-700 hover:bg-green-50'
-                    : 'border-red-200 text-red-600 hover:bg-red-50'
-                }`}
-              >
-                {drawer.status === 'Blocked' ? 'Unblock User' : 'Block User'}
-              </button>
+                <button
+                  onClick={() => blockToggle(drawer)}
+                  className={`flex-1 py-1.5 rounded-lg text-[11px] font-bold cursor-pointer transition-colors border ${
+                    drawer.status === 'Blocked'
+                      ? 'border-green-300 text-green-700 hover:bg-green-50'
+                      : 'border-red-200 text-red-600 hover:bg-red-50'
+                  }`}
+                >
+                  {drawer.status === 'Blocked' ? 'Unblock' : 'Block'}
+                </button>
+              </div>
             </div>
           </div>
         </div>

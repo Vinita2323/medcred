@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { saveUser, seedSelfMember, saveFamilyMembers, getAgeFromDob } from '../utils/storage';
 import api from '../../../services/api';
-import { ENDPOINTS } from '../../../services/types';
+import { ENDPOINTS, STORAGE_KEYS } from '../../../services/types';
 import { compressImage } from '../../../utils/compressImage';
 
 // ── Aadhaar formatter helper ─────────────────────────────────────
@@ -20,10 +20,11 @@ const EMPTY_MEMBER = { name: '', relationship: '', dob: '', aadhaar: '' };
 
 export default function RegisterPage() {
   const navigate = useNavigate();
+  const location = useLocation();
 
   // ── Personal form ────────────────────────────────────────────────
   const [formData, setFormData] = useState({
-    name: '', mobile: '', email: '', dob: '',
+    name: '', mobile: location.state?.mobile || '', email: '', dob: '',
     gender: '', aadhaar: '', address: '', password: '', consent: false
   });
   const [profilePic, setProfilePic] = useState(null);
@@ -33,6 +34,59 @@ export default function RegisterPage() {
   const [aadhaarBackPic, setAadhaarBackPic] = useState(null);
   const [aadhaarBackFile, setAadhaarBackFile] = useState(null);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+
+  // Mobile Verification states
+  const [showOtpModal, setShowOtpModal] = useState(false);
+  const [otp, setOtp] = useState(new Array(6).fill(''));
+  const [resendTimer, setResendTimer] = useState(30);
+  const [successMsg, setSuccessMsg] = useState('');
+  const inputRefs = useRef([]);
+
+  useEffect(() => {
+    let timer;
+    if (showOtpModal && resendTimer > 0) {
+      timer = setTimeout(() => setResendTimer(resendTimer - 1), 1000);
+    }
+    return () => clearTimeout(timer);
+  }, [resendTimer, showOtpModal]);
+
+  const handleOtpChange = (e, index) => {
+    const val = e.target.value;
+    if (isNaN(val)) return;
+
+    const newOtp = [...otp];
+    newOtp[index] = val.substring(val.length - 1);
+    setOtp(newOtp);
+
+    // Focus next input
+    if (val && index < 5) {
+      inputRefs.current[index + 1].focus();
+    }
+  };
+
+  const handleOtpKeyDown = (e, index) => {
+    if (e.key === 'Backspace' && !otp[index] && index > 0) {
+      inputRefs.current[index - 1].focus();
+    }
+  };
+
+  const handleResendOtp = async () => {
+    try {
+      setLoading(true);
+      setErrorMsg('');
+      setSuccessMsg('');
+      await api.post('/auth/resend-otp', { mobile: formData.mobile, purpose: 'register' });
+      setResendTimer(30);
+      setOtp(new Array(6).fill(''));
+      setSuccessMsg('OTP resent successfully.');
+    } catch (error) {
+      setErrorMsg(error.response?.data?.message || 'Failed to resend OTP.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // ── Family members ───────────────────────────────────────────────
   const [familyMembers, setFamilyMembers] = useState([]);
@@ -96,21 +150,67 @@ export default function RegisterPage() {
     setFamilyMembers(prev => prev.filter(m => m.id !== id));
   };
 
-  const [loading, setLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
-
   // ── Submit ───────────────────────────────────────────────────────
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg('');
+    setSuccessMsg('');
+
+    // Form validations
+    if (!formData.name) return setErrorMsg('Full Name is required.');
+    if (!formData.mobile) return setErrorMsg('Mobile Number is required.');
+    if (!formData.email) return setErrorMsg('Email Address is required.');
+    if (!formData.dob) return setErrorMsg('Date of Birth is required.');
+    if (!formData.gender) return setErrorMsg('Gender is required.');
+    if (!formData.address) return setErrorMsg('Address is required.');
+    if (!formData.password) return setErrorMsg('Password is required.');
     if (!formData.consent) {
       alert('Please agree to the verification terms to continue.');
       return;
     }
 
+    const mobileRegex = /^[6-9]\d{9}$/;
+    if (!mobileRegex.test(formData.mobile)) {
+      setErrorMsg('Invalid mobile number. Must be exactly 10 digits.');
+      return;
+    }
+
     try {
       setLoading(true);
+      // Trigger Send OTP
+      const res = await api.post('/auth/send-otp', { mobile: formData.mobile, purpose: 'register' });
+      if (res.data.success) {
+        setShowOtpModal(true);
+        setResendTimer(30);
+        setOtp(new Array(6).fill(''));
+        setSuccessMsg('OTP sent successfully to your mobile number.');
+      }
+    } catch (error) {
+      setErrorMsg(error.response?.data?.message || 'Failed to send OTP. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyAndRegister = async () => {
+    const otpCode = otp.join('');
+    if (otpCode.length < 6) {
+      setErrorMsg('Please enter the complete 6-digit OTP.');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setErrorMsg('');
+      setSuccessMsg('');
       
+      // Step 1: Verify OTP
+      const verifyRes = await api.post('/auth/verify-otp', { mobile: formData.mobile, otp: otpCode, purpose: 'register' });
+      if (!verifyRes.data.success) {
+        throw new Error('OTP verification failed.');
+      }
+
+      // Step 2: Register user immediately
       const payload = new FormData();
       payload.append('name', formData.name);
       payload.append('mobile', formData.mobile);
@@ -153,14 +253,24 @@ export default function RegisterPage() {
         };
         saveFamilyMembers([selfMember, ...familyMembers]);
 
+        // Save tokens and user data
+        if (res.data.data && res.data.data.accessToken) {
+          const { accessToken, refreshToken, user } = res.data.data;
+          localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, accessToken);
+          localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
+          localStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(user));
+        }
+
+        setShowOtpModal(false);
         setShowSuccess(true);
         setTimeout(() => {
           setShowSuccess(false);
-          navigate('/verify-otp', { state: { mobile: formData.mobile, purpose: 'register' } });
+          navigate('/dashboard');
         }, 2000);
       }
     } catch (error) {
-      setErrorMsg(error.response?.data?.message || 'Registration failed. Please try again.');
+      setErrorMsg(error.response?.data?.message || error.message || 'Verification or registration failed.');
+    } finally {
       setLoading(false);
     }
   };
@@ -190,7 +300,6 @@ export default function RegisterPage() {
 
       <main className="flex-grow overflow-y-auto px-4 py-5 pb-8 lg:py-10 relative z-10 flex justify-center">
         <form onSubmit={handleSubmit} className="space-y-5 lg:space-y-8 max-w-md lg:max-w-4xl w-full mx-auto lg:bg-white lg:shadow-xl lg:rounded-3xl lg:p-8 lg:border lg:border-blue-100">
-
           {/* ── Section 1: Personal Information ─────────────────── */}
           <div className="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm overflow-hidden">
             {/* Section Header */}
@@ -247,7 +356,7 @@ export default function RegisterPage() {
                 <label className="text-[10px] lg:text-xs font-bold text-on-surface-variant uppercase tracking-wider px-0.5">Create Password *</label>
                 <input
                   className="w-full h-11 lg:h-12 px-3 bg-surface border border-outline-variant rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                  placeholder="Minimum 6 characters"
+                  placeholder="At least 6 characters"
                   type="password" name="password" value={formData.password}
                   onChange={handleInputChange} required minLength={6}
                 />
@@ -325,6 +434,17 @@ export default function RegisterPage() {
                     <span className="text-[9px] font-bold text-on-surface-variant text-center leading-tight">Aadhaar Back</span>
                   </div>
                 </div>
+              </div>
+
+              {/* Aadhaar Number */}
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider px-0.5">Aadhaar Card Number *</label>
+                <input
+                  className="w-full h-11 px-3 bg-surface border border-outline-variant rounded-lg text-sm tracking-wider focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-mono"
+                  placeholder="0000 0000 0000"
+                  type="text" name="aadhaar" value={formData.aadhaar}
+                  onChange={handleAadhaarChange} maxLength={14} required
+                />
               </div>
 
               {/* Address */}
@@ -501,7 +621,7 @@ export default function RegisterPage() {
               type="submit"
               disabled={loading}
             >
-              <span>{loading ? 'Verifying...' : 'Verify & Continue'}</span>
+              <span>{loading ? 'Processing...' : 'Register'}</span>
               {!loading && <span className="material-symbols-outlined text-lg">arrow_forward</span>}
             </button>
             <p className="text-center text-xs text-on-surface-variant">
@@ -512,6 +632,97 @@ export default function RegisterPage() {
             </p>
           </div>
         </form>
+
+        {/* OTP Verification Modal Overlay */}
+        {showOtpModal && (
+          <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
+            <div className="w-full max-w-[400px] bg-surface-container-lowest border border-outline-variant rounded-2xl p-6 shadow-2xl space-y-6 animate-scale-up">
+              <div className="text-center">
+                <h2 className="text-lg font-bold text-on-surface mb-2">Verify Mobile Number</h2>
+                <p className="text-xs text-on-surface-variant max-w-[280px] mx-auto leading-relaxed">
+                  Enter the 6-digit OTP sent to your number <strong>+91 {formData.mobile}</strong>.
+                </p>
+              </div>
+
+              {errorMsg && (
+                <div className="bg-error/10 border border-error/20 text-error text-xs font-bold p-3 rounded-lg flex items-center gap-2">
+                  <span className="material-symbols-outlined text-sm">error</span>
+                  {errorMsg}
+                </div>
+              )}
+
+              {successMsg && (
+                <div className="bg-emerald-50 border border-emerald-100 text-emerald-600 text-[10px] font-bold p-3 rounded-xl flex items-center gap-2">
+                  <span className="material-symbols-outlined text-sm">check_circle</span>
+                  {successMsg}
+                </div>
+              )}
+
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-on-surface-variant">Enter 6-Digit OTP *</label>
+                  <div className="flex justify-between gap-1.5">
+                    {otp.map((digit, idx) => (
+                      <input
+                        key={idx}
+                        ref={(el) => (inputRefs.current[idx] = el)}
+                        className="w-10 h-12 text-center text-lg font-extrabold rounded-xl border border-outline-variant bg-surface-container-low focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-mono"
+                        inputMode="numeric"
+                        maxLength={1}
+                        value={digit}
+                        onChange={(e) => handleOtpChange(e, idx)}
+                        onKeyDown={(e) => handleOtpKeyDown(e, idx)}
+                        required
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex justify-between items-center text-[10px] px-0.5">
+                  <span className="text-on-surface-variant font-medium">Didn't receive code?</span>
+                  <button
+                    type="button"
+                    onClick={handleResendOtp}
+                    disabled={resendTimer > 0 || loading}
+                    className={`font-bold underline underline-offset-2 ${
+                      resendTimer > 0 ? 'text-slate-400 no-underline' : 'text-primary hover:text-primary-container'
+                    }`}
+                  >
+                    {resendTimer > 0 ? `Resend in ${resendTimer}s` : 'Resend OTP'}
+                  </button>
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowOtpModal(false)}
+                    className="flex-1 h-11 border border-outline text-on-surface-variant text-xs font-bold rounded-lg hover:bg-surface-container-low cursor-pointer transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleVerifyAndRegister}
+                    disabled={loading}
+                    className="flex-1 h-11 bg-primary text-white text-xs font-bold rounded-lg hover:opacity-90 active:scale-95 transition-all cursor-pointer shadow flex items-center justify-center gap-2"
+                  >
+                    {loading ? (
+                      <>
+                        <span className="material-symbols-outlined animate-spin text-sm">progress_activity</span>
+                        <span>Verifying...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Verify & Register</span>
+                        <span className="material-symbols-outlined text-sm">check_circle</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
 
       {/* Success Modal */}

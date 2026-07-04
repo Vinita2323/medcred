@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import BottomNavBar from '../components/Navigation/BottomNavBar';
 import api from '../../../services/api';
 import { ENDPOINTS } from '../../../services/types';
@@ -13,13 +13,15 @@ const STATUS_MAP = {
 
 export default function LoanDetailsPage() {
   const navigate = useNavigate();
+  const { id } = useParams();
   const [loan, setLoan] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchLoan = async () => {
       try {
-        const res = await api.get(ENDPOINTS.MY_LOAN);
+        const endpoint = id ? `/loans/${id}` : ENDPOINTS.MY_LOAN;
+        const res = await api.get(endpoint);
         if (res.data.success) {
           setLoan(res.data.data);
         }
@@ -30,7 +32,7 @@ export default function LoanDetailsPage() {
       }
     };
     fetchLoan();
-  }, []);
+  }, [id]);
 
   if (loading) {
     return (
@@ -69,6 +71,28 @@ export default function LoanDetailsPage() {
       </header>
 
       <main className="p-4 space-y-6 max-w-md mx-auto w-full">
+        {loan.applicationStatus === 'rejected' && (
+          <div className="bg-red-50 border border-red-200 rounded-2xl p-5 shadow-sm space-y-3 relative overflow-hidden">
+            <div className="flex items-start gap-3 relative z-10">
+              <span className="material-symbols-outlined text-red-600 text-3xl">cancel</span>
+              <div>
+                <h2 className="text-red-800 font-extrabold text-base">Application Rejected</h2>
+                <p className="text-xs text-red-600 mt-1">Your loan application could not be approved at this time.</p>
+              </div>
+            </div>
+            <div className="bg-white/60 rounded-xl p-3 border border-red-100 relative z-10">
+              <p className="text-[10px] text-red-500 font-bold uppercase tracking-wider mb-1">Reason for Rejection</p>
+              <p className="text-sm font-bold text-red-900">{loan.rejectionReason}</p>
+            </div>
+            {loan.rejectedAt && (
+              <p className="text-[10px] text-red-500 font-semibold relative z-10">
+                Rejected on {new Date(loan.rejectedAt).toLocaleString()}
+              </p>
+            )}
+            <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-red-100 rounded-full blur-xl z-0"></div>
+          </div>
+        )}
+
         <div className="bg-white border border-outline-variant/50 rounded-2xl p-5 shadow-sm space-y-4">
           <div className="flex justify-between items-start">
             <div>

@@ -24,7 +24,13 @@ export async function compressImage(file) {
   try {
     const compressed = await imageCompression(file, options);
     console.log(`Image compressed: ${(file.size / 1024).toFixed(0)}KB → ${(compressed.size / 1024).toFixed(0)}KB`);
-    return compressed;
+    const dotIndex = file.name.lastIndexOf('.');
+    const baseName = dotIndex !== -1 ? file.name.substring(0, dotIndex) : file.name;
+    const webpFile = new File([compressed], `${baseName}.webp`, {
+      type: 'image/webp',
+      lastModified: Date.now()
+    });
+    return webpFile;
   } catch (err) {
     console.warn('Image compression failed, using original:', err);
     return file; // fallback: original file

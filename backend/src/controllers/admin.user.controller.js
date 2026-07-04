@@ -30,6 +30,7 @@ export const adminGetAllUsers = async (req, res) => {
         cardStatus: card ? (card.status.charAt(0).toUpperCase() + card.status.slice(1)) : 'Pending',
         plan: card && card.planId ? card.planId.name : 'N/A',
         status: u.status.charAt(0).toUpperCase() + u.status.slice(1),
+        bypassLoanWaitingPeriod: u.bypassLoanWaitingPeriod || false,
         registeredAt: new Date(u.createdAt).toLocaleDateString(),
       };
     });
@@ -346,6 +347,36 @@ export const adminVerifyUserKYC = async (req, res) => {
     });
   } catch (error) {
     console.error('Admin Verify User KYC Error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+// ─────────────────────────────────────────────────────────────────
+// @route   PATCH /api/v1/admin/users/:id/toggle-loan-bypass
+// @desc    Toggle urgent loan access (bypasses 30-day waiting period)
+// @access  Private (Admin)
+// ─────────────────────────────────────────────────────────────────
+export const adminToggleLoanBypass = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    user.bypassLoanWaitingPeriod = !user.bypassLoanWaitingPeriod;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: `Urgent loan access ${user.bypassLoanWaitingPeriod ? 'enabled' : 'disabled'} successfully`,
+      data: {
+        bypassLoanWaitingPeriod: user.bypassLoanWaitingPeriod
+      }
+    });
+  } catch (error) {
+    console.error('Admin Toggle Loan Bypass Error:', error);
     res.status(500).json({ success: false, message: 'Server error' });
   }
 };

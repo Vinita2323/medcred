@@ -1,4 +1,5 @@
 import User from '../models/User.model.js';
+import OtpStore from '../models/OtpStore.model.js';
 import { saveOtp, verifyOtp } from '../services/otp.service.js';
 import { generateAccessToken, generateRefreshToken } from '../utils/generateToken.js';
 
@@ -11,8 +12,16 @@ const register = async (req, res) => {
   try {
     const { name, mobile, email, dob, gender, aadhaar, address, consent, password } = req.body;
 
+    // Sanitize mobile
+    let cleanedMobile = mobile.replace(/\D/g, '');
+    if (cleanedMobile.startsWith('91') && cleanedMobile.length === 12) {
+      cleanedMobile = cleanedMobile.substring(2);
+    } else if (cleanedMobile.startsWith('0') && cleanedMobile.length === 11) {
+      cleanedMobile = cleanedMobile.substring(1);
+    }
+
     // Validate required fields
-    if (!name || !mobile || !email || !dob || !gender || !address || !password) {
+    if (!name || !cleanedMobile || !email || !dob || !gender || !address || !password) {
       return res.status(400).json({ success: false, message: 'All fields are required' });
     }
 
@@ -25,7 +34,7 @@ const register = async (req, res) => {
     }
 
     // Check duplicate mobile
-    const existingMobile = await User.findOne({ mobile });
+    const existingMobile = await User.findOne({ mobile: cleanedMobile });
     if (existingMobile) {
       return res.status(400).json({ success: false, message: 'Mobile number already registered' });
     }
@@ -53,10 +62,63 @@ const register = async (req, res) => {
       }
     }
 
-    // Save user (unverified)
+    // Check if the mobile number was pre-verified
+    const preVerified = await OtpStore.findOne({ mobile: cleanedMobile, purpose: 'register', isUsed: true });
+
+    if (preVerified) {
+      // Save user as verified directly
+      const user = await User.create({
+        fullName: name,
+        mobile: cleanedMobile,
+        email,
+        password,
+        profilePhoto: profilePhotoPath,
+        dob,
+        gender,
+        aadhaarNumber: aadhaar ? aadhaar.replace(/\s/g, '') : undefined,
+        aadhaarFrontUrl,
+        aadhaarBackUrl,
+        address,
+        consentGiven: consent,
+        consentGivenAt: new Date(),
+        isMobileVerified: true,
+        isVerified: true,
+        lastLoginAt: new Date()
+      });
+
+      // Delete the pre-verification proof record
+      await OtpStore.deleteOne({ _id: preVerified._id });
+
+      // Generate login tokens immediately
+      const payload = { id: user._id, role: 'user' };
+      const accessToken = generateAccessToken(payload);
+      const refreshToken = generateRefreshToken(payload);
+
+      user.refreshToken = refreshToken;
+      await user.save({ validateBeforeSave: false });
+
+      return res.status(201).json({
+        success: true,
+        message: 'Registration successful',
+        data: {
+          accessToken,
+          refreshToken,
+          user: {
+            userId: user.userId,
+            name: user.fullName,
+            mobile: user.mobile,
+            email: user.email,
+            kycStatus: user.kycStatus,
+            hasCard: !!user.cardId,
+          }
+        }
+      });
+    }
+
+    // Default flow: Save user (unverified)
     const user = await User.create({
       fullName: name,
-      mobile,
+      mobile: cleanedMobile,
       email,
       password, // user provided password
       profilePhoto: profilePhotoPath,
@@ -72,12 +134,12 @@ const register = async (req, res) => {
     });
 
     // Send OTP
-    await saveOtp(mobile, 'register');
+    await saveOtp(cleanedMobile, 'register');
 
     res.status(201).json({
       success: true,
       message: 'OTP sent to your mobile number',
-      data: { mobile },
+      data: { mobile: cleanedMobile },
     });
   } catch (error) {
     console.error('Register Error:', error);
@@ -98,15 +160,23 @@ const verifyOtpHandler = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Mobile and OTP are required' });
     }
 
+    // Sanitize mobile
+    let cleanedMobile = mobile.replace(/\D/g, '');
+    if (cleanedMobile.startsWith('91') && cleanedMobile.length === 12) {
+      cleanedMobile = cleanedMobile.substring(2);
+    } else if (cleanedMobile.startsWith('0') && cleanedMobile.length === 11) {
+      cleanedMobile = cleanedMobile.substring(1);
+    }
+
     // Verify OTP
-    const result = await verifyOtp(mobile, otp, 'register');
+    const result = await verifyOtp(cleanedMobile, otp, 'register');
     if (!result.valid) {
       return res.status(400).json({ success: false, message: result.message });
     }
 
     // Mark user as verified
     const user = await User.findOneAndUpdate(
-      { mobile },
+      { mobile: cleanedMobile },
       { isMobileVerified: true, isVerified: true, lastLoginAt: new Date() },
       { new: true }
     );
@@ -162,8 +232,16 @@ const login = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Mobile and password are required' });
     }
 
+    // Sanitize mobile
+    let cleanedMobile = mobile.replace(/\D/g, '');
+    if (cleanedMobile.startsWith('91') && cleanedMobile.length === 12) {
+      cleanedMobile = cleanedMobile.substring(2);
+    } else if (cleanedMobile.startsWith('0') && cleanedMobile.length === 11) {
+      cleanedMobile = cleanedMobile.substring(1);
+    }
+
     // Find user with password field
-    const user = await User.findOne({ mobile }).select('+password');
+    const user = await User.findOne({ mobile: cleanedMobile }).select('+password');
     if (!user) {
       return res.status(401).json({ success: false, message: 'Invalid mobile number or password' });
     }
@@ -226,12 +304,20 @@ const forgotPassword = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Mobile number is required' });
     }
 
-    const user = await User.findOne({ mobile });
+    // Sanitize mobile
+    let cleanedMobile = mobile.replace(/\D/g, '');
+    if (cleanedMobile.startsWith('91') && cleanedMobile.length === 12) {
+      cleanedMobile = cleanedMobile.substring(2);
+    } else if (cleanedMobile.startsWith('0') && cleanedMobile.length === 11) {
+      cleanedMobile = cleanedMobile.substring(1);
+    }
+
+    const user = await User.findOne({ mobile: cleanedMobile });
     if (!user) {
       return res.status(404).json({ success: false, message: 'No account found with this mobile number' });
     }
 
-    await saveOtp(mobile, 'forgot_password');
+    await saveOtp(cleanedMobile, 'forgot_password');
 
     res.status(200).json({ success: true, message: 'OTP sent to your mobile number' });
   } catch (error) {
@@ -261,14 +347,22 @@ const resetPassword = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Passwords do not match' });
     }
 
+    // Sanitize mobile
+    let cleanedMobile = mobile.replace(/\D/g, '');
+    if (cleanedMobile.startsWith('91') && cleanedMobile.length === 12) {
+      cleanedMobile = cleanedMobile.substring(2);
+    } else if (cleanedMobile.startsWith('0') && cleanedMobile.length === 11) {
+      cleanedMobile = cleanedMobile.substring(1);
+    }
+
     // Verify OTP
-    const result = await verifyOtp(mobile, otp, 'forgot_password');
+    const result = await verifyOtp(cleanedMobile, otp, 'forgot_password');
     if (!result.valid) {
       return res.status(400).json({ success: false, message: result.message });
     }
 
     // Update password
-    const user = await User.findOne({ mobile }).select('+password');
+    const user = await User.findOne({ mobile: cleanedMobile }).select('+password');
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }

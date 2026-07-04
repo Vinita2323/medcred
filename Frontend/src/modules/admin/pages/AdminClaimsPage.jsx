@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import api from '../../../services/api';
 import { ENDPOINTS, SERVER_URL } from '../../../services/types';
 
@@ -26,10 +27,25 @@ export default function AdminClaimsPage() {
   const [reviewClaim, setReview]  = useState(null);
   const [rejectReason, setReason] = useState('');
   const [search, setSearch]       = useState('');
+  const [previewDoc, setPreviewDoc] = useState(null);
 
   useEffect(() => {
     fetchClaims();
   }, []);
+
+  useEffect(() => {
+    if (reviewClaim || previewDoc) {
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+      document.documentElement.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+      document.documentElement.style.overflow = 'unset';
+    };
+  }, [reviewClaim, previewDoc]);
 
   const fetchClaims = async () => {
     try {
@@ -224,8 +240,8 @@ export default function AdminClaimsPage() {
       </div>
 
       {/* Review Modal */}
-      {reviewClaim && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => { setReview(null); setReason(''); }}>
+      {reviewClaim && createPortal(
+        <div className="fixed inset-0 bg-[#0D1B3E]/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4" onClick={() => { setReview(null); setReason(''); }}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg animate-fade-in" onClick={e=>e.stopPropagation()}>
             <div className="flex justify-between items-center border-b border-[#c3c6d6]/20 px-6 py-4">
               <h3 className="font-extrabold text-[#191b23]">Claim Review — {reviewClaim.id}</h3>
@@ -253,20 +269,19 @@ export default function AdminClaimsPage() {
                 <p className="text-xs font-bold text-[#516161] uppercase tracking-wider mb-2">Submitted Documents</p>
                 <div className="flex flex-wrap gap-2">
                   {(reviewClaim.documents || []).map((doc, i) => (
-                    <a 
+                    <button 
                       key={i} 
-                      href={`${SERVER_URL}${doc.url}`}
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1.5 bg-[#f0f4ff] border border-[#dae2ff] rounded-lg px-3 py-1.5 hover:bg-[#dae2ff] transition-colors"
+                      type="button"
+                      onClick={() => setPreviewDoc({ url: `${SERVER_URL}${doc.url}`, filename: doc.filename })}
+                      className="flex items-center gap-1.5 bg-[#f0f4ff] border border-[#dae2ff] rounded-lg px-3 py-1.5 hover:bg-[#dae2ff] transition-colors cursor-pointer text-left"
                     >
                       <span className="material-symbols-outlined text-[#003d9b] text-[14px]">
-                        {doc.filename?.match(/\.(jpg|jpeg|png)$/i) ? 'image' : 'description'}
+                        {doc.filename?.match(/\.(jpg|jpeg|png|webp)$/i) || doc.filename === 'blob' ? 'image' : 'description'}
                       </span>
                       <span className="text-xs font-semibold text-[#003d9b] max-w-[200px] truncate">
                         {doc.filename || 'Document'}
                       </span>
-                    </a>
+                    </button>
                   ))}
                 </div>
               </div>
@@ -319,7 +334,83 @@ export default function AdminClaimsPage() {
               )}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Document Preview Modal */}
+      {previewDoc && createPortal(
+        <div 
+          className="fixed inset-0 bg-black/60 z-[10000] flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in"
+          onClick={() => setPreviewDoc(null)}
+        >
+          <div 
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden animate-scale-up"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center border-b border-[#c3c6d6]/20 px-6 py-4">
+              <h3 className="font-extrabold text-[#191b23] truncate max-w-[80%]">
+                Document Preview — {previewDoc.filename || 'Document'}
+              </h3>
+              <div className="flex items-center gap-3">
+                <a 
+                  href={previewDoc.url}
+                  download={previewDoc.filename || 'download'}
+                  className="material-symbols-outlined text-[#737685] hover:text-[#191b23] cursor-pointer text-xl"
+                  title="Download File"
+                >
+                  download
+                </a>
+                <button 
+                  onClick={() => setPreviewDoc(null)} 
+                  className="material-symbols-outlined text-[#737685] hover:text-[#191b23] cursor-pointer text-xl"
+                >
+                  close
+                </button>
+              </div>
+            </div>
+            <div className="p-6 flex items-center justify-center bg-slate-50 min-h-[300px] max-h-[75vh] overflow-y-auto">
+              {previewDoc.filename?.match(/\.(jpg|jpeg|png|webp)$/i) || previewDoc.url.match(/\.(jpg|jpeg|png|webp)$/i) || previewDoc.filename === 'blob' ? (
+                <img 
+                  src={previewDoc.url} 
+                  alt={previewDoc.filename} 
+                  className="max-w-full max-h-[60vh] object-contain rounded-lg shadow-sm"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    e.target.nextSibling.style.display = 'block';
+                  }}
+                />
+              ) : previewDoc.filename?.match(/\.pdf$/i) || previewDoc.url.match(/\.pdf$/i) ? (
+                <iframe 
+                  src={previewDoc.url} 
+                  title="PDF Preview"
+                  className="w-full h-[60vh] border-0 rounded-lg shadow-inner"
+                />
+              ) : (
+                <div className="text-center p-8 space-y-4">
+                  <span className="material-symbols-outlined text-5xl text-[#737685]">draft</span>
+                  <p className="text-sm font-semibold text-[#516161]">Preview not supported for this file format.</p>
+                  <a 
+                    href={previewDoc.url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 bg-[#003d9b] text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-md hover:bg-[#0052cc] transition-colors cursor-pointer"
+                  >
+                    Open in New Tab
+                    <span className="material-symbols-outlined text-sm">open_in_new</span>
+                  </a>
+                </div>
+              )}
+              <div style={{ display: 'none' }} className="text-center p-8">
+                <p className="text-sm font-semibold text-[#516161]">Failed to load preview.</p>
+                <a href={previewDoc.url} target="_blank" rel="noopener noreferrer" className="text-xs text-[#003d9b] underline font-bold mt-2 block">
+                  Open link directly
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
     </div>
   );

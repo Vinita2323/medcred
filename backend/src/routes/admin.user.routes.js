@@ -1,5 +1,5 @@
 import express from 'express';
-import { adminGetAllUsers, adminDashboardStats, adminUpdateUserStatus, adminActivateCard, adminGetUserDetails, adminVerifyUserKYC } from '../controllers/admin.user.controller.js';
+import { adminGetAllUsers, adminDashboardStats, adminUpdateUserStatus, adminActivateCard, adminGetUserDetails, adminVerifyUserKYC, adminToggleLoanBypass } from '../controllers/admin.user.controller.js';
 import { protect, restrictTo } from '../middlewares/auth.middleware.js';
 
 const router = express.Router();
@@ -10,6 +10,7 @@ router.get('/dashboard/stats', adminDashboardStats);
 router.patch('/:id/status', adminUpdateUserStatus);
 router.patch('/:id/activate-card', adminActivateCard);
 router.patch('/:id/verify-kyc', adminVerifyUserKYC);
+router.patch('/:id/toggle-loan-bypass', adminToggleLoanBypass);
 router.get('/:id/details', adminGetUserDetails);
 router.get('/', adminGetAllUsers);
 

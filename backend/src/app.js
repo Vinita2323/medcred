@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 
 // Routes
+import otpRoutes from './routes/otp.routes.js';
 import userAuthRoutes from './routes/user.auth.routes.js';
 import agentAuthRoutes from './routes/agent.auth.routes.js';
 import adminAuthRoutes from './routes/admin.auth.routes.js';
@@ -80,6 +81,8 @@ app.get('/api/v1/health', (req, res) => {
 });
 
 // ── Routes ─────────────────────────────────────────────────────
+app.use('/api/auth', otpRoutes);
+app.use('/api/v1/auth', otpRoutes);
 app.use('/api/v1/auth', userAuthRoutes);
 app.use('/api/v1/auth', authRefreshRoutes);
 app.use('/api/v1/agent/auth', agentAuthRoutes);

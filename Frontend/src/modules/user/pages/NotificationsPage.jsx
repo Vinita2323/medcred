@@ -1,54 +1,47 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import BottomNavBar from '../components/Navigation/BottomNavBar';
+import api from '../../../services/api';
+import { ENDPOINTS } from '../../../services/types';
 
 export default function NotificationsPage() {
   const navigate = useNavigate();
-  const [notifications, setNotifications] = useState([
-    {
-      id: 1,
-      title: 'Claim Approved & Settled',
-      description: "Your claim of ₹45,000 for Priya Mehta's dental surgery has been successfully approved and settled with the hospital.",
-      time: '2 hours ago',
-      type: 'success',
-      read: false,
-      icon: 'check_circle'
-    },
-    {
-      id: 2,
-      title: 'Monthly EMI Due',
-      description: 'Your monthly interest-free repayment of ₹4,200 is due in 3 days. Autopay will execute on the due date.',
-      time: '1 day ago',
-      type: 'warning',
-      read: false,
-      icon: 'calendar_month'
-    },
-    {
-      id: 3,
-      title: 'New Member Added',
-      description: 'Rohan Mehta (Son) has been successfully verified via Aadhaar e-KYC and added to your Family Health Passport.',
-      time: '2 days ago',
-      type: 'info',
-      read: true,
-      icon: 'person_add'
-    },
-    {
-      id: 4,
-      title: 'KYC Verification Complete',
-      description: 'Aadhaar e-KYC verification for Arjun Mehta was completed successfully. Your medical limit is active.',
-      time: '5 days ago',
-      type: 'success',
-      read: true,
-      icon: 'verified'
-    }
-  ]);
+  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const markAllAsRead = () => {
-    setNotifications(notifications.map(n => ({ ...n, read: true })));
+  useEffect(() => {
+    fetchNotifications();
+  }, []);
+
+  const fetchNotifications = async () => {
+    try {
+      // Create new endpoint in ENDPOINTS if not exists, but for now we can hardcode the route string or use api.get
+      const res = await api.get('/notifications');
+      if (res.data.success) {
+        setNotifications(res.data.data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch notifications', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const deleteNotification = (id) => {
-    setNotifications(notifications.filter(n => n.id !== id));
+  const handleNotificationClick = async (notification) => {
+    if (!notification.isRead) {
+      try {
+        await api.patch(`/notifications/${notification._id}/read`);
+        setNotifications(notifications.map(n => 
+          n._id === notification._id ? { ...n, isRead: true } : n
+        ));
+      } catch (err) {
+        console.error('Failed to mark as read', err);
+      }
+    }
+    
+    if (notification.link) {
+      navigate(notification.link);
+    }
   };
 
   const getBadgeStyles = (type) => {
@@ -56,6 +49,8 @@ export default function NotificationsPage() {
       case 'success':
         return 'bg-tertiary/10 text-tertiary';
       case 'warning':
+        return 'bg-error/10 text-error';
+      case 'error':
         return 'bg-error/10 text-error';
       case 'info':
         return 'bg-primary/10 text-primary';
@@ -77,19 +72,15 @@ export default function NotificationsPage() {
           </button>
           <h1 className="text-sm font-bold text-primary">Notifications</h1>
         </div>
-        {notifications.some(n => !n.read) && (
-          <button 
-            onClick={markAllAsRead}
-            className="text-[10px] font-bold text-primary hover:underline cursor-pointer"
-          >
-            Mark all read
-          </button>
-        )}
       </header>
 
       {/* Main Content */}
       <main className="flex-grow overflow-y-auto p-4 space-y-4 max-w-md mx-auto w-full animate-fade-in">
-        {notifications.length === 0 ? (
+        {loading ? (
+          <div className="flex justify-center items-center py-20">
+            <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        ) : notifications.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
             <div className="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center text-outline">
               <span className="material-symbols-outlined text-3xl">notifications_off</span>
@@ -103,21 +94,22 @@ export default function NotificationsPage() {
           <div className="space-y-3">
             {notifications.map((n) => (
               <div 
-                key={n.id} 
-                className={`p-4 rounded-2xl border transition-all relative flex gap-3 ${
-                  n.read 
+                key={n._id} 
+                onClick={() => handleNotificationClick(n)}
+                className={`p-4 rounded-2xl border transition-all relative flex gap-3 cursor-pointer ${
+                  n.isRead 
                     ? 'bg-surface-container-lowest border-outline-variant/30 opacity-75' 
                     : 'bg-white border-primary/20 shadow-sm'
                 }`}
               >
                 {/* Unread indicator */}
-                {!n.read && (
+                {!n.isRead && (
                   <span className="absolute top-4 right-4 w-2.5 h-2.5 bg-primary rounded-full"></span>
                 )}
 
                 {/* Badge Icon */}
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${getBadgeStyles(n.type)}`}>
-                  <span className="material-symbols-outlined text-lg">{n.icon}</span>
+                  <span className="material-symbols-outlined text-lg">{n.icon || 'notifications'}</span>
                 </div>
 
                 {/* Content */}
@@ -125,17 +117,9 @@ export default function NotificationsPage() {
                   <div className="flex justify-between items-start">
                     <h4 className="font-bold text-xs text-on-surface">{n.title}</h4>
                   </div>
-                  <p className="text-[10px] text-on-surface-variant leading-relaxed">{n.description}</p>
-                  <span className="text-[9px] text-outline font-semibold block pt-1">{n.time}</span>
+                  <p className="text-[10px] text-on-surface-variant leading-relaxed">{n.message}</p>
+                  <span className="text-[9px] text-outline font-semibold block pt-1">{new Date(n.createdAt).toLocaleString()}</span>
                 </div>
-
-                {/* Delete button */}
-                <button 
-                  onClick={() => deleteNotification(n.id)}
-                  className="absolute bottom-4 right-4 text-outline hover:text-error transition-colors cursor-pointer"
-                >
-                  <span className="material-symbols-outlined text-sm">delete</span>
-                </button>
               </div>
             ))}
           </div>

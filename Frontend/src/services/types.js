@@ -76,6 +76,7 @@ export const ENDPOINTS = {
   ADMIN_USER_ACTIVATE_CARD: (id) => `/admin/users/${id}/activate-card`,
   ADMIN_USER_DETAILS: (id) => `/admin/users/${id}/details`,
   ADMIN_USER_VERIFY_KYC: (id) => `/admin/users/${id}/verify-kyc`,
+  ADMIN_USER_TOGGLE_LOAN_BYPASS: (id) => `/admin/users/${id}/toggle-loan-bypass`,
 
   // ADMIN — SETTLEMENTS
   ADMIN_SETTLEMENTS: '/admin/settlements',
@@ -167,6 +168,7 @@ export const ENDPOINTS = {
   LOAN_ELIGIBILITY: '/loans/eligibility',
   LOAN_APPLY: '/loans/apply',
   MY_LOAN: '/loans/my-loan',
+  LOAN_HISTORY: '/loans/history',
 
   // ADMIN - LOANS
   ADMIN_LOANS: '/admin/loans',

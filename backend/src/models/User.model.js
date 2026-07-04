@@ -106,6 +106,10 @@ const userSchema = new mongoose.Schema(
       enum: ['active', 'blocked', 'suspended', 'deleted'],
       default: 'active',
     },
+    bypassLoanWaitingPeriod: {
+      type: Boolean,
+      default: false,
+    },
     consentGiven: {
       type: Boolean,
       default: false,
@@ -159,8 +163,18 @@ const userSchema = new mongoose.Schema(
 userSchema.pre('save', async function () {
   // Generate userId
   if (!this.userId) {
-    const count = await mongoose.model('User').countDocuments();
-    this.userId = `USR${String(count + 1).padStart(3, '0')}`;
+    let isUnique = false;
+    let nextNum = (await mongoose.model('User').countDocuments()) + 1;
+    while (!isUnique) {
+      const candidateId = `USR${String(nextNum).padStart(3, '0')}`;
+      const exists = await mongoose.model('User').findOne({ userId: candidateId });
+      if (!exists) {
+        this.userId = candidateId;
+        isUnique = true;
+      } else {
+        nextNum++;
+      }
+    }
   }
 
   // Hash password if modified

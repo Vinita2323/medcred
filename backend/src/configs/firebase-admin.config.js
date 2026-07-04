@@ -1,11 +1,18 @@
-import admin from 'firebase-admin';
+import { initializeApp, cert } from 'firebase-admin/app';
+import { getMessaging } from 'firebase-admin/messaging';
 import dotenv from 'dotenv';
 dotenv.config();
 
-const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+let app;
+try {
+  const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+  app = initializeApp({
+    credential: cert(serviceAccount)
+  });
+} catch (err) {
+  console.warn("Firebase Admin Initialization Error:", err.message);
+}
 
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
-});
-
-export default admin;
+export default {
+  messaging: () => getMessaging(app)
+};

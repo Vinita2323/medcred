@@ -52,3 +52,32 @@ export const testPushNotification = async (req, res) => {
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
+
+export const getUserNotifications = async (req, res) => {
+  try {
+    const { Notification } = await import('../models/Notification.model.js');
+    const notifications = await Notification.find({ userId: req.user._id }).sort({ createdAt: -1 });
+    res.status(200).json({ success: true, data: notifications });
+  } catch (error) {
+    console.error('Error fetching notifications:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+export const markNotificationRead = async (req, res) => {
+  try {
+    const { Notification } = await import('../models/Notification.model.js');
+    const notif = await Notification.findOneAndUpdate(
+      { _id: req.params.id, userId: req.user._id },
+      { isRead: true },
+      { new: true }
+    );
+    if (!notif) {
+      return res.status(404).json({ success: false, message: 'Notification not found' });
+    }
+    res.status(200).json({ success: true, data: notif });
+  } catch (error) {
+    console.error('Error marking notification read:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};

@@ -23,6 +23,7 @@ export default function LoanPage() {
   const [progressPct, setProgressPct] = useState(0);
   const [maxLimit, setMaxLimit] = useState(200000);
   const [activeLoan, setActiveLoan] = useState(null);
+  const [loanHistory, setLoanHistory] = useState([]);
 
   const minAmount = 10000;
 
@@ -57,8 +58,13 @@ export default function LoanPage() {
           setActiveLoan(aLoan);
         }
       }
+      
+      const historyRes = await api.get(ENDPOINTS.LOAN_HISTORY);
+      if (historyRes.data.success) {
+        setLoanHistory(historyRes.data.data);
+      }
     } catch (err) {
-      console.error('Error fetching loan eligibility:', err);
+      console.error('Error fetching loan eligibility/history:', err);
     } finally {
       setLoading(false);
     }
@@ -365,6 +371,55 @@ export default function LoanPage() {
               )}
             </button>
           </>
+        )}
+
+        {/* Loan History Section */}
+        {loanHistory.length > 0 && (
+          <section className="mt-8 space-y-4 pt-6 border-t border-outline-variant/30">
+            <h3 className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Loan History</h3>
+            <div className="space-y-3">
+              {loanHistory.map((historyItem) => (
+                <div key={historyItem._id} className="bg-white border border-outline-variant/50 rounded-2xl p-4 shadow-sm flex flex-col gap-2">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="font-bold text-on-surface text-sm">₹{historyItem.loanAmount?.toLocaleString('en-IN')}</p>
+                      <p className="text-[10px] text-on-surface-variant mt-0.5">{new Date(historyItem.appliedAt).toLocaleDateString()}</p>
+                    </div>
+                    <div className="text-right">
+                      {historyItem.applicationStatus === 'rejected' ? (
+                        <span className="inline-flex items-center gap-1 bg-red-100 text-red-800 px-2 py-1 rounded-md text-[10px] font-bold">
+                          <span className="material-symbols-outlined text-[12px]">cancel</span> Rejected
+                        </span>
+                      ) : historyItem.applicationStatus === 'disbursed' ? (
+                        <span className="inline-flex items-center gap-1 bg-green-100 text-green-800 px-2 py-1 rounded-md text-[10px] font-bold">
+                          <span className="material-symbols-outlined text-[12px]">check_circle</span> Disbursed
+                        </span>
+                      ) : historyItem.applicationStatus === 'closed' ? (
+                        <span className="inline-flex items-center gap-1 bg-gray-100 text-gray-800 px-2 py-1 rounded-md text-[10px] font-bold">
+                          <span className="material-symbols-outlined text-[12px]">task_alt</span> Closed
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 bg-surface-container text-on-surface-variant px-2 py-1 rounded-md text-[10px] font-bold capitalize">
+                          {historyItem.applicationStatus?.replace('_', ' ')}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  {historyItem.applicationStatus === 'rejected' && historyItem.rejectionReason && (
+                    <div className="bg-red-50 p-2 rounded text-[10px] text-red-700 mt-1">
+                      <span className="font-bold">Reason:</span> {historyItem.rejectionReason.slice(0, 50)}{historyItem.rejectionReason.length > 50 ? '...' : ''}
+                    </div>
+                  )}
+                  <button 
+                    onClick={() => navigate(`/loan-details/${historyItem._id}`)}
+                    className="mt-1 w-full bg-surface-container-low hover:bg-surface-container-high py-2 rounded-lg text-xs font-bold text-primary transition-colors cursor-pointer"
+                  >
+                    View Details
+                  </button>
+                </div>
+              ))}
+            </div>
+          </section>
         )}
       </main>
 

@@ -333,8 +333,8 @@ export default function ClaimsPage() {
 
           {/* New Claim Modal */}
           {isModalOpen && (
-            <div className="fixed inset-0 z-50 flex items-start justify-center pt-24 bg-[#0D1B3E]/60 backdrop-blur-sm animate-fade-in px-4">
-              <div className="bg-white rounded-2xl p-5 w-full max-w-sm shadow-2xl animate-slide-up">
+            <div className="fixed inset-0 z-50 flex items-start justify-center py-6 bg-[#0D1B3E]/60 backdrop-blur-sm animate-fade-in px-4 overflow-y-auto">
+              <div className="bg-white rounded-2xl p-5 w-full max-w-sm shadow-2xl animate-slide-up my-auto">
                 <h3 className="text-lg font-bold text-on-surface mb-4">Submit New Claim</h3>
                 <div className="space-y-4">
                   <div>

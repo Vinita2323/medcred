@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../../services/api';
 import { ENDPOINTS, STORAGE_KEYS } from '../../../services/types';
@@ -11,10 +11,62 @@ export default function LoginPage() {
   const [loginMethod, setLoginMethod] = useState('password'); // 'password' or 'otp'
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
+
+  // OTP Login Flow States
+  const [step, setStep] = useState('request'); // 'request' or 'verify'
+  const [otp, setOtp] = useState(new Array(6).fill(''));
+  const [resendTimer, setResendTimer] = useState(30);
+  const inputRefs = useRef([]);
+
+  useEffect(() => {
+    let timer;
+    if (loginMethod === 'otp' && step === 'verify' && resendTimer > 0) {
+      timer = setTimeout(() => setResendTimer(resendTimer - 1), 1000);
+    }
+    return () => clearTimeout(timer);
+  }, [resendTimer, step, loginMethod]);
+
+  const handleOtpChange = (e, index) => {
+    const val = e.target.value;
+    if (isNaN(val)) return;
+
+    const newOtp = [...otp];
+    newOtp[index] = val.substring(val.length - 1);
+    setOtp(newOtp);
+
+    // Focus next input
+    if (val && index < 5) {
+      inputRefs.current[index + 1].focus();
+    }
+  };
+
+  const handleOtpKeyDown = (e, index) => {
+    if (e.key === 'Backspace' && !otp[index] && index > 0) {
+      inputRefs.current[index - 1].focus();
+    }
+  };
+
+  const handleResend = async () => {
+    try {
+      setErrorMsg('');
+      setSuccessMsg('');
+      setLoading(true);
+      await api.post('/auth/resend-otp', { mobile, purpose: 'login' });
+      setResendTimer(30);
+      setOtp(new Array(6).fill(''));
+      setSuccessMsg('OTP resent successfully.');
+    } catch (error) {
+      setErrorMsg(error.response?.data?.message || 'Failed to resend OTP.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg('');
+    setSuccessMsg('');
 
     if (loginMethod === 'password') {
       if (!mobile || !password) {
@@ -43,16 +95,56 @@ export default function LoginPage() {
         setErrorMsg('Please enter your mobile number.');
         return;
       }
-      try {
-        setLoading(true);
-        const res = await api.post(ENDPOINTS.USER_SEND_LOGIN_OTP, { mobile });
 
-        if (res.data.success) {
-          navigate('/verify-otp', { state: { mobile, purpose: 'login' } });
+      const mobileRegex = /^[6-9]\d{9}$/;
+      if (!mobileRegex.test(mobile)) {
+        setErrorMsg('Invalid mobile number. Must be exactly 10 digits.');
+        return;
+      }
+
+      if (step === 'request') {
+        try {
+          setLoading(true);
+          const res = await api.post('/auth/send-otp', { mobile, purpose: 'login' });
+
+          if (res.data.success) {
+            setStep('verify');
+            setResendTimer(30);
+            setSuccessMsg('OTP sent successfully.');
+          }
+        } catch (error) {
+          setErrorMsg(error.response?.data?.message || 'Failed to send OTP. Please try again.');
+        } finally {
+          setLoading(false);
         }
-      } catch (error) {
-        setErrorMsg(error.response?.data?.message || 'Failed to send OTP. Please try again.');
-        setLoading(false);
+      } else {
+        const otpCode = otp.join('');
+        if (otpCode.length < 6) {
+          setErrorMsg('Please enter the complete 6-digit OTP.');
+          return;
+        }
+
+        try {
+          setLoading(true);
+          const res = await api.post('/auth/verify-otp', { mobile, otp: otpCode, purpose: 'login' });
+
+          if (res.data.success) {
+            if (res.data.isRegistered) {
+              const { accessToken, refreshToken, user } = res.data.data;
+              localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, accessToken);
+              localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
+              localStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(user));
+              navigate('/dashboard');
+            } else {
+              // User is not registered yet! Go to registration page with verified mobile
+              navigate('/register', { state: { mobile, verified: true } });
+            }
+          }
+        } catch (error) {
+          setErrorMsg(error.response?.data?.message || 'Invalid OTP. Please try again.');
+        } finally {
+          setLoading(false);
+        }
       }
     }
   };
@@ -182,23 +274,77 @@ export default function LoginPage() {
               <form onSubmit={handleSubmit} className="space-y-4 flex-grow flex flex-col">
                 <div className="space-y-4 flex-grow">
                   {/* Mobile Number Input */}
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-[#1A2338]" htmlFor="mobile">Mobile Number</label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                        <span className="material-symbols-outlined text-gray-400 text-[18px]">call</span>
+                  {(loginMethod === 'password' || step === 'request') && (
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-[#1A2338]" htmlFor="mobile">Mobile Number</label>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                          <span className="material-symbols-outlined text-gray-400 text-[18px]">call</span>
+                        </div>
+                        <input 
+                          className="w-full pl-10 pr-3 py-3 bg-white lg:bg-transparent border border-gray-200 lg:border-gray-200 rounded-xl focus:ring-2 focus:ring-[#3267E3]/20 focus:border-[#3267E3] outline-none transition-all text-xs font-semibold text-[#1A2338]" 
+                          id="mobile" 
+                          name="mobile" 
+                          placeholder="9988776655" 
+                          type="tel"
+                          value={mobile}
+                          onChange={(e) => setMobile(e.target.value)}
+                        />
                       </div>
-                      <input 
-                        className="w-full pl-10 pr-3 py-3 bg-white lg:bg-transparent border border-gray-200 lg:border-gray-200 rounded-xl focus:ring-2 focus:ring-[#3267E3]/20 focus:border-[#3267E3] outline-none transition-all text-xs font-semibold text-[#1A2338]" 
-                        id="mobile" 
-                        name="mobile" 
-                        placeholder="9988776655" 
-                        type="tel"
-                        value={mobile}
-                        onChange={(e) => setMobile(e.target.value)}
-                      />
                     </div>
-                  </div>
+                  )}
+
+                  {/* OTP Verification UI (6 Boxes + Timer) */}
+                  {loginMethod === 'otp' && step === 'verify' && (
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center bg-blue-50/50 border border-blue-100/60 p-3 rounded-xl">
+                        <div>
+                          <p className="text-[9px] font-bold text-gray-400 uppercase">Verifying Mobile</p>
+                          <p className="text-xs font-bold text-[#1A2338]">+91 {mobile}</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setStep('request')}
+                          className="text-[10px] text-[#3267E3] font-bold hover:underline"
+                        >
+                          Change
+                        </button>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-bold text-[#1A2338]">Enter 6-Digit OTP</label>
+                        <div className="flex justify-between gap-1.5 sm:gap-2">
+                          {otp.map((digit, idx) => (
+                            <input
+                              key={idx}
+                              ref={(el) => (inputRefs.current[idx] = el)}
+                              className="flex-1 min-w-0 h-12 sm:h-14 text-center text-lg font-extrabold rounded-xl border border-gray-200 bg-white focus:ring-2 focus:ring-[#3267E3]/20 focus:border-[#3267E3] outline-none transition-all"
+                              inputMode="numeric"
+                              maxLength={1}
+                              value={digit}
+                              onChange={(e) => handleOtpChange(e, idx)}
+                              onKeyDown={(e) => handleOtpKeyDown(e, idx)}
+                              required
+                            />
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="flex justify-between items-center text-[10px] px-0.5">
+                        <span className="text-gray-400 font-medium">Didn't receive code?</span>
+                        <button
+                          type="button"
+                          onClick={handleResend}
+                          disabled={resendTimer > 0 || loading}
+                          className={`font-bold underline underline-offset-2 ${
+                            resendTimer > 0 ? 'text-gray-400 no-underline' : 'text-[#3267E3] hover:text-[#2855C2]'
+                          }`}
+                        >
+                          {resendTimer > 0 ? `Resend in ${resendTimer}s` : 'Resend OTP'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
                   
                   {/* Password Input */}
                   {loginMethod === 'password' && (
@@ -231,6 +377,13 @@ export default function LoginPage() {
                     </div>
                   )}
 
+                  {successMsg && (
+                    <div className="bg-emerald-50 border border-emerald-100 text-emerald-600 text-[10px] font-bold p-3 rounded-xl flex items-center gap-2 mt-2">
+                      <span className="material-symbols-outlined text-sm">check_circle</span>
+                      {successMsg}
+                    </div>
+                  )}
+
                   {errorMsg && (
                     <div className="bg-red-50 border border-red-100 text-red-600 text-[10px] font-bold p-3 rounded-xl flex items-center gap-2 mt-2">
                       <span className="material-symbols-outlined text-sm">error</span>
@@ -248,9 +401,9 @@ export default function LoginPage() {
                     {loading ? (
                       <>
                         <span className="material-symbols-outlined animate-spin text-sm">progress_activity</span>
-                        {loginMethod === 'otp' ? 'Sending OTP...' : 'Logging in...'}
+                        {loginMethod === 'otp' ? (step === 'request' ? 'Sending OTP...' : 'Verifying...') : 'Logging in...'}
                       </>
-                    ) : (loginMethod === 'otp' ? 'Send OTP' : 'Login')}
+                    ) : loginMethod === 'otp' ? (step === 'request' ? 'Send OTP' : 'Verify OTP') : 'Login'}
                   </button>
 
                   <div className="flex items-center gap-4 px-2">

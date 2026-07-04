@@ -26,6 +26,14 @@ const otpStoreSchema = new mongoose.Schema({
     type: Date,
     required: true,
   },
+  sendCount: {
+    type: Number,
+    default: 1,
+  },
+  lastSentAt: {
+    type: Date,
+    default: Date.now,
+  },
   createdAt: {
     type: Date,
     default: Date.now,

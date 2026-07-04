@@ -64,6 +64,7 @@ export default function UserRoutes() {
         <Route path="/notifications" element={<NotificationsPage />} />
         <Route path="/loan"       element={<LoanPage />} />
         <Route path="/loan-details" element={<LoanDetailsPage />} />
+        <Route path="/loan-details/:id" element={<LoanDetailsPage />} />
         <Route path="/loan-application-form" element={<LoanApplicationFormPage />} />
         <Route path="/wallet"     element={<WalletPage />} />
         <Route path="/insurance"  element={<InsurancePage />} />

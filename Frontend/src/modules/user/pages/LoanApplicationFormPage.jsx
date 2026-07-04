@@ -4,6 +4,113 @@ import api from '../../../services/api';
 import { ENDPOINTS, SERVER_URL } from '../../../services/types';
 import { compressImage } from '../../../utils/compressImage';
 
+const GuarantorSection = ({ title, data, files, onDataChange, onFileChange }) => (
+  <section className="bg-white border border-outline-variant/50 rounded-2xl p-5 shadow-sm space-y-4">
+    <h3 className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{title}</h3>
+    
+    <div className="grid grid-cols-2 gap-3">
+      <div className="space-y-1 col-span-2">
+        <label className="text-[10px] font-bold text-on-surface-variant">Full Name <span className="text-error">*</span></label>
+        <input type="text" value={data.name || ''} onChange={(e) => onDataChange('name', e.target.value)} placeholder="Enter full name" className="w-full bg-surface-container-low border border-outline-variant/50 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" required />
+      </div>
+      <div className="space-y-1">
+        <label className="text-[10px] font-bold text-on-surface-variant">Mobile No. <span className="text-error">*</span></label>
+        <input type="text" value={data.mobile || ''} onChange={(e) => onDataChange('mobile', e.target.value)} className="w-full bg-surface-container-low border border-outline-variant/50 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" required />
+      </div>
+      <div className="space-y-1">
+        <label className="text-[10px] font-bold text-on-surface-variant">Email <span className="text-error">*</span></label>
+        <input type="email" value={data.email || ''} onChange={(e) => onDataChange('email', e.target.value)} className="w-full bg-surface-container-low border border-outline-variant/50 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" required />
+      </div>
+      <div className="space-y-1">
+        <label className="text-[10px] font-bold text-on-surface-variant">Date of Birth <span className="text-error">*</span></label>
+        <input type="date" value={data.dob || ''} onChange={(e) => onDataChange('dob', e.target.value)} className="w-full bg-surface-container-low border border-outline-variant/50 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" required />
+      </div>
+      <div className="space-y-1">
+        <label className="text-[10px] font-bold text-on-surface-variant">Gender <span className="text-error">*</span></label>
+        <select value={data.gender || ''} onChange={(e) => onDataChange('gender', e.target.value)} className="w-full bg-surface-container-low border border-outline-variant/50 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" required>
+          <option value="" disabled>Select</option>
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div className="space-y-1">
+        <label className="text-[10px] font-bold text-on-surface-variant">Relationship <span className="text-error">*</span></label>
+        <input type="text" value={data.relationship || ''} onChange={(e) => onDataChange('relationship', e.target.value)} className="w-full bg-surface-container-low border border-outline-variant/50 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" required />
+      </div>
+      <div className="space-y-1">
+        <label className="text-[10px] font-bold text-on-surface-variant">Occupation <span className="text-error">*</span></label>
+        <input type="text" value={data.occupation || ''} onChange={(e) => onDataChange('occupation', e.target.value)} className="w-full bg-surface-container-low border border-outline-variant/50 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" required />
+      </div>
+      <div className="space-y-1">
+        <label className="text-[10px] font-bold text-on-surface-variant">Company Name</label>
+        <input type="text" value={data.companyName || ''} onChange={(e) => onDataChange('companyName', e.target.value)} className="w-full bg-surface-container-low border border-outline-variant/50 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" />
+      </div>
+      <div className="space-y-1">
+        <label className="text-[10px] font-bold text-on-surface-variant">Monthly Income</label>
+        <input type="number" value={data.monthlyIncome || ''} onChange={(e) => onDataChange('monthlyIncome', e.target.value)} className="w-full bg-surface-container-low border border-outline-variant/50 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" />
+      </div>
+      <div className="space-y-1 col-span-2">
+        <label className="text-[10px] font-bold text-on-surface-variant">Address <span className="text-error">*</span></label>
+        <input type="text" value={data.address || ''} onChange={(e) => onDataChange('address', e.target.value)} className="w-full bg-surface-container-low border border-outline-variant/50 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" required />
+      </div>
+      <div className="space-y-1">
+        <label className="text-[10px] font-bold text-on-surface-variant">City <span className="text-error">*</span></label>
+        <input type="text" value={data.city || ''} onChange={(e) => onDataChange('city', e.target.value)} className="w-full bg-surface-container-low border border-outline-variant/50 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" required />
+      </div>
+      <div className="space-y-1">
+        <label className="text-[10px] font-bold text-on-surface-variant">State <span className="text-error">*</span></label>
+        <input type="text" value={data.state || ''} onChange={(e) => onDataChange('state', e.target.value)} className="w-full bg-surface-container-low border border-outline-variant/50 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" required />
+      </div>
+      <div className="space-y-1">
+        <label className="text-[10px] font-bold text-on-surface-variant">Pincode <span className="text-error">*</span></label>
+        <input type="text" value={data.pincode || ''} onChange={(e) => onDataChange('pincode', e.target.value)} className="w-full bg-surface-container-low border border-outline-variant/50 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" required />
+      </div>
+      <div className="space-y-1">
+        <label className="text-[10px] font-bold text-on-surface-variant">Aadhaar No. <span className="text-error">*</span></label>
+        <input type="text" value={data.aadhaarNumber || ''} onChange={(e) => onDataChange('aadhaarNumber', e.target.value)} className="w-full bg-surface-container-low border border-outline-variant/50 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" maxLength={12} required />
+      </div>
+      <div className="space-y-1">
+        <label className="text-[10px] font-bold text-on-surface-variant">PAN No. <span className="text-error">*</span></label>
+        <input type="text" value={data.panNumber || ''} onChange={(e) => onDataChange('panNumber', e.target.value)} className="w-full bg-surface-container-low border border-outline-variant/50 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all uppercase" maxLength={10} required />
+      </div>
+      <div className="space-y-1">
+        <label className="text-[10px] font-bold text-on-surface-variant">Bank A/C No. <span className="text-error">*</span></label>
+        <input type="text" value={data.bankAccountNumber || ''} onChange={(e) => onDataChange('bankAccountNumber', e.target.value)} className="w-full bg-surface-container-low border border-outline-variant/50 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" required />
+      </div>
+      <div className="space-y-1">
+        <label className="text-[10px] font-bold text-on-surface-variant">IFSC Code <span className="text-error">*</span></label>
+        <input type="text" value={data.ifscCode || ''} onChange={(e) => onDataChange('ifscCode', e.target.value)} className="w-full bg-surface-container-low border border-outline-variant/50 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all uppercase" required />
+      </div>
+      <div className="space-y-1 col-span-2">
+        <label className="text-[10px] font-bold text-on-surface-variant">CIBIL Score <span className="text-error">*</span></label>
+        <input type="number" value={data.cibilScore || ''} onChange={(e) => onDataChange('cibilScore', e.target.value)} className="w-full bg-surface-container-low border border-outline-variant/50 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" required />
+      </div>
+    </div>
+
+    <div className="space-y-3 pt-2">
+      <p className="text-[10px] font-bold text-on-surface-variant">Mandatory Documents <span className="text-error">*</span></p>
+      <div className="grid grid-cols-3 gap-2">
+        {[
+          { label: '1. Aadhaar', field: 'aadhaarCardFile' },
+          { label: '2. Photo', field: 'photoFile' },
+          { label: '3. PAN Card', field: 'panCardFile' },
+          { label: '4. 6M Bank Stmt', field: 'bankStatementFile' },
+          { label: '5. Address Proof', field: 'addressProofFile' },
+          { label: '8. Cheque', field: 'chequeFile' },
+          { label: '9. CIBIL Report', field: 'cibilScoreFile' },
+        ].map(({ label, field }) => (
+          <label key={field} className="border border-dashed border-outline-variant rounded-xl p-2 flex flex-col items-center justify-center gap-1 bg-surface-container-lowest hover:bg-surface-container-low transition-colors cursor-pointer relative overflow-hidden text-center h-20">
+            <input type="file" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept=".jpg,.jpeg,.png,.pdf" onChange={(e) => onFileChange(e, field)} required={!files[field]} />
+            <span className={`material-symbols-outlined text-base ${files[field] ? 'text-primary' : 'text-on-surface-variant'}`}>{files[field] ? 'check_circle' : 'upload_file'}</span>
+            <p className={`text-[8px] font-bold leading-tight ${files[field] ? 'text-primary line-clamp-2' : 'text-on-surface'}`}>{files[field] ? files[field].name : label}</p>
+          </label>
+        ))}
+      </div>
+    </div>
+  </section>
+);
+
 const RequirementSection = ({ title, showName, data, files, onDataChange, onFileChange }) => (
   <section className="bg-white border border-outline-variant/50 rounded-2xl p-5 shadow-sm space-y-4">
     <h3 className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{title}</h3>
@@ -185,7 +292,7 @@ export default function LoanApplicationFormPage() {
     }
   };
 
-  const initialGuarantorData = { name: '', aadhaarNumber: '', panNumber: '', bankAccountNumber: '', ifscCode: '', cibilScore: '' };
+  const initialGuarantorData = { name: '', mobile: '', email: '', dob: '', gender: '', relationship: '', occupation: '', companyName: '', monthlyIncome: '', address: '', city: '', state: '', pincode: '', aadhaarNumber: '', panNumber: '', bankAccountNumber: '', ifscCode: '', cibilScore: '' };
   const initialGuarantorFiles = { aadhaarCardFile: null, photoFile: null, panCardFile: null, bankStatementFile: null, addressProofFile: null, chequeFile: null, cibilScoreFile: null };
 
   const [guarantorsData, setGuarantorsData] = useState([ { ...initialGuarantorData }, { ...initialGuarantorData } ]);
@@ -322,7 +429,7 @@ export default function LoanApplicationFormPage() {
 
     for (let i = 0; i < 2; i++) {
       const g = guarantorsData[i];
-      if (!g.name || !g.aadhaarNumber || !g.panNumber || !g.bankAccountNumber || !g.ifscCode || !g.cibilScore) {
+      if (!g.name || !g.mobile || !g.email || !g.dob || !g.gender || !g.relationship || !g.occupation || !g.address || !g.city || !g.state || !g.pincode || !g.aadhaarNumber || !g.panNumber || !g.bankAccountNumber || !g.ifscCode || !g.cibilScore) {
         alert(`Please fill out all identity and bank details for Guarantor ${i + 1}.`);
         return;
       }
@@ -364,6 +471,18 @@ export default function LoanApplicationFormPage() {
 
       guarantorsData.forEach((g, i) => {
         formData.append(`guarantor${i+1}_name`, g.name);
+        formData.append(`guarantor${i+1}_mobile`, g.mobile);
+        formData.append(`guarantor${i+1}_email`, g.email);
+        formData.append(`guarantor${i+1}_dob`, g.dob);
+        formData.append(`guarantor${i+1}_gender`, g.gender);
+        formData.append(`guarantor${i+1}_relationship`, g.relationship);
+        formData.append(`guarantor${i+1}_occupation`, g.occupation);
+        formData.append(`guarantor${i+1}_companyName`, g.companyName);
+        formData.append(`guarantor${i+1}_monthlyIncome`, g.monthlyIncome);
+        formData.append(`guarantor${i+1}_address`, g.address);
+        formData.append(`guarantor${i+1}_city`, g.city);
+        formData.append(`guarantor${i+1}_state`, g.state);
+        formData.append(`guarantor${i+1}_pincode`, g.pincode);
         formData.append(`guarantor${i+1}_aadhaarNumber`, g.aadhaarNumber);
         formData.append(`guarantor${i+1}_panNumber`, g.panNumber);
         formData.append(`guarantor${i+1}_bankAccountNumber`, g.bankAccountNumber);
@@ -649,9 +768,8 @@ export default function LoanApplicationFormPage() {
             />
 
             {/* Guarantor 1 Details */}
-            <RequirementSection
+            <GuarantorSection
               title="Guarantor 1 Details & Papers"
-              showName={true}
               data={guarantorsData[0]}
               files={guarantorsFiles[0]}
               onDataChange={(field, val) => handleGuarantorDataChange(0, field, val)}
@@ -659,9 +777,8 @@ export default function LoanApplicationFormPage() {
             />
 
             {/* Guarantor 2 Details */}
-            <RequirementSection
+            <GuarantorSection
               title="Guarantor 2 Details & Papers"
-              showName={true}
               data={guarantorsData[1]}
               files={guarantorsFiles[1]}
               onDataChange={(field, val) => handleGuarantorDataChange(1, field, val)}

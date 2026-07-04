@@ -219,7 +219,7 @@ export default function SupportPage() {
                 <p className="text-on-surface-variant text-[9px]">Priority line for medical credit</p>
               </div>
             </div>
-            <span className="text-primary font-bold text-xs">1800-MED-CRED</span>
+            <span className="text-primary font-bold text-xs">9307441212</span>
           </a>
 
           {/* Consult with Doctor Row */}
@@ -236,7 +236,7 @@ export default function SupportPage() {
                 <p className="text-on-surface-variant text-[9px]">Tele-consultation with verified doctors</p>
               </div>
             </div>
-            <span className="text-primary font-bold text-xs">1800-MED-DOC</span>
+            <span className="text-primary font-bold text-xs">9519793335</span>
           </a>
         </section>
 
