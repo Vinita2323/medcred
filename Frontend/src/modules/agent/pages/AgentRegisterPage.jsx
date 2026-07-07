@@ -15,7 +15,7 @@ export default function AgentRegisterPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [referralCode, setReferralCode] = useState('');
-  const [aadhaarNumber, setAadhaarNumber] = useState('');
+
   const [role, setRole] = useState('Field Agent');
 
   // Upload Previews
@@ -143,10 +143,6 @@ export default function AgentRegisterPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!aadhaarNumber) {
-      alert('Please enter your Aadhaar number.');
-      return;
-    }
     if (!profileFile || !frontFile || !backFile) {
       alert('Please upload all required identity documents.');
       return;
@@ -161,7 +157,7 @@ export default function AgentRegisterPage() {
       formData.append('email', email);
       formData.append('password', password);
       formData.append('referralCodeUsed', referralCode);
-      formData.append('aadhaarNumber', aadhaarNumber);
+
       formData.append('role', role);
 
       formData.append('profilePic', profileFile);
@@ -302,13 +298,13 @@ export default function AgentRegisterPage() {
                   <div className="relative input-group">
                     <input 
                       className="input-field block w-full px-4 py-3 bg-transparent border border-[#c3c6d6] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003d9b] focus:border-transparent text-sm font-semibold text-[#003d9b]" 
-                      id="referral-code" 
+                      id="join-code" 
                       placeholder=" " 
                       type="text"
                       value={referralCode}
                       onChange={(e) => setReferralCode(e.target.value)}
                     />
-                    <label className="absolute left-4 top-3 text-[#434654] text-xs" htmlFor="referral-code">Referral Code (Optional)</label>
+                    <label className="absolute left-4 top-3 text-[#434654] text-xs" htmlFor="join-code">Manager's Join Code (Optional)</label>
                   </div>
 
                   <div className="relative input-group">
@@ -339,18 +335,7 @@ export default function AgentRegisterPage() {
               <form onSubmit={handleSubmit} className="space-y-6">
                 <h3 className="text-base font-bold text-[#191b23]">Step 2: Identity &amp; Documents</h3>
 
-                <div className="relative input-group">
-                  <input 
-                    className="input-field block w-full px-4 py-3 bg-transparent border border-[#c3c6d6] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003d9b] focus:border-transparent text-sm font-semibold tracking-wider" 
-                    id="aadhaar" 
-                    placeholder=" " 
-                    maxLength="12"
-                    value={aadhaarNumber}
-                    onChange={(e) => setAadhaarNumber(e.target.value.replace(/[^0-9]/g, ''))}
-                    required
-                  />
-                  <label className="absolute left-4 top-3 text-[#434654] text-xs" htmlFor="aadhaar">12-Digit Aadhaar Number</label>
-                </div>
+
 
                 <div className="grid grid-cols-3 gap-4">
                   {/* Photo upload UI */}

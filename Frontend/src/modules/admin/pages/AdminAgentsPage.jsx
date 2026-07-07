@@ -565,7 +565,7 @@ export default function AdminAgentsPage() {
                           {activeTab === 'Pending Requests' && (
                             <>
                               <button
-                                onClick={() => { setApproving(agent); setRole('Field Agent'); setManager(''); }}
+                                onClick={() => { setApproving(agent); setRole(agent.role || 'Field Agent'); setManager(agent.reportingManagerId || ''); }}
                                 disabled={actionLoading}
                                 className="bg-[#003d9b] hover:bg-[#0052cc] text-white px-2.5 py-1.5 rounded-lg text-xs font-bold cursor-pointer disabled:opacity-60"
                               >
@@ -773,6 +773,8 @@ export default function AdminAgentsPage() {
                   <button
                     onClick={() => {
                       setDetailsAgent(null);
+                      setRole(detailsAgent.role || 'Field Agent');
+                      setManager(detailsAgent.reportingManagerId || '');
                       setApproving(detailsAgent);
                     }}
                     className="flex-1 bg-[#003d9b] hover:bg-[#0052cc] text-white py-2.5 rounded-xl text-xs font-bold transition-colors cursor-pointer"

@@ -7,7 +7,7 @@ const router = express.Router();
 
 router.use(protect, restrictTo('user'));
 
-router.post('/submit', upload.array('documents', 5), submitClaim);
+router.post('/submit', upload.any(), submitClaim);
 router.get('/my-claims', getMyClaims);
 
 export default router;

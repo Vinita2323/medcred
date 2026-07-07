@@ -121,7 +121,25 @@ export const applyLoan = async (req, res) => {
         if (billFile) {
           patient.estimatedBillUrl = `/uploads/${billFile.filename}`;
         }
+
+        // New Mandatory Medical Claim Documents
+        const docs = [
+          'claimForm', 'neftAndPhotoId', 'hospitalBillsAndDischarge',
+          'medicalPractitionerCertificate', 'chemistBills', 'investigationReports',
+          'referralLetter', 'ambulanceBills'
+        ];
+
+        docs.forEach(doc => {
+          const file = req.files.find(f => f.fieldname === `${doc}_${index}`);
+          if (file) {
+            patient[`${doc}Url`] = `/uploads/${file.filename}`;
+          } else {
+            throw new Error(`Missing mandatory medical document: ${doc} for patient index ${index}`);
+          }
+        });
       });
+    } catch (docErr) {
+      return res.status(400).json({ success: false, message: docErr.message });
     }
 
     const getFileUrl = (fieldname) => {

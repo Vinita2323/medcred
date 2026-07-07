@@ -18,6 +18,17 @@ const APPLICATION_COLORS = {
   closed:        'bg-gray-100 text-gray-700',
 };
 
+const DOC_LABELS = {
+  claimFormUrl: 'Claim Form',
+  neftAndPhotoIdUrl: 'NEFT & Photo ID',
+  hospitalBillsAndDischargeUrl: 'Hospital Bills & Discharge',
+  medicalPractitionerCertificateUrl: 'Medical Certificate',
+  chemistBillsUrl: 'Chemist Bills',
+  investigationReportsUrl: 'Investigation Reports',
+  referralLetterUrl: 'Referral Letter',
+  ambulanceBillsUrl: 'Ambulance Bills'
+};
+
 export default function AdminLoansPage() {
   const [loans, setLoans]   = useState([]);
   const [selected, setSelected] = useState(null);
@@ -771,6 +782,11 @@ export default function AdminLoansPage() {
                       if (p.estimatedBillUrl) {
                         patientDocs.push({ name: 'Estimated Bill', url: p.estimatedBillUrl, fileType: p.estimatedBillUrl.match(/\.pdf$/i) ? 'PDF' : 'Image' });
                       }
+                      Object.keys(DOC_LABELS).forEach(key => {
+                        if (p[key]) {
+                          patientDocs.push({ name: DOC_LABELS[key], url: p[key], fileType: p[key].match(/\.pdf$/i) ? 'PDF' : 'Image' });
+                        }
+                      });
                       return (
                         <div key={idx} className="bg-gray-50 rounded-xl p-4 text-xs border border-gray-200/50">
                           <div>

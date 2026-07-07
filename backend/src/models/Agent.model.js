@@ -91,10 +91,15 @@ const agentSchema = new mongoose.Schema(
     pendingEarnings: { type: Number, default: 0 },
     paidEarnings: { type: Number, default: 0 },
 
-    // ── Referral ──────────────────────────────────────────────
+    // ── Referral & Team Building ──────────────────────────────
     referralCode: {
       type: String,
       unique: true,
+    },
+    joinCode: {
+      type: String,
+      unique: true,
+      sparse: true, // Only Super Agents and Agents will have this
     },
 
     // ── Wallet & FCM ──────────────────────────────────────────

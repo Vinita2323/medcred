@@ -197,8 +197,12 @@ const agentRegister = async (req, res) => {
       role,
     } = req.body;
 
-    if (!fullName || !mobileNumber || !email || !password || !aadhaarNumber || !role) {
+    if (!fullName || !mobileNumber || !email || !password || !role) {
       return res.status(400).json({ success: false, message: 'Please provide all required fields' });
+    }
+
+    if (!req.files || !req.files.profilePic || !req.files.aadhaarFront || !req.files.aadhaarBack) {
+      return res.status(400).json({ success: false, message: 'Please upload all required documents (Profile Photo, Aadhaar Front, Aadhaar Back)' });
     }
 
     // Check if agent already exists
@@ -222,23 +226,43 @@ const agentRegister = async (req, res) => {
     }
 
     // Role specific logic
-    let suggManager = '';
+    let suggManagerName = '';
+    let suggManagerId = null;
     let commissionRate = 2.5;
     
     if (role === 'Agent') {
-      suggManager = 'Rajesh Kumar';
       commissionRate = 1.5;
     } else if (role === 'Field Agent') {
-      suggManager = 'Sanjay Dutt';
       commissionRate = 2.5;
     } else if (role === 'Super Agent') {
-      suggManager = 'System Administrator';
+      suggManagerName = 'System Administrator';
       commissionRate = 1.0;
     }
 
+    if (referralCodeUsed) {
+      // Look up manager by either joinCode or referralCode
+      const manager = await Agent.findOne({
+        $or: [
+          { joinCode: referralCodeUsed },
+          { referralCode: referralCodeUsed }
+        ],
+        status: 'Approved'
+      });
+      if (manager) {
+        suggManagerId = manager._id;
+        suggManagerName = manager.fullName;
+      }
+    }
+
     // Generate unique agentId
-    const count = await Agent.countDocuments();
-    const agentId = `MC-${8000 + count + 1}`;
+    let agentId;
+    let isUnique = false;
+    while (!isUnique) {
+      const num = Math.floor(10000 + Math.random() * 90000);
+      agentId = `MC-${num}`;
+      const existing = await Agent.findOne({ agentId });
+      if (!existing) isUnique = true;
+    }
 
     const newAgent = await Agent.create({
       agentId,
@@ -249,7 +273,8 @@ const agentRegister = async (req, res) => {
       referralCodeUsed: referralCodeUsed || '',
       aadhaarNumber,
       role,
-      reportingManagerName: suggManager,
+      reportingManagerId: suggManagerId,
+      reportingManagerName: suggManagerName,
       commissionRate,
       status: 'Pending Approval',
       rank: 'Bronze',

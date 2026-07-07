@@ -207,7 +207,7 @@ export default function SupportPage() {
 
           {/* Call Support Row */}
           <a
-            href="tel:18005552733"
+            href="tel:7897253535"
             className="col-span-2 bg-surface-container-high border border-outline-variant/80 p-4 rounded-2xl flex items-center justify-between cursor-pointer hover:bg-surface-container transition-all active:scale-[0.98]"
           >
             <div className="flex items-center gap-3">
@@ -219,7 +219,7 @@ export default function SupportPage() {
                 <p className="text-on-surface-variant text-[9px]">Priority line for medical credit</p>
               </div>
             </div>
-            <span className="text-primary font-bold text-xs">9307441212</span>
+            <span className="text-primary font-bold text-xs whitespace-nowrap">78972 53535</span>
           </a>
 
           {/* Consult with Doctor Row */}

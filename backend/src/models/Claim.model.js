@@ -41,7 +41,7 @@ const claimSchema = new mongoose.Schema(
       trim: true,
     },
 
-    // ── Documents (uploaded file URLs) ─────────────────────────
+    // ── Generic Documents Array (Legacy) ───────────────────────
     documents: [
       {
         filename: String,
@@ -49,6 +49,16 @@ const claimSchema = new mongoose.Schema(
         uploadedAt: { type: Date, default: Date.now },
       },
     ],
+
+    // ── Mandatory Claim Documents ──────────────────────────────
+    claimFormUrl: String,
+    neftAndPhotoIdUrl: String,
+    hospitalBillsAndDischargeUrl: String,
+    medicalPractitionerCertificateUrl: String,
+    chemistBillsUrl: String,
+    investigationReportsUrl: String,
+    referralLetterUrl: String,
+    ambulanceBillsUrl: String,
 
     // ── Status ────────────────────────────────────────────────
     status: {

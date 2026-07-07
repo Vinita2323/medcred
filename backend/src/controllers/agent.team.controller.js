@@ -20,17 +20,18 @@ export const getAgentTeam = async (req, res) => {
       
       const agentIds = agents.map(tl => tl._id);
 
-      // Get Field Agents under these Agents
-      fieldAgents = await Agent.find({ role: 'Field Agent', reportingManagerId: { $in: agentIds } })
+      // Get Field Agents under these Agents AND directly under this Super Agent
+      fieldAgents = await Agent.find({ role: 'Field Agent', reportingManagerId: { $in: [...agentIds, _id] } })
         .select('agentId fullName mobile email role status totalRegistrations reportingManagerId joiningDate rank salesCount commissionRate')
         .lean();
 
       // Attach reporting manager name to field agents for display
       fieldAgents = fieldAgents.map(fa => {
         const manager = agents.find(tl => tl._id.toString() === fa.reportingManagerId?.toString());
+        const isDirect = fa.reportingManagerId?.toString() === _id.toString();
         return {
           ...fa,
-          reportingManagerName: manager ? manager.fullName : 'Unknown'
+          reportingManagerName: isDirect ? req.user.fullName : (manager ? manager.fullName : 'Unknown')
         };
       });
       

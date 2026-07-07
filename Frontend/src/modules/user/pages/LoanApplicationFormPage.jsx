@@ -322,6 +322,17 @@ export default function LoanApplicationFormPage() {
   const [isApplying, setIsApplying] = useState(false);
   const [applied, setApplied] = useState(false);
 
+  const DOC_LABELS = {
+    claimForm: 'Duly filled claim form(s)',
+    neftAndPhotoId: 'NEFT details & Photo ID of proposer',
+    hospitalBillsAndDischarge: 'Original bills, receipts and discharge card',
+    medicalPractitionerCertificate: 'Certificate from attending Medical Practitioner',
+    chemistBills: 'Original bills from chemists',
+    investigationReports: 'Original Investigation test reports & receipts',
+    referralLetter: 'Medical Practitioner referral letter',
+    ambulanceBills: 'Original bills & receipts for Ambulance charges'
+  };
+
   const [isCustomAmountModalOpen, setIsCustomAmountModalOpen] = useState(false);
   const [customAmountInput, setCustomAmountInput] = useState('');
 
@@ -440,6 +451,12 @@ export default function LoanApplicationFormPage() {
       }
     }
     
+    const requiredDocs = [
+      'claimForm', 'neftAndPhotoId', 'hospitalBillsAndDischarge', 
+      'medicalPractitionerCertificate', 'chemistBills', 'investigationReports', 
+      'referralLetter', 'ambulanceBills'
+    ];
+
     for (let id of activePatientIds) {
       const data = patientsData[id];
       if (!data || !data.patientName || !data.relationship || !data.hospitalName || !data.admissionDate) {
@@ -449,6 +466,12 @@ export default function LoanApplicationFormPage() {
       if (!data.prescriptionFile) {
         alert(`Please upload the Doctor's Prescription for ${data?.patientName || 'the patient'}.`);
         return;
+      }
+      for (const doc of requiredDocs) {
+        if (!data[doc]) {
+          alert(`Please upload mandatory document for ${data?.patientName || 'the patient'}: ${doc}`);
+          return;
+        }
       }
     }
     
@@ -517,6 +540,17 @@ export default function LoanApplicationFormPage() {
         if (patientsData[id].billFile) {
           formData.append(`billFile_${index}`, patientsData[id].billFile);
         }
+        
+        const docs = [
+          'claimForm', 'neftAndPhotoId', 'hospitalBillsAndDischarge', 
+          'medicalPractitionerCertificate', 'chemistBills', 'investigationReports', 
+          'referralLetter', 'ambulanceBills'
+        ];
+        docs.forEach(doc => {
+          if (patientsData[id][doc]) {
+            formData.append(`${doc}_${index}`, patientsData[id][doc]);
+          }
+        });
       });
 
       const res = await api.post(ENDPOINTS.LOAN_APPLY, formData, {
@@ -751,6 +785,35 @@ export default function LoanApplicationFormPage() {
                           </p>
                         </div>
                       </label>
+                    </div>
+
+                    <div className="space-y-4 pt-4 border-t border-outline-variant/50 mt-4">
+                      <h4 className="text-xs font-bold text-on-surface uppercase tracking-wider">Mandatory Medical Documents</h4>
+                      {Object.keys(DOC_LABELS).map(docKey => (
+                        <div key={docKey} className="space-y-2">
+                          <label className="text-xs font-bold text-on-surface-variant">{DOC_LABELS[docKey]} <span className="text-error">*</span></label>
+                          <label className="w-full border-2 border-dashed border-outline-variant rounded-xl p-4 flex flex-col items-center justify-center gap-2 bg-surface-container-lowest hover:bg-surface-container-low transition-colors cursor-pointer relative overflow-hidden">
+                            <input 
+                              type="file" 
+                              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                              accept=".jpg,.jpeg,.png,.pdf"
+                              onChange={(e) => handlePatientFileChange(e, id, docKey)}
+                              required
+                            />
+                            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                              <span className="material-symbols-outlined text-primary">{data[docKey] ? 'check_circle' : 'upload_file'}</span>
+                            </div>
+                            <div className="text-center">
+                              <p className="text-xs font-bold text-primary">
+                                {data[docKey] ? data[docKey].name : 'Click to upload'}
+                              </p>
+                              <p className="text-[10px] text-on-surface-variant mt-0.5">
+                                {data[docKey] ? `${(data[docKey].size / 1024 / 1024).toFixed(2)} MB` : 'JPG, PNG or PDF (Max 5MB)'}
+                              </p>
+                            </div>
+                          </label>
+                        </div>
+                      ))}
                     </div>
                   </section>
                 </div>

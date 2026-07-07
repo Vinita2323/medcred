@@ -32,8 +32,28 @@ export const submitClaim = async (req, res) => {
       });
     }
 
-    // Build documents array from uploaded files
-    const documents = (req.files || []).map((file) => ({
+    // Enforce 8 Mandatory Documents
+    const requiredDocs = [
+      'claimForm', 'neftAndPhotoId', 'hospitalBillsAndDischarge', 
+      'medicalPractitionerCertificate', 'chemistBills', 'investigationReports', 
+      'referralLetter', 'ambulanceBills'
+    ];
+
+    if (!req.files || !Array.isArray(req.files)) {
+      return res.status(400).json({ success: false, message: 'No documents uploaded.' });
+    }
+
+    const getFile = (fieldname) => req.files.find(f => f.fieldname === fieldname);
+
+    for (const doc of requiredDocs) {
+      if (!getFile(doc)) {
+        return res.status(400).json({ success: false, message: `Missing required document: ${doc}` });
+      }
+    }
+
+    // Build legacy documents array (optional, for backward compatibility)
+    const legacyDocs = req.files.filter(f => f.fieldname === 'documents');
+    const documents = legacyDocs.map((file) => ({
       filename: file.originalname,
       url: `/uploads/${file.filename}`,
     }));
@@ -46,6 +66,14 @@ export const submitClaim = async (req, res) => {
       claimType: claimType || 'medical_services',
       description,
       documents,
+      claimFormUrl: `/uploads/${getFile('claimForm').filename}`,
+      neftAndPhotoIdUrl: `/uploads/${getFile('neftAndPhotoId').filename}`,
+      hospitalBillsAndDischargeUrl: `/uploads/${getFile('hospitalBillsAndDischarge').filename}`,
+      medicalPractitionerCertificateUrl: `/uploads/${getFile('medicalPractitionerCertificate').filename}`,
+      chemistBillsUrl: `/uploads/${getFile('chemistBills').filename}`,
+      investigationReportsUrl: `/uploads/${getFile('investigationReports').filename}`,
+      referralLetterUrl: `/uploads/${getFile('referralLetter').filename}`,
+      ambulanceBillsUrl: `/uploads/${getFile('ambulanceBills').filename}`,
       status: 'pending',
       submittedAt: new Date(),
     });

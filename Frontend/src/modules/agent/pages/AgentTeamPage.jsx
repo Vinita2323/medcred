@@ -161,7 +161,7 @@ export default function AgentTeamPage() {
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className="text-xs font-bold text-[#003d9b]">{agent.salesCount || Math.floor(Math.random() * 20) + 1} Sales</div>
+                          <div className="text-xs font-bold text-[#003d9b]">{agent.salesCount ?? 0} Sales</div>
                           <span className={`px-2 py-0.5 mt-1 inline-block rounded-full text-[9px] font-bold uppercase tracking-wider ${getRankBadge(agent.rank)}`}>
                             {agent.rank}
                           </span>
@@ -189,7 +189,7 @@ export default function AgentTeamPage() {
                                     <div className="text-[9px] text-[#737685] font-mono mt-0.5">Field Agent • {fa.agentId}</div>
                                   </div>
                                 </div>
-                                <div className="text-[11px] font-bold text-[#1a73e8]">{fa.salesCount || Math.floor(Math.random() * 10) + 1} Sales</div>
+                                <div className="text-[11px] font-bold text-[#1a73e8]">{fa.salesCount ?? 0} Sales</div>
                               </div>
                             </div>
                           );
@@ -218,7 +218,7 @@ export default function AgentTeamPage() {
                           <div className="text-[9px] text-[#737685] font-mono mt-0.5">Field Agent • {fa.agentId}</div>
                         </div>
                       </div>
-                      <div className="text-[11px] font-bold text-[#1a73e8]">{fa.salesCount || Math.floor(Math.random() * 10) + 1} Sales</div>
+                      <div className="text-[11px] font-bold text-[#1a73e8]">{fa.salesCount ?? 0} Sales</div>
                     </div>
                   </div>
                 );
@@ -287,7 +287,7 @@ export default function AgentTeamPage() {
                             </div>
                           </div>
                           <div className="text-right">
-                            <div className="text-[11px] font-bold text-[#1a73e8]">{fa.salesCount || Math.floor(Math.random() * 10) + 1} Sales</div>
+                            <div className="text-[11px] font-bold text-[#1a73e8]">{fa.salesCount ?? 0} Sales</div>
                           </div>
                         </div>
                       </div>
@@ -464,7 +464,7 @@ export default function AgentTeamPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 font-bold text-center sm:text-left text-[#191b23]">
-                      {agent.salesCount || Math.floor(Math.random() * 20) + 1}
+                      {agent.salesCount ?? 0}
                     </td>
                     <td className="px-6 py-4 text-right font-bold text-[#003d9b]">
                       {agent.commissionRate}%

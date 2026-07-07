@@ -29,6 +29,20 @@ const generateReferralCode = async (role) => {
   return code;
 };
 
+// ── Helper: Generate Join Code from role ─────────────────────────
+const generateJoinCode = async (role) => {
+  const prefix = role === 'Super Agent' ? 'J-SA' : 'J-AG';
+  let code;
+  let isUnique = false;
+  while (!isUnique) {
+    const num = Math.floor(1000 + Math.random() * 9000);
+    code = `${prefix}${num}`;
+    const existing = await Agent.findOne({ joinCode: code });
+    if (!existing) isUnique = true;
+  }
+  return code;
+};
+
 // ── Helper: Commission rate by role ──────────────────────────────
 const getCommissionRate = (role) => {
   if (role === 'Super Agent') return 3;
@@ -123,10 +137,19 @@ export const approveAgent = async (req, res) => {
       referralCode = await generateReferralCode(role);
     }
 
+    // Generate joinCode if applicable and not already present
+    let joinCode;
+    if ((role === 'Super Agent' || role === 'Agent') && !agent.joinCode) {
+      joinCode = await generateJoinCode(role);
+    }
+
     agent.status = 'Approved';
     agent.role = role;
     agent.agentId = agentId;
     agent.referralCode = referralCode;
+    if (joinCode) {
+      agent.joinCode = joinCode;
+    }
     agent.commissionRate = getCommissionRate(role);
     agent.joiningDate = new Date();
     agent.approvedBy = req.user._id;
@@ -150,6 +173,7 @@ export const approveAgent = async (req, res) => {
       data: {
         agentId: agent.agentId,
         referralCode: agent.referralCode,
+        joinCode: agent.joinCode,
         role: agent.role,
         status: agent.status,
       },

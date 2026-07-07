@@ -21,6 +21,17 @@ const LIMITS = {
   pharmacy:          50000,
 };
 
+const DOC_LABELS = {
+  claimFormUrl: 'Claim Form',
+  neftAndPhotoIdUrl: 'NEFT & Photo ID',
+  hospitalBillsAndDischargeUrl: 'Hospital Bills & Discharge',
+  medicalPractitionerCertificateUrl: 'Medical Certificate',
+  chemistBillsUrl: 'Chemist Bills',
+  investigationReportsUrl: 'Investigation Reports',
+  referralLetterUrl: 'Referral Letter',
+  ambulanceBillsUrl: 'Ambulance Bills'
+};
+
 export default function AdminClaimsPage() {
   const [claims, setClaims]       = useState([]);
   const [activeTab, setTab]       = useState('All Claims');
@@ -283,6 +294,27 @@ export default function AdminClaimsPage() {
                       </span>
                     </button>
                   ))}
+                  
+                  {Object.keys(DOC_LABELS).map((key) => {
+                    if (reviewClaim[key]) {
+                      return (
+                        <button 
+                          key={key} 
+                          type="button"
+                          onClick={() => setPreviewDoc({ url: `${SERVER_URL}${reviewClaim[key]}`, filename: DOC_LABELS[key] })}
+                          className="flex items-center gap-1.5 bg-[#e8f5e9] border border-[#c8e6c9] rounded-lg px-3 py-1.5 hover:bg-[#c8e6c9] transition-colors cursor-pointer text-left"
+                        >
+                          <span className="material-symbols-outlined text-[#2e7d32] text-[14px]">
+                            {reviewClaim[key].match(/\.(jpg|jpeg|png|webp)$/i) ? 'image' : 'description'}
+                          </span>
+                          <span className="text-xs font-semibold text-[#2e7d32] max-w-[200px] truncate">
+                            {DOC_LABELS[key]}
+                          </span>
+                        </button>
+                      );
+                    }
+                    return null;
+                  })}
                 </div>
               </div>
 

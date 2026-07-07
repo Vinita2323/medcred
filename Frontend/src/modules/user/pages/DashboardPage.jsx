@@ -12,6 +12,7 @@ import imgWeighing from '../../../assets/Machine/Weighting.webp';
 import imgAcupressure from '../../../assets/Machine/Acupressure.jpg';
 import imgMassager from '../../../assets/Machine/Bodymassager.jpg';
 import imgChatSupport from '../../../assets/chat-removebg-preview.png';
+import imgBodyCheckup from '../../../assets/BodyCheckup.jpg';
 
 export default function DashboardPage() {
   const navigate = useNavigate();
@@ -249,6 +250,34 @@ export default function DashboardPage() {
                     className="bg-[#0A4DBF] text-white text-[10px] font-bold py-1.5 px-2 rounded-lg flex items-center gap-0.5 active:scale-95 transition-all shadow-[0_4px_12px_rgba(10,77,191,0.2)] cursor-pointer whitespace-nowrap"
                   >
                     Start Chat
+                    <span className="material-symbols-outlined text-[12px] font-bold">arrow_forward</span>
+                  </button>
+                </div>
+              </div>
+            </section>
+
+            {/* Full Body Check Up Section */}
+            <section className="bg-[#F5F8FF] border border-blue-100 rounded-2xl p-3 shadow-sm relative overflow-hidden mt-3">
+              <div className="absolute left-0 bottom-0 w-[100px] h-[110px] pointer-events-none">
+                <img src={imgBodyCheckup} alt="Full Body Checkup" className="w-full h-full object-contain object-bottom drop-shadow-md origin-bottom" />
+              </div>
+
+              <div className="ml-[100px] flex flex-col justify-between min-h-[85px] z-10 relative">
+                <div>
+                  <h3 className="text-base font-black text-[#0D1B3E] leading-tight">Full Body Check Up</h3>
+                  <p className="text-[10px] text-[#4A5568] mt-1 leading-snug">Comprehensive health screening at your doorstep</p>
+                </div>
+
+                <div className="flex items-end justify-between mt-3">
+                  <div className="flex items-center gap-1 mb-1">
+                    <span className="material-symbols-outlined text-[#00A86B] text-[12px]">verified</span>
+                    <span className="text-[9px] font-bold text-[#00A86B]">NABL Certified</span>
+                  </div>
+                  <button
+                    onClick={() => window.open('https://share.google/GmrxI3vR1GPf7yrPE', '_blank')}
+                    className="bg-[#0A4DBF] text-white text-[10px] font-bold py-1.5 px-2 rounded-lg flex items-center gap-0.5 active:scale-95 transition-all shadow-[0_4px_12px_rgba(10,77,191,0.2)] cursor-pointer whitespace-nowrap"
+                  >
+                    Book Now
                     <span className="material-symbols-outlined text-[12px] font-bold">arrow_forward</span>
                   </button>
                 </div>

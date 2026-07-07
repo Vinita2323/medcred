@@ -51,7 +51,7 @@ app.use(helmet({
 // ── CORS — Allow React frontend ────────────────────────────────
 app.use(
   cors({
-    origin: ['http://localhost:5173', 'http://localhost:3000', "https://medcred-nu.vercel.app"],
+    origin: ['http://localhost:5173', 'http://localhost:3000', "https://medcred-nu.vercel.app", "https://medcred.in", "https://www.medcred.in"],
     credentials: true,
   })
 );

@@ -18,6 +18,17 @@ const STATUS_CLASS = {
   rejected: 'bg-error-container text-on-error-container',
 };
 
+const DOC_LABELS = {
+  claimForm: 'Duly filled claim form(s)',
+  neftAndPhotoId: 'NEFT details & Photo ID of proposer',
+  hospitalBillsAndDischarge: 'Original bills, receipts and discharge card',
+  medicalPractitionerCertificate: 'Certificate from attending Medical Practitioner',
+  chemistBills: 'Original bills from chemists',
+  investigationReports: 'Original Investigation test reports & receipts',
+  referralLetter: 'Medical Practitioner referral letter',
+  ambulanceBills: 'Original bills & receipts for Ambulance charges'
+};
+
 export default function ClaimsPage() {
   const navigate = useNavigate();
   const [claims, setClaims] = useState([]);
@@ -25,6 +36,8 @@ export default function ClaimsPage() {
   const [hasCard, setHasCard] = useState(false);
   const [selectedClaimId, setSelectedClaimId] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showDocuments, setShowDocuments] = useState(false);
+  const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     hospitalName: '',
@@ -32,7 +45,16 @@ export default function ClaimsPage() {
     claimType: 'medical_services',
     description: '',
   });
-  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [selectedFiles, setSelectedFiles] = useState({
+    claimForm: null,
+    neftAndPhotoId: null,
+    hospitalBillsAndDischarge: null,
+    medicalPractitionerCertificate: null,
+    chemistBills: null,
+    investigationReports: null,
+    referralLetter: null,
+    ambulanceBills: null,
+  });
 
   useEffect(() => {
     if (isModalOpen) {
@@ -72,24 +94,31 @@ export default function ClaimsPage() {
 
   const handleNewClaim = () => {
     setFormData({ hospitalName: '', claimAmount: '5000', claimType: 'medical_services', description: '' });
-    setSelectedFiles([]);
+    setSelectedFiles({
+      claimForm: null,
+      neftAndPhotoId: null,
+      hospitalBillsAndDischarge: null,
+      medicalPractitionerCertificate: null,
+      chemistBills: null,
+      investigationReports: null,
+      referralLetter: null,
+      ambulanceBills: null,
+    });
+    setShowDocuments(false);
+    setIsTermsModalOpen(false);
     setIsModalOpen(true);
   };
 
-  const handleFileSelect = async (e) => {
-    if (e.target.files) {
-      const filesArr = Array.from(e.target.files);
-      if (selectedFiles.length + filesArr.length > 5) {
-        alert("You can only upload up to 5 documents.");
-        return;
-      }
-      const compressed = await Promise.all(filesArr.map(f => compressImage(f)));
-      setSelectedFiles([...selectedFiles, ...compressed]);
+  const handleSpecificFileSelect = async (e, fieldName) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      const compressed = await compressImage(file);
+      setSelectedFiles(prev => ({ ...prev, [fieldName]: compressed }));
     }
   };
 
-  const removeFile = (index) => {
-    setSelectedFiles(selectedFiles.filter((_, i) => i !== index));
+  const removeSpecificFile = (fieldName) => {
+    setSelectedFiles(prev => ({ ...prev, [fieldName]: null }));
   };
 
   const submitNewClaim = async () => {
@@ -97,10 +126,18 @@ export default function ClaimsPage() {
       alert('Please fill out Hospital Name and Claim Amount.');
       return;
     }
-    if (selectedFiles.length === 0) {
-      alert('Please upload at least 1 document (e.g. Prescription or Bill).');
-      return;
+    const requiredDocs = [
+      'claimForm', 'neftAndPhotoId', 'hospitalBillsAndDischarge', 
+      'medicalPractitionerCertificate', 'chemistBills', 'investigationReports', 
+      'referralLetter', 'ambulanceBills'
+    ];
+    for (const doc of requiredDocs) {
+      if (!selectedFiles[doc]) {
+        alert(`Please upload: ${DOC_LABELS[doc]}`);
+        return;
+      }
     }
+
     setSubmitting(true);
     try {
       const payload = new FormData();
@@ -110,8 +147,11 @@ export default function ClaimsPage() {
       if (formData.description) {
         payload.append('description', formData.description);
       }
-      selectedFiles.forEach((file) => {
-        payload.append('documents', file);
+      
+      Object.keys(selectedFiles).forEach(key => {
+        if (selectedFiles[key]) {
+          payload.append(key, selectedFiles[key]);
+        }
       });
 
       const res = await api.post(ENDPOINTS.CLAIMS_SUBMIT, payload, {
@@ -380,34 +420,47 @@ export default function ClaimsPage() {
                       className="w-full px-4 py-3 mt-1 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all resize-none"
                     />
                   </div>
-                  <div>
-                    <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Documents (Max 5) *</label>
-                    <div className="mt-1 relative w-full h-16 bg-surface-container-lowest border-2 border-outline-variant border-dashed rounded-xl flex items-center justify-center overflow-hidden hover:bg-surface-container-low transition-colors">
-                      <input 
-                        type="file" 
-                        multiple
-                        accept="image/*,.pdf" 
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                        onChange={handleFileSelect}
-                      />
-                      <div className="flex flex-col items-center justify-center pointer-events-none text-primary">
-                        <span className="material-symbols-outlined text-2xl">upload_file</span>
-                        <span className="text-[10px] font-bold">Tap to attach Prescription, Bills etc.</span>
-                      </div>
+                  {!showDocuments ? (
+                    <div className="pt-2">
+                      <button
+                        onClick={() => setIsTermsModalOpen(true)}
+                        type="button"
+                        className="w-full py-3 rounded-xl border border-primary text-primary font-bold text-sm hover:bg-primary/10 transition-all cursor-pointer"
+                      >
+                        Terms and Conditions
+                      </button>
                     </div>
-                    {selectedFiles.length > 0 && (
-                      <div className="mt-2 space-y-1">
-                        {selectedFiles.map((file, index) => (
-                          <div key={index} className="flex justify-between items-center bg-surface-container-low px-3 py-2 rounded-lg border border-outline-variant/50">
-                            <span className="text-[10px] text-on-surface font-semibold truncate max-w-[200px]">{file.name}</span>
-                            <button onClick={() => removeFile(index)} className="text-error hover:text-error/80 cursor-pointer">
-                              <span className="material-symbols-outlined text-sm">close</span>
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                  ) : (
+                    <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                      <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider block mb-2 sticky top-0 bg-white z-10 py-1">Mandatory Documents *</label>
+                      {Object.keys(DOC_LABELS).map((docKey) => (
+                        <div key={docKey} className="border border-outline-variant/60 rounded-xl p-3 bg-surface-container-lowest">
+                          <p className="text-[11px] font-bold text-on-surface mb-2">{DOC_LABELS[docKey]} *</p>
+                          {!selectedFiles[docKey] ? (
+                            <div className="relative w-full h-12 bg-surface-container-lowest border border-outline-variant border-dashed rounded-lg flex items-center justify-center overflow-hidden hover:bg-surface-container-low transition-colors">
+                              <input 
+                                type="file" 
+                                accept="image/*,.pdf" 
+                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                onChange={(e) => handleSpecificFileSelect(e, docKey)}
+                              />
+                              <div className="flex items-center justify-center gap-2 pointer-events-none text-primary">
+                                <span className="material-symbols-outlined text-base">upload_file</span>
+                                <span className="text-[10px] font-bold">Tap to upload</span>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex justify-between items-center bg-surface-container-low px-3 py-2 rounded-lg border border-outline-variant/50">
+                              <span className="text-[10px] text-on-surface font-semibold truncate max-w-[200px]">{selectedFiles[docKey].name}</span>
+                              <button onClick={() => removeSpecificFile(docKey)} className="text-error hover:text-error/80 cursor-pointer p-1">
+                                <span className="material-symbols-outlined text-sm">close</span>
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                   <div className="flex gap-3 pt-2">
                     <button
                       onClick={() => setIsModalOpen(false)}
@@ -415,14 +468,61 @@ export default function ClaimsPage() {
                     >
                       Cancel
                     </button>
-                    <button
-                      onClick={submitNewClaim}
-                      disabled={submitting}
-                      className="flex-1 py-3 rounded-xl bg-primary text-white font-bold text-sm hover:opacity-90 active:scale-95 transition-all cursor-pointer disabled:opacity-60"
-                    >
-                      {submitting ? 'Submitting...' : 'Submit'}
-                    </button>
+                    {showDocuments && (
+                      <button
+                        onClick={submitNewClaim}
+                        disabled={submitting}
+                        className="flex-1 py-3 rounded-xl bg-primary text-white font-bold text-sm hover:opacity-90 active:scale-95 transition-all cursor-pointer disabled:opacity-60"
+                      >
+                        {submitting ? 'Submitting...' : 'Submit'}
+                      </button>
+                    )}
                   </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Terms and Conditions Modal */}
+          {isTermsModalOpen && (
+            <div className="fixed inset-0 z-[60] flex items-center justify-center py-6 bg-black/60 backdrop-blur-sm animate-fade-in px-4">
+              <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl animate-slide-up max-h-[80vh] flex flex-col">
+                <h3 className="text-lg font-bold text-on-surface mb-2">Terms & conditions for Claim-:</h3>
+                
+                <div className="overflow-y-auto custom-scrollbar pr-2 mb-4">
+                  <p className="text-sm text-on-surface-variant mb-6">
+                    For general queries or assistance with submitting a claim, call <strong>9519793335</strong> or email <strong>medcredcard@gmail.com</strong>
+                  </p>
+                  
+                  <h4 className="text-sm font-bold text-on-surface mb-3 uppercase">Required Documents:</h4>
+                  <ul className="list-disc pl-5 space-y-3 text-sm text-on-surface-variant">
+                    <li>Duly filled claim form(s)</li>
+                    <li>NEFT details & Photo ID of the proposer</li>
+                    <li>Original bills, receipts and discharge card from the Hospital / Medical Practitioner</li>
+                    <li>Certificate from attending Medical Practitioner providing details of first symptoms and date of occurrence of the disease/illness/injury/surgery along with complete medical history of the Insured/Insured Person.</li>
+                    <li>Original bills from chemists supported by proper prescription</li>
+                    <li>Original Investigation test reports and payment receipts</li>
+                    <li>Medical Practitioner referral letter advising hospitalisation</li>
+                    <li>Original bills and receipts for claiming Ambulance charges</li>
+                  </ul>
+                </div>
+
+                <div className="flex gap-3 pt-4 border-t border-outline-variant/50 mt-auto">
+                  <button
+                    onClick={() => setIsTermsModalOpen(false)}
+                    className="flex-1 py-3 rounded-xl border border-outline-variant text-on-surface-variant font-bold text-sm hover:bg-surface-container transition-all cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsTermsModalOpen(false);
+                      setShowDocuments(true);
+                    }}
+                    className="flex-1 py-3 rounded-xl bg-primary text-white font-bold text-sm hover:opacity-90 active:scale-95 transition-all cursor-pointer"
+                  >
+                    Proceed
+                  </button>
                 </div>
               </div>
             </div>

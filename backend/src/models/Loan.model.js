@@ -32,6 +32,16 @@ const PatientSchema = new mongoose.Schema({
   estimatedBillUrl: {
     type: String,
   },
+
+  // ── Mandatory Medical Documents ──────────────────────────────
+  claimFormUrl: String,
+  neftAndPhotoIdUrl: String,
+  hospitalBillsAndDischargeUrl: String,
+  medicalPractitionerCertificateUrl: String,
+  chemistBillsUrl: String,
+  investigationReportsUrl: String,
+  referralLetterUrl: String,
+  ambulanceBillsUrl: String,
 });
 
 const LoanSchema = new mongoose.Schema({
