@@ -70,8 +70,11 @@ if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
 
+// ── API Router ──────────────────────────────────────────────────
+const apiRouter = express.Router();
+
 // ── Health Check ───────────────────────────────────────────────
-app.get('/v1/health', (req, res) => {
+apiRouter.get('/v1/health', (req, res) => {
   res.status(200).json({
     success: true,
     message: '🏥 MedCred API is running',
@@ -81,44 +84,48 @@ app.get('/v1/health', (req, res) => {
 });
 
 // ── Routes ─────────────────────────────────────────────────────
-app.use('/auth', otpRoutes);
-app.use('/v1/auth', otpRoutes);
-app.use('/v1/auth', userAuthRoutes);
-app.use('/v1/auth', authRefreshRoutes);
-app.use('/v1/agent/auth', agentAuthRoutes);
-app.use('/v1/admin/auth', adminAuthRoutes);
-app.use('/v1/user/profile', userProfileRoutes);
-app.use('/v1/agent/profile', agentProfileRoutes);
-app.use('/v1/admin/profile', adminProfileRoutes);
-app.use('/v1/admin/agents', adminAgentRoutes);
-app.use('/v1/plans', planRoutes);
-app.use('/v1/orders', orderRoutes);
-app.use('/v1/cards', cardRoutes);
-app.use('/v1/family', familyRoutes);
-app.use('/v1/admin/family', adminFamilyRoutes);
-app.use('/v1/loans', loanRoutes);
-app.use('/v1/admin/loans', adminLoanRoutes);
-app.use('/v1/kyc', kycRoutes);
-app.use('/v1/admin/kyc', adminKycRoutes);
-app.use('/v1/admin/users', adminUserRoutes);
-app.use('/v1/claims', claimRoutes);
-app.use('/v1/admin/claims', adminClaimRoutes);
-app.use('/v1/agent/customers', agentCustomerRoutes);
-app.use('/v1/agent/wallet', agentWalletRoutes);
-app.use('/v1/agent/team', agentTeamRoutes);
-app.use('/v1/agent/loans', agentLoanRoutes);
-app.use('/v1/admin/settlements', adminSettlementRoutes);
-app.use('/v1/admin/hospitals', adminHospitalRoutes);
-app.use('/v1/admin/reports', adminReportsRoutes);
-app.use('/v1/admin/transactions', adminTransactionsRoutes);
-app.use('/v1/user/wallet', userWalletRoutes);
-app.use('/v1/products', productRoutes);
-app.use('/v1/admin/products', adminProductRoutes);
-app.use('/v1/admin/orders', adminOrderRoutes);
-app.use('/v1/hospitals', hospitalRoutes);
-app.use('/v1/support', supportRoutes);
-app.use('/v1/admin/support', adminSupportRoutes);
-app.use('/v1/notifications', notificationRoutes);
+apiRouter.use('/auth', otpRoutes);
+apiRouter.use('/v1/auth', otpRoutes);
+apiRouter.use('/v1/auth', userAuthRoutes);
+apiRouter.use('/v1/auth', authRefreshRoutes);
+apiRouter.use('/v1/agent/auth', agentAuthRoutes);
+apiRouter.use('/v1/admin/auth', adminAuthRoutes);
+apiRouter.use('/v1/user/profile', userProfileRoutes);
+apiRouter.use('/v1/agent/profile', agentProfileRoutes);
+apiRouter.use('/v1/admin/profile', adminProfileRoutes);
+apiRouter.use('/v1/admin/agents', adminAgentRoutes);
+apiRouter.use('/v1/plans', planRoutes);
+apiRouter.use('/v1/orders', orderRoutes);
+apiRouter.use('/v1/cards', cardRoutes);
+apiRouter.use('/v1/family', familyRoutes);
+apiRouter.use('/v1/admin/family', adminFamilyRoutes);
+apiRouter.use('/v1/loans', loanRoutes);
+apiRouter.use('/v1/admin/loans', adminLoanRoutes);
+apiRouter.use('/v1/kyc', kycRoutes);
+apiRouter.use('/v1/admin/kyc', adminKycRoutes);
+apiRouter.use('/v1/admin/users', adminUserRoutes);
+apiRouter.use('/v1/claims', claimRoutes);
+apiRouter.use('/v1/admin/claims', adminClaimRoutes);
+apiRouter.use('/v1/agent/customers', agentCustomerRoutes);
+apiRouter.use('/v1/agent/wallet', agentWalletRoutes);
+apiRouter.use('/v1/agent/team', agentTeamRoutes);
+apiRouter.use('/v1/agent/loans', agentLoanRoutes);
+apiRouter.use('/v1/admin/settlements', adminSettlementRoutes);
+apiRouter.use('/v1/admin/hospitals', adminHospitalRoutes);
+apiRouter.use('/v1/admin/reports', adminReportsRoutes);
+apiRouter.use('/v1/admin/transactions', adminTransactionsRoutes);
+apiRouter.use('/v1/user/wallet', userWalletRoutes);
+apiRouter.use('/v1/products', productRoutes);
+apiRouter.use('/v1/admin/products', adminProductRoutes);
+apiRouter.use('/v1/admin/orders', adminOrderRoutes);
+apiRouter.use('/v1/hospitals', hospitalRoutes);
+apiRouter.use('/v1/support', supportRoutes);
+apiRouter.use('/v1/admin/support', adminSupportRoutes);
+apiRouter.use('/v1/notifications', notificationRoutes);
+
+// Register the router for both /api and root / paths
+app.use('/api', apiRouter);
+app.use('/', apiRouter);
 
 // ── 404 Handler ────────────────────────────────────────────────
 app.use((req, res) => {
