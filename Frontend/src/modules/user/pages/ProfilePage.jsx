@@ -34,6 +34,7 @@ export default function ProfilePage() {
   const [card, setCard] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [familyMembers, setFamilyMembers] = useState([]);
+  const [imageErrors, setImageErrors] = useState({ front: false, back: false });
 
   // Temp edit fields
   const [tempName, setTempName] = useState('');
@@ -575,7 +576,7 @@ export default function ProfilePage() {
               <div className="p-4 pt-2 border-t border-outline-variant/30">
                 <div
                   onClick={() => navigate('/card')}
-                  className="relative w-full aspect-[1.58/1] rounded-2xl overflow-hidden shadow-lg bg-gradient-to-br from-primary to-secondary p-5 text-white cursor-pointer hover:scale-[1.01] transition-transform"
+                  className="relative w-full md:max-w-[420px] md:mx-auto aspect-[1.58/1] rounded-2xl overflow-hidden shadow-lg bg-gradient-to-br from-primary to-secondary p-5 text-white cursor-pointer hover:scale-[1.01] transition-transform"
                 >
                   <div className="flex justify-between items-start">
                     <div className="font-bold tracking-widest text-xs opacity-90 uppercase">{card?.planName || 'MEDCRED ELITE'}</div>
@@ -597,14 +598,10 @@ export default function ProfilePage() {
                   </div>
                   <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent pointer-events-none"></div>
                 </div>
-                <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
+                <div className="mt-3 grid grid-cols-2 gap-2 text-xs md:max-w-[420px] md:mx-auto">
                   <div className="bg-surface-container-low rounded-lg p-2 text-center">
                     <p className="text-[9px] text-on-surface-variant uppercase font-bold">Type</p>
                     <p className="font-bold text-on-surface mt-0.5 capitalize">{card?.cardType || 'Platinum'}</p>
-                  </div>
-                  <div className="bg-surface-container-low rounded-lg p-2 text-center">
-                    <p className="text-[9px] text-on-surface-variant uppercase font-bold">Credit Limit</p>
-                    <p className="font-bold text-primary mt-0.5">{card?.creditLimit ? `₹${card.creditLimit.toLocaleString('en-IN')}` : '₹0'}</p>
                   </div>
                   <div className="bg-surface-container-low rounded-lg p-2 text-center">
                     <p className="text-[9px] text-on-surface-variant uppercase font-bold">Status</p>
@@ -665,8 +662,13 @@ export default function ProfilePage() {
                       <div className="flex flex-col gap-1">
                         <span className="text-[9px] font-bold text-on-surface-variant text-center">Front</span>
                         <div className="w-full aspect-[1.58/1] bg-surface-container rounded-xl overflow-hidden border border-outline-variant/50 flex items-center justify-center">
-                          {user?.kyc?.aadhaarFrontUrl || user?.aadhaarFrontUrl ? (
-                            <img src={getImageUrl(user?.kyc?.aadhaarFrontUrl || user?.aadhaarFrontUrl)} alt="Aadhaar Front" className="w-full h-full object-cover" />
+                          {(user?.kyc?.aadhaarFrontUrl || user?.aadhaarFrontUrl) && !imageErrors.front ? (
+                            <img 
+                              src={getImageUrl(user?.kyc?.aadhaarFrontUrl || user?.aadhaarFrontUrl)} 
+                              alt="Aadhaar Front" 
+                              className="w-full h-full object-cover" 
+                              onError={() => setImageErrors(prev => ({ ...prev, front: true }))}
+                            />
                           ) : (
                             <span className="material-symbols-outlined text-outline text-2xl">badge</span>
                           )}
@@ -675,8 +677,13 @@ export default function ProfilePage() {
                       <div className="flex flex-col gap-1">
                         <span className="text-[9px] font-bold text-on-surface-variant text-center">Back</span>
                         <div className="w-full aspect-[1.58/1] bg-surface-container rounded-xl overflow-hidden border border-outline-variant/50 flex items-center justify-center">
-                          {user?.kyc?.aadhaarBackUrl || user?.aadhaarBackUrl ? (
-                            <img src={getImageUrl(user?.kyc?.aadhaarBackUrl || user?.aadhaarBackUrl)} alt="Aadhaar Back" className="w-full h-full object-cover" />
+                          {(user?.kyc?.aadhaarBackUrl || user?.aadhaarBackUrl) && !imageErrors.back ? (
+                            <img 
+                              src={getImageUrl(user?.kyc?.aadhaarBackUrl || user?.aadhaarBackUrl)} 
+                              alt="Aadhaar Back" 
+                              className="w-full h-full object-cover" 
+                              onError={() => setImageErrors(prev => ({ ...prev, back: true }))}
+                            />
                           ) : (
                             <span className="material-symbols-outlined text-outline text-2xl">credit_card</span>
                           )}

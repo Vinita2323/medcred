@@ -272,7 +272,7 @@ export const confirmPayment = async (req, res) => {
 // ─────────────────────────────────────────────────────────────────
 export const createProductOrder = async (req, res) => {
   try {
-    const { productId, deliveryAddress, paymentMethod, paymentDetails } = req.body;
+    const { productId, deliveryAddress, paymentMethod, paymentDetails, quantity = 1 } = req.body;
 
     // Accept both MongoDB ObjectId (_id) and the string productId (e.g. "PRD-1234567")
     let product = null;
@@ -291,10 +291,11 @@ export const createProductOrder = async (req, res) => {
     }
 
     const orderId = `ORD-${Date.now()}`;
-    const finalAmount = product.discountedPrice || product.price;
+    const singleProductPrice = product.discountedPrice || product.price;
+    const finalAmount = singleProductPrice * quantity;
 
-    if (!finalAmount || finalAmount <= 0) {
-      console.error('Invalid amount:', finalAmount);
+    if (!singleProductPrice || singleProductPrice <= 0) {
+      console.error('Invalid amount:', singleProductPrice);
       return res.status(400).json({ success: false, message: 'Invalid product price.' });
     }
 
@@ -344,6 +345,7 @@ export const createProductOrder = async (req, res) => {
       paymentStatus: 'pending', // Initially pending
       razorpayOrderId: razorpayOrder.id,
       invoiceNumber: `INV-${Math.floor(100000 + Math.random() * 900000)}`,
+      quantity,
     });
 
     res.status(201).json({

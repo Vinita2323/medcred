@@ -13,7 +13,7 @@ export const getAdminProducts = async (req, res) => {
 export const createProduct = async (req, res) => {
   try {
     // imageUrl is a base64 data string sent directly in the JSON body
-    const { name, category, price, discountedPrice, stockCount, brand, isAvailable, imageUrl } = req.body;
+    const { name, category, price, discountedPrice, stockCount, brand, isAvailable, imageUrl, description, images, keyFeatures } = req.body;
 
     const product = await Product.create({
       productId: `PRD-${Date.now()}`,
@@ -25,6 +25,9 @@ export const createProduct = async (req, res) => {
       brand,
       isAvailable,
       imageUrl: imageUrl || '',
+      description: description || '',
+      images: images || [],
+      keyFeatures: keyFeatures || [],
     });
 
     res.status(201).json({ success: true, data: product });
@@ -36,9 +39,20 @@ export const createProduct = async (req, res) => {
 
 export const updateProduct = async (req, res) => {
   try {
-    const { name, category, price, discountedPrice, stockCount, brand, isAvailable, imageUrl } = req.body;
+    const { name, category, price, discountedPrice, stockCount, brand, isAvailable, imageUrl, description, images, keyFeatures } = req.body;
 
-    const updateData = { name, category, price, discountedPrice, stockCount, brand, isAvailable };
+    const updateData = { 
+      name, 
+      category, 
+      price, 
+      discountedPrice, 
+      stockCount, 
+      brand, 
+      isAvailable,
+      description: description || '',
+      images: images || [],
+      keyFeatures: keyFeatures || [],
+    };
     // Only update imageUrl if a new one was sent
     if (imageUrl) updateData.imageUrl = imageUrl;
 

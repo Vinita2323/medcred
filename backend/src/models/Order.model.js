@@ -80,6 +80,10 @@ const orderSchema = new mongoose.Schema(
     razorpayOrderId: String,
     razorpayPaymentId: String,
     razorpaySignature: String,
+    quantity: {
+      type: Number,
+      default: 1,
+    },
   },
   { timestamps: true }
 );

@@ -3,7 +3,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import html2pdf from 'html2pdf.js';
 
 import api from '../../../services/api';
-import { ENDPOINTS, getImageUrl } from '../../../services/types';
+import { ENDPOINTS } from '../../../services/types';
+import { getProductImage } from '../../../utils/getProductImage';
 
 // Method constants removed since Razorpay handles them internally
 
@@ -26,14 +27,35 @@ export default function CheckoutPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const product = location.state?.product || { name: 'Medical Equipment', price: 999 };
+  const quantity = location.state?.quantity || 1;
   const price = product.discountedPrice || product.price || 1575;
+  const totalPrice = price * quantity;
 
   const [processing, setProcessing] = useState(false);
   const [success, setSuccess] = useState(false);
-  const [deliveryAddress, setDeliveryAddress] = useState('');
+  const [addressData, setAddressData] = useState({
+    fullName: '',
+    phone: '',
+    street: '',
+    city: '',
+    state: '',
+    pincode: '',
+  });
+
+  const handleAddressChange = (e) => {
+    const { name, value } = e.target;
+    setAddressData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const deliveryAddress = `${addressData.fullName}, Phone: ${addressData.phone}, Addr: ${addressData.street}, ${addressData.city}, ${addressData.state} - ${addressData.pincode}`;
 
   const validateForm = () => {
-    if (!deliveryAddress || deliveryAddress.trim().length < 10) { alert('Please enter a complete delivery address'); return false; }
+    if (!addressData.fullName.trim()) { alert('Please enter Full Name'); return false; }
+    if (!addressData.phone.trim() || addressData.phone.length < 10) { alert('Please enter a valid 10-digit Phone Number'); return false; }
+    if (!addressData.street.trim()) { alert('Please enter Street Address'); return false; }
+    if (!addressData.city.trim()) { alert('Please enter City'); return false; }
+    if (!addressData.state.trim()) { alert('Please enter State'); return false; }
+    if (!addressData.pincode.trim() || addressData.pincode.length < 6) { alert('Please enter a valid 6-digit Pincode'); return false; }
     return true;
   };
 
@@ -52,7 +74,8 @@ export default function CheckoutPage() {
       const payload = {
         productId: product._id || product.productId,
         deliveryAddress,
-        paymentMethod: 'razorpay'
+        paymentMethod: 'razorpay',
+        quantity
       };
 
       // 1. Create order on backend (returns razorpay_order_id)
@@ -72,7 +95,7 @@ export default function CheckoutPage() {
         amount: razorpayOrder.amount,
         currency: razorpayOrder.currency,
         name: "MedCred Health",
-        description: `Purchase of ${product.name}`,
+        description: `Purchase of ${product.name} (Qty: ${quantity})`,
         image: "https://medcred.in/logo.png", // Add your actual logo URL here
         order_id: razorpayOrder.id,
         handler: async function (response) {
@@ -163,15 +186,15 @@ export default function CheckoutPage() {
           <tr>
             <td style="text-align: left; padding: 12px; border-bottom: 1px solid #ddd;">
               <strong>${product.name}</strong><br/>
-              <span style="color: #666; font-size: 13px;">Medical Equipment</span>
+              <span style="color: #666; font-size: 13px;">Medical Equipment (Qty: ${quantity})</span>
             </td>
-            <td style="text-align: right; padding: 12px; border-bottom: 1px solid #ddd;">₹${price.toLocaleString()}</td>
+            <td style="text-align: right; padding: 12px; border-bottom: 1px solid #ddd;">₹${totalPrice.toLocaleString()}</td>
           </tr>
         </tbody>
       </table>
 
       <div style="font-size: 20px; font-weight: bold; color: #0052CC; text-align: right;">
-        Total Paid: ₹${price.toLocaleString()}
+        Total Paid: ₹${totalPrice.toLocaleString()}
       </div>
       
       <div style="margin-top: 60px; font-size: 12px; color: #888; text-align: center;">
@@ -251,32 +274,116 @@ export default function CheckoutPage() {
       <main className="flex-grow overflow-y-auto px-4 py-5 max-w-md mx-auto w-full space-y-5">
         {/* Order summary */}
         <div className="bg-white rounded-2xl border border-outline-variant p-4 shadow-sm flex items-center gap-4">
-          {product.imageUrl ? (
-            <img src={getImageUrl(product.imageUrl)} alt={product.name} className="w-16 h-16 object-contain rounded-lg bg-surface-container-lowest" />
-          ) : (
-            <div className="w-16 h-16 bg-surface-container rounded-lg flex items-center justify-center">
-              <span className="material-symbols-outlined text-on-surface-variant text-2xl">medical_services</span>
-            </div>
-          )}
+          <div className="w-16 h-16 rounded-xl bg-surface-container-lowest border border-outline-variant/50 p-1 flex items-center justify-center shrink-0 overflow-hidden">
+            <img 
+              src={getProductImage(product.imageUrl, product.category)} 
+              alt={product.name} 
+              className="w-full h-full object-contain"
+              onError={(e) => { e.target.onerror = null; e.target.src = getProductImage(null, product.category); }} 
+            />
+          </div>
           <div className="flex-1">
             <p className="font-bold text-on-surface text-sm line-clamp-2">{product.name}</p>
-            <p className="text-[11px] text-on-surface-variant mt-0.5">Qty: 1</p>
+            <p className="text-[11px] text-on-surface-variant mt-0.5">Qty: {quantity}</p>
           </div>
-          <p className="text-lg font-black text-primary">₹{price.toLocaleString()}</p>
+          <p className="text-lg font-black text-primary">₹{totalPrice.toLocaleString('en-IN')}</p>
         </div>
 
         {/* Delivery Address */}
         <div className="bg-white rounded-2xl border border-outline-variant p-4 shadow-sm space-y-3">
           <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Delivery Address</p>
-          <textarea 
-            value={deliveryAddress}
-            onChange={(e) => setDeliveryAddress(e.target.value)}
-            placeholder="Enter full shipping address (House No, Street, City, Pincode)"
-            className="w-full h-24 p-3 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary resize-none transition-all"
-          />
+          <div className="space-y-3">
+            <div>
+              <label className="block text-[10px] font-bold text-on-surface-variant uppercase mb-1">Full Name</label>
+              <input 
+                type="text"
+                name="fullName"
+                value={addressData.fullName}
+                onChange={handleAddressChange}
+                placeholder="Enter full name"
+                className="w-full p-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[10px] font-bold text-on-surface-variant uppercase mb-1">Phone Number</label>
+                <input 
+                  type="text"
+                  name="phone"
+                  value={addressData.phone}
+                  onChange={handleAddressChange}
+                  placeholder="10-digit number"
+                  className="w-full p-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-on-surface-variant uppercase mb-1">Pincode</label>
+                <input 
+                  type="text"
+                  name="pincode"
+                  value={addressData.pincode}
+                  onChange={handleAddressChange}
+                  placeholder="6-digit code"
+                  className="w-full p-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold text-on-surface-variant uppercase mb-1">Street Address</label>
+              <input 
+                type="text"
+                name="street"
+                value={addressData.street}
+                onChange={handleAddressChange}
+                placeholder="Flat/House no., building, street"
+                className="w-full p-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[10px] font-bold text-on-surface-variant uppercase mb-1">City</label>
+                <input 
+                  type="text"
+                  name="city"
+                  value={addressData.city}
+                  onChange={handleAddressChange}
+                  placeholder="City"
+                  className="w-full p-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-on-surface-variant uppercase mb-1">State</label>
+                <input 
+                  type="text"
+                  name="state"
+                  value={addressData.state}
+                  onChange={handleAddressChange}
+                  placeholder="State"
+                  className="w-full p-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                />
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* UI for Payment method selection has been removed since Razorpay natively handles it */}
+        {/* Bill Details */}
+        <div className="bg-white rounded-2xl border border-outline-variant p-4 shadow-sm space-y-3">
+          <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Bill Details</p>
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between text-on-surface-variant">
+              <span>Item Total ({quantity} items)</span>
+              <span>₹{(price * quantity).toLocaleString('en-IN')}</span>
+            </div>
+            <div className="flex justify-between text-on-surface-variant">
+              <span>Delivery Charges</span>
+              <span className="text-green-600 font-bold">FREE</span>
+            </div>
+            <div className="border-t border-outline-variant/30 pt-2 flex justify-between font-black text-on-surface text-base">
+              <span>To Pay</span>
+              <span className="text-primary">₹{totalPrice.toLocaleString('en-IN')}</span>
+            </div>
+          </div>
+        </div>
 
         {/* Security badges */}
         <div className="flex items-center justify-center gap-4 opacity-50 py-1">
@@ -292,7 +399,7 @@ export default function CheckoutPage() {
             className="w-full py-4 bg-primary text-white font-black rounded-2xl shadow-xl hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-3 text-base"
           >
             <span className="material-symbols-outlined">lock</span>
-            Pay ₹{price.toLocaleString()} Securely
+            Pay ₹{totalPrice.toLocaleString('en-IN')} Securely
           </button>
         </div>
       </main>

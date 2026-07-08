@@ -18,6 +18,12 @@ export default function AdminProductsPage() {
     brand: '',
     imageUrl: '',
     image: null,
+    imageUrl2: '',
+    image2: null,
+    imageUrl3: '',
+    image3: null,
+    description: '',
+    keyFeatures: '',
     isAvailable: true,
   });
 
@@ -47,7 +53,7 @@ export default function AdminProductsPage() {
     }));
   };
 
-  const handleFileChange = async (e) => {
+  const handleFileChange = async (e, imageNum = '') => {
     if (e.target.files && e.target.files[0]) {
       const compressed = await compressImage(e.target.files[0]);
       // Convert to base64 so we can store it directly in MongoDB (no filesystem needed)
@@ -55,8 +61,8 @@ export default function AdminProductsPage() {
       reader.onloadend = () => {
         setFormData(prev => ({
           ...prev,
-          image: compressed,
-          imageUrl: reader.result  // base64 data URL string
+          [`image${imageNum}`]: compressed,
+          [`imageUrl${imageNum}`]: reader.result  // base64 data URL string
         }));
       };
       reader.readAsDataURL(compressed);
@@ -66,6 +72,7 @@ export default function AdminProductsPage() {
   const openModal = (product = null) => {
     if (product) {
       setEditingProduct(product);
+      const productImages = product.images || [];
       setFormData({
         name: product.name,
         category: product.category,
@@ -75,6 +82,12 @@ export default function AdminProductsPage() {
         brand: product.brand || '',
         imageUrl: product.imageUrl || '',
         image: null,
+        imageUrl2: productImages[1] || '',
+        image2: null,
+        imageUrl3: productImages[2] || '',
+        image3: null,
+        description: product.description || '',
+        keyFeatures: (product.keyFeatures || []).join(', '),
         isAvailable: product.isAvailable,
       });
     } else {
@@ -88,6 +101,12 @@ export default function AdminProductsPage() {
         brand: '',
         imageUrl: '',
         image: null,
+        imageUrl2: '',
+        image2: null,
+        imageUrl3: '',
+        image3: null,
+        description: '',
+        keyFeatures: '',
         isAvailable: true,
       });
     }
@@ -102,6 +121,7 @@ export default function AdminProductsPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      const imagesArray = [formData.imageUrl, formData.imageUrl2, formData.imageUrl3].filter(Boolean);
       // Build a plain JSON payload — imageUrl is already a base64 string
       const payload = {
         name: formData.name,
@@ -111,7 +131,10 @@ export default function AdminProductsPage() {
         stockCount: formData.stockCount,
         brand: formData.brand,
         isAvailable: formData.isAvailable,
-        ...(formData.imageUrl && { imageUrl: formData.imageUrl }),
+        description: formData.description,
+        keyFeatures: formData.keyFeatures.split(',').map(f => f.trim()).filter(Boolean),
+        images: imagesArray,
+        imageUrl: formData.imageUrl || imagesArray[0] || '',
       };
 
       if (editingProduct) {
@@ -233,13 +256,13 @@ export default function AdminProductsPage() {
 
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl animate-fade-in">
-            <div className="px-6 py-4 border-b border-[#c3c6d6]/30 flex justify-between items-center bg-[#faf8ff]">
+          <div className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden shadow-2xl animate-fade-in">
+            <div className="px-6 py-4 border-b border-[#c3c6d6]/30 flex justify-between items-center bg-[#faf8ff] shrink-0">
               <h2 className="text-lg font-bold text-[#191b23]">{editingProduct ? 'Edit Product' : 'Add New Product'}</h2>
               <button onClick={closeModal} className="material-symbols-outlined text-[#737685] hover:bg-[#f3f3fd] rounded-full p-1">close</button>
             </div>
             
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto flex-1">
               <div>
                 <label className="block text-xs font-bold text-[#516161] uppercase tracking-wider mb-1">Product Name *</label>
                 <input
@@ -334,27 +357,95 @@ export default function AdminProductsPage() {
                 </div>
               </div>
 
+              {/* Description */}
               <div>
-                <label className="block text-xs font-bold text-[#516161] uppercase tracking-wider mb-1">Image Upload</label>
-                <input
-                  type="file"
-                  name="image"
-                  accept="image/*"
-                  onChange={handleFileChange}
-                  className="w-full px-4 py-2 border border-[#c3c6d6] rounded-xl focus:outline-none focus:border-[#0c56d0] text-sm bg-white"
+                <label className="block text-xs font-bold text-[#516161] uppercase tracking-wider mb-1">Description</label>
+                <textarea
+                  name="description"
+                  value={formData.description}
+                  onChange={handleInputChange}
+                  rows="3"
+                  className="w-full px-4 py-2 border border-[#c3c6d6] rounded-xl focus:outline-none focus:border-[#0c56d0] text-sm"
+                  placeholder="Enter product description..."
                 />
-                {formData.imageUrl && !formData.image && (
-                  <div className="mt-2 text-xs text-green-600 font-semibold flex items-center gap-1">
-                    <span className="material-symbols-outlined text-[14px]">check_circle</span>
-                    Current image uploaded
-                  </div>
-                )}
-                {formData.image && (
-                  <div className="mt-2 text-xs text-[#0c56d0] font-semibold flex items-center gap-1">
-                    <span className="material-symbols-outlined text-[14px]">photo</span>
-                    New file selected: {formData.image.name}
-                  </div>
-                )}
+              </div>
+
+              {/* Key Features */}
+              <div>
+                <label className="block text-xs font-bold text-[#516161] uppercase tracking-wider mb-1">Key Features (comma-separated)</label>
+                <input
+                  type="text"
+                  name="keyFeatures"
+                  value={formData.keyFeatures}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-[#c3c6d6] rounded-xl focus:outline-none focus:border-[#0c56d0] text-sm"
+                  placeholder="Clinical accuracy certified, Lightweight and portable"
+                />
+              </div>
+
+              {/* Images */}
+              <div className="space-y-3">
+                <label className="block text-xs font-bold text-[#516161] uppercase tracking-wider">Product Images (up to 3)</label>
+                
+                {/* Image 1 */}
+                <div className="border border-[#c3c6d6]/60 rounded-xl p-3 bg-slate-50/50 space-y-2">
+                  <span className="text-[11px] font-bold text-[#0c56d0] block">Image 1 (Main/Thumbnail)</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleFileChange(e, '')}
+                    className="w-full text-xs bg-white border border-[#c3c6d6]/40 p-1 rounded"
+                  />
+                  {formData.imageUrl && (
+                    <div className="flex items-center gap-2 mt-1">
+                      <img src={formData.imageUrl} className="w-10 h-10 object-contain rounded border border-[#c3c6d6]/40 bg-white" alt="Prev 1" />
+                      <span className="text-[10px] text-green-600 font-semibold flex items-center gap-0.5">
+                        <span className="material-symbols-outlined text-[12px]">check_circle</span>
+                        Loaded
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Image 2 */}
+                <div className="border border-[#c3c6d6]/60 rounded-xl p-3 bg-slate-50/50 space-y-2">
+                  <span className="text-[11px] font-bold text-[#0c56d0] block">Image 2</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleFileChange(e, '2')}
+                    className="w-full text-xs bg-white border border-[#c3c6d6]/40 p-1 rounded"
+                  />
+                  {formData.imageUrl2 && (
+                    <div className="flex items-center gap-2 mt-1">
+                      <img src={formData.imageUrl2} className="w-10 h-10 object-contain rounded border border-[#c3c6d6]/40 bg-white" alt="Prev 2" />
+                      <span className="text-[10px] text-green-600 font-semibold flex items-center gap-0.5">
+                        <span className="material-symbols-outlined text-[12px]">check_circle</span>
+                        Loaded
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Image 3 */}
+                <div className="border border-[#c3c6d6]/60 rounded-xl p-3 bg-slate-50/50 space-y-2">
+                  <span className="text-[11px] font-bold text-[#0c56d0] block">Image 3</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleFileChange(e, '3')}
+                    className="w-full text-xs bg-white border border-[#c3c6d6]/40 p-1 rounded"
+                  />
+                  {formData.imageUrl3 && (
+                    <div className="flex items-center gap-2 mt-1">
+                      <img src={formData.imageUrl3} className="w-10 h-10 object-contain rounded border border-[#c3c6d6]/40 bg-white" alt="Prev 3" />
+                      <span className="text-[10px] text-green-600 font-semibold flex items-center gap-0.5">
+                        <span className="material-symbols-outlined text-[12px]">check_circle</span>
+                        Loaded
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="pt-4 flex justify-end gap-3">

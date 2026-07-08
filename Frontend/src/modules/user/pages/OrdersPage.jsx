@@ -31,14 +31,16 @@ export default function OrdersPage() {
 
   return (
     <div className="flex-grow flex flex-col bg-[#F8FAFF] min-h-screen font-body-md pb-20">
-      <header className="flex items-center gap-3 px-4 h-16 sticky top-0 z-40 bg-white border-b border-outline-variant/30 shadow-sm">
-        <button onClick={() => navigate(-1)} className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-surface-container-low cursor-pointer transition-colors">
-          <span className="material-symbols-outlined text-primary">arrow_back</span>
-        </button>
-        <h1 className="text-lg font-bold text-on-surface flex-1">My Orders</h1>
+      <header className="w-full h-16 sticky top-0 z-40 bg-white border-b border-outline-variant/30 shadow-sm">
+        <div className="max-w-6xl mx-auto h-full px-4 flex items-center gap-3">
+          <button onClick={() => navigate(-1)} className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-surface-container-low cursor-pointer transition-colors">
+            <span className="material-symbols-outlined text-primary">arrow_back</span>
+          </button>
+          <h1 className="text-lg font-bold text-on-surface flex-1">My Orders</h1>
+        </div>
       </header>
 
-      <main className="flex-grow overflow-y-auto p-4 space-y-4">
+      <main className="flex-grow overflow-y-auto w-full max-w-6xl mx-auto p-4 md:p-8 space-y-4 md:space-y-6">
         {loading ? (
           <div className="flex justify-center py-10">
             <span className="material-symbols-outlined animate-spin text-primary text-3xl">progress_activity</span>
@@ -51,76 +53,82 @@ export default function OrdersPage() {
           </div>
         ) : (
           orders.map((order) => (
-            <div key={order._id} className="bg-white rounded-2xl border border-outline-variant p-4 shadow-sm space-y-4">
-              <div className="flex justify-between items-start border-b border-outline-variant/30 pb-3">
+            <div key={order._id} className="bg-white rounded-2xl border border-outline-variant p-4 shadow-sm space-y-4 md:p-6 md:rounded-3xl md:shadow-[0_8px_30px_rgb(0,0,0,0.02)] md:border-outline-variant/40">
+              <div className="flex justify-between items-start border-b border-outline-variant/30 pb-3 md:pb-4">
                 <div>
                   <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Order ID</p>
-                  <p className="font-mono text-sm font-bold text-on-surface">{order.orderId}</p>
+                  <p className="font-mono text-sm font-bold text-on-surface md:text-base">{order.orderId}</p>
                   <p className="text-[10px] text-on-surface-variant mt-1">Placed on {new Date(order.createdAt).toLocaleDateString()}</p>
                 </div>
-                <div className={`font-bold text-[10px] uppercase tracking-wider px-2 py-1 rounded-full border ${order.paymentStatus === 'success' ? 'bg-[#0A9E58]/10 text-[#0A9E58] border-[#0A9E58]/20' : 'bg-tertiary/10 text-tertiary border-tertiary/20'}`}>
+                <div className={`font-bold text-[10px] md:text-xs uppercase tracking-wider px-2 py-1 md:px-3 md:py-1 rounded-full border ${order.paymentStatus === 'success' ? 'bg-[#0A9E58]/10 text-[#0A9E58] border-[#0A9E58]/20' : 'bg-tertiary/10 text-tertiary border-tertiary/20'}`}>
                   {order.paymentStatus}
                 </div>
               </div>
 
               <div className="space-y-3">
-                <div className="flex gap-4 items-center">
-                  {order.orderType === 'medical_equipment' && order.productId?.imageUrl ? (
-                    <div className="w-16 h-16 rounded-xl bg-surface-container-lowest border border-outline-variant/50 p-1 flex items-center justify-center shrink-0">
-                      <img src={getImageUrl(order.productId.imageUrl)} alt={order.productName} className="w-full h-full object-contain" />
+                <div className="flex gap-4 items-center justify-between">
+                  <div className="flex gap-4 items-center flex-grow min-w-0">
+                    {order.orderType === 'medical_equipment' && order.productId?.imageUrl ? (
+                      <div className="w-16 h-16 rounded-xl bg-surface-container-lowest border border-outline-variant/50 p-1 flex items-center justify-center shrink-0">
+                        <img src={getImageUrl(order.productId.imageUrl)} alt={order.productName} className="w-full h-full object-contain" />
+                      </div>
+                    ) : (
+                      <div className="w-16 h-16 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+                        <span className="material-symbols-outlined text-primary text-2xl">
+                          {order.orderType === 'membership_card' ? 'badge' : 'medical_services'}
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex-grow min-w-0">
+                      <p className="font-bold text-on-surface text-sm md:text-base truncate">{order.productName || order.planName || 'Order Item'}</p>
+                      <p className="text-[11px] md:text-xs text-on-surface-variant mt-0.5">Qty: {order.quantity || 1}</p>
                     </div>
-                  ) : (
-                    <div className="w-16 h-16 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
-                      <span className="material-symbols-outlined text-primary text-2xl">
-                        {order.orderType === 'membership_card' ? 'badge' : 'medical_services'}
-                      </span>
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold text-on-surface text-sm truncate">{order.productName || order.planName || 'Order Item'}</p>
-                    <p className="text-[11px] text-on-surface-variant mt-0.5">Qty: 1</p>
                   </div>
-                  <p className="font-black text-primary">₹{order.finalAmount?.toLocaleString('en-IN')}</p>
+                  <p className="font-black text-primary md:text-xl shrink-0 ml-4">₹{order.finalAmount?.toLocaleString('en-IN')}</p>
                 </div>
               </div>
 
-              {order.orderType === 'medical_equipment' && (
-                <div className="bg-surface-container-low rounded-xl p-3 flex items-center justify-between gap-3 mt-2">
-                  <div className="flex items-center gap-3">
-                    <span className="material-symbols-outlined text-primary text-xl">
-                      {order.deliveryStatus === 'delivered' ? 'done_all' : order.deliveryStatus === 'shipped' ? 'local_shipping' : 'pending_actions'}
-                    </span>
-                    <div>
-                      <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Delivery Status</p>
-                      <p className={`font-bold text-xs capitalize ${order.deliveryStatus === 'delivered' ? 'text-green-600' : order.deliveryStatus === 'shipped' ? 'text-primary' : 'text-on-surface'}`}>
-                        {order.deliveryStatus || 'Pending'}
-                      </p>
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between md:pt-4 md:border-t md:border-outline-variant/30 gap-4">
+                {order.orderType === 'medical_equipment' ? (
+                  <div className="bg-surface-container-low rounded-xl p-3 flex items-center justify-between gap-3 mt-2 md:mt-0 md:bg-[#F8FAFF] md:border md:border-outline-variant/30 md:py-2 md:px-4 md:rounded-2xl">
+                    <div className="flex items-center gap-3">
+                      <span className="material-symbols-outlined text-primary text-xl">
+                        {order.deliveryStatus === 'delivered' ? 'done_all' : order.deliveryStatus === 'shipped' ? 'local_shipping' : 'pending_actions'}
+                      </span>
+                      <div>
+                        <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Delivery Status</p>
+                        <p className={`font-bold text-xs capitalize ${order.deliveryStatus === 'delivered' ? 'text-green-600' : order.deliveryStatus === 'shipped' ? 'text-primary' : 'text-on-surface'}`}>
+                          {order.deliveryStatus || 'Pending'}
+                        </p>
+                      </div>
                     </div>
+                    {order.estimatedDelivery && (
+                      <div className="text-right border-l border-outline-variant/30 pl-3">
+                        <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Expected</p>
+                        <p className="font-bold text-xs text-on-surface">{new Date(order.estimatedDelivery).toLocaleDateString()}</p>
+                      </div>
+                    )}
                   </div>
-                  {order.estimatedDelivery && (
-                    <div className="text-right border-l border-outline-variant/30 pl-3">
-                      <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Expected</p>
-                      <p className="font-bold text-xs text-on-surface">{new Date(order.estimatedDelivery).toLocaleDateString()}</p>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              <div className="flex gap-2 pt-2 border-t border-outline-variant/30">
-                {order.orderType === 'medical_equipment' && (
-                  <button 
-                    onClick={() => setTrackingOrder(order)}
-                    className="flex-1 py-2 rounded-xl border border-primary text-primary text-xs font-bold hover:bg-primary/5 transition-colors cursor-pointer"
-                  >
-                    Track Order
-                  </button>
+                ) : (
+                  <div className="hidden md:block"></div>
                 )}
-                <button 
-                  onClick={() => setInvoiceOrder(order)}
-                  className="flex-1 py-2 rounded-xl bg-primary text-white text-xs font-bold hover:opacity-90 transition-colors cursor-pointer shadow-sm"
-                >
-                  View Invoice
-                </button>
+
+                <div className="flex gap-2 pt-2 border-t border-outline-variant/30 md:pt-0 md:border-0 md:w-auto md:min-w-[260px]">
+                  {order.orderType === 'medical_equipment' && (
+                    <button 
+                      onClick={() => setTrackingOrder(order)}
+                      className="flex-1 py-2 px-4 rounded-xl border border-primary text-primary text-xs font-bold hover:bg-primary/5 transition-colors cursor-pointer md:rounded-xl md:h-10 flex items-center justify-center"
+                    >
+                      Track Order
+                    </button>
+                  )}
+                  <button 
+                    onClick={() => setInvoiceOrder(order)}
+                    className="flex-1 py-2 px-4 rounded-xl bg-primary text-white text-xs font-bold hover:opacity-90 transition-colors cursor-pointer shadow-sm md:rounded-xl md:h-10 flex items-center justify-center"
+                  >
+                    View Invoice
+                  </button>
+                </div>
               </div>
             </div>
           ))
