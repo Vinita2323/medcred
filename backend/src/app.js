@@ -71,7 +71,7 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 // ── Health Check ───────────────────────────────────────────────
-app.get('/api/v1/health', (req, res) => {
+app.get('/v1/health', (req, res) => {
   res.status(200).json({
     success: true,
     message: '🏥 MedCred API is running',
@@ -81,44 +81,44 @@ app.get('/api/v1/health', (req, res) => {
 });
 
 // ── Routes ─────────────────────────────────────────────────────
-app.use('/api/auth', otpRoutes);
-app.use('/api/v1/auth', otpRoutes);
-app.use('/api/v1/auth', userAuthRoutes);
-app.use('/api/v1/auth', authRefreshRoutes);
-app.use('/api/v1/agent/auth', agentAuthRoutes);
-app.use('/api/v1/admin/auth', adminAuthRoutes);
-app.use('/api/v1/user/profile', userProfileRoutes);
-app.use('/api/v1/agent/profile', agentProfileRoutes);
-app.use('/api/v1/admin/profile', adminProfileRoutes);
-app.use('/api/v1/admin/agents', adminAgentRoutes);
-app.use('/api/v1/plans', planRoutes);
-app.use('/api/v1/orders', orderRoutes);
-app.use('/api/v1/cards', cardRoutes);
-app.use('/api/v1/family', familyRoutes);
-app.use('/api/v1/admin/family', adminFamilyRoutes);
-app.use('/api/v1/loans', loanRoutes);
-app.use('/api/v1/admin/loans', adminLoanRoutes);
-app.use('/api/v1/kyc', kycRoutes);
-app.use('/api/v1/admin/kyc', adminKycRoutes);
-app.use('/api/v1/admin/users', adminUserRoutes);
-app.use('/api/v1/claims', claimRoutes);
-app.use('/api/v1/admin/claims', adminClaimRoutes);
-app.use('/api/v1/agent/customers', agentCustomerRoutes);
-app.use('/api/v1/agent/wallet', agentWalletRoutes);
-app.use('/api/v1/agent/team', agentTeamRoutes);
-app.use('/api/v1/agent/loans', agentLoanRoutes);
-app.use('/api/v1/admin/settlements', adminSettlementRoutes);
-app.use('/api/v1/admin/hospitals', adminHospitalRoutes);
-app.use('/api/v1/admin/reports', adminReportsRoutes);
-app.use('/api/v1/admin/transactions', adminTransactionsRoutes);
-app.use('/api/v1/user/wallet', userWalletRoutes);
-app.use('/api/v1/products', productRoutes);
-app.use('/api/v1/admin/products', adminProductRoutes);
-app.use('/api/v1/admin/orders', adminOrderRoutes);
-app.use('/api/v1/hospitals', hospitalRoutes);
-app.use('/api/v1/support', supportRoutes);
-app.use('/api/v1/admin/support', adminSupportRoutes);
-app.use('/api/v1/notifications', notificationRoutes);
+app.use('/auth', otpRoutes);
+app.use('/v1/auth', otpRoutes);
+app.use('/v1/auth', userAuthRoutes);
+app.use('/v1/auth', authRefreshRoutes);
+app.use('/v1/agent/auth', agentAuthRoutes);
+app.use('/v1/admin/auth', adminAuthRoutes);
+app.use('/v1/user/profile', userProfileRoutes);
+app.use('/v1/agent/profile', agentProfileRoutes);
+app.use('/v1/admin/profile', adminProfileRoutes);
+app.use('/v1/admin/agents', adminAgentRoutes);
+app.use('/v1/plans', planRoutes);
+app.use('/v1/orders', orderRoutes);
+app.use('/v1/cards', cardRoutes);
+app.use('/v1/family', familyRoutes);
+app.use('/v1/admin/family', adminFamilyRoutes);
+app.use('/v1/loans', loanRoutes);
+app.use('/v1/admin/loans', adminLoanRoutes);
+app.use('/v1/kyc', kycRoutes);
+app.use('/v1/admin/kyc', adminKycRoutes);
+app.use('/v1/admin/users', adminUserRoutes);
+app.use('/v1/claims', claimRoutes);
+app.use('/v1/admin/claims', adminClaimRoutes);
+app.use('/v1/agent/customers', agentCustomerRoutes);
+app.use('/v1/agent/wallet', agentWalletRoutes);
+app.use('/v1/agent/team', agentTeamRoutes);
+app.use('/v1/agent/loans', agentLoanRoutes);
+app.use('/v1/admin/settlements', adminSettlementRoutes);
+app.use('/v1/admin/hospitals', adminHospitalRoutes);
+app.use('/v1/admin/reports', adminReportsRoutes);
+app.use('/v1/admin/transactions', adminTransactionsRoutes);
+app.use('/v1/user/wallet', userWalletRoutes);
+app.use('/v1/products', productRoutes);
+app.use('/v1/admin/products', adminProductRoutes);
+app.use('/v1/admin/orders', adminOrderRoutes);
+app.use('/v1/hospitals', hospitalRoutes);
+app.use('/v1/support', supportRoutes);
+app.use('/v1/admin/support', adminSupportRoutes);
+app.use('/v1/notifications', notificationRoutes);
 
 // ── 404 Handler ────────────────────────────────────────────────
 app.use((req, res) => {
