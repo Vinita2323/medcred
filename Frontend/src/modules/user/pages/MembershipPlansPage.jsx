@@ -30,14 +30,18 @@ export default function MembershipPlansPage() {
   useEffect(() => {
     const fetchPlans = async () => {
       try {
-        const res = await api.get(ENDPOINTS.PLANS);
+        // Add timestamp to bypass any stale CDN or browser cache
+        const res = await api.get(`${ENDPOINTS.PLANS}?t=${new Date().getTime()}`);
         if (res.data.success) {
-          setPlans(res.data.data);
-          // If a specific plan was passed via navigation, pre-select it; else default to family/first
-          const defaultPlan = preSelectedPlanId
-            ? res.data.data.find(p => p.planId === preSelectedPlanId) || res.data.data[0]
-            : res.data.data.find(p => p.planId === 'family') || res.data.data[0];
-          if (defaultPlan) setSelectedPlanId(defaultPlan.planId);
+          const fetchedPlans = res.data.data || [];
+          setPlans(fetchedPlans);
+          
+          if (fetchedPlans.length > 0) {
+            const defaultPlan = preSelectedPlanId
+              ? fetchedPlans.find(p => p.planId === preSelectedPlanId) || fetchedPlans[0]
+              : fetchedPlans.find(p => p.planId === 'family') || fetchedPlans[0];
+            if (defaultPlan) setSelectedPlanId(defaultPlan.planId);
+          }
         }
       } catch (err) {
         console.error('Failed to fetch plans:', err);

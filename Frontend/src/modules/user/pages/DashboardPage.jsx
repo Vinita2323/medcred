@@ -78,9 +78,9 @@ export default function DashboardPage() {
 
     const fetchPlans = async () => {
       try {
-        const res = await api.get(ENDPOINTS.PLANS);
+        const res = await api.get(`${ENDPOINTS.PLANS}?t=${new Date().getTime()}`);
         if (res.data.success) {
-          setDynamicPlans(res.data.data);
+          setDynamicPlans(res.data.data || []);
         }
       } catch (err) {
         console.error('Failed to fetch plans:', err);

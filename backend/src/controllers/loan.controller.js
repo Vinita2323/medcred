@@ -107,37 +107,39 @@ export const applyLoan = async (req, res) => {
     }
 
     // Attach uploaded files to patients
-    if (req.files) {
-      patientsData.forEach((patient, index) => {
-        const presKey = `prescriptionFile_${index}`;
-        const billKey = `billFile_${index}`;
-        
-        const presFile = req.files.find(f => f.fieldname === presKey);
-        const billFile = req.files.find(f => f.fieldname === billKey);
+    try {
+      if (req.files) {
+        patientsData.forEach((patient, index) => {
+          const presKey = `prescriptionFile_${index}`;
+          const billKey = `billFile_${index}`;
+          
+          const presFile = req.files.find(f => f.fieldname === presKey);
+          const billFile = req.files.find(f => f.fieldname === billKey);
 
-        if (presFile) {
-          patient.prescriptionFileUrl = `/uploads/${presFile.filename}`;
-        }
-        if (billFile) {
-          patient.estimatedBillUrl = `/uploads/${billFile.filename}`;
-        }
-
-        // New Mandatory Medical Claim Documents
-        const docs = [
-          'claimForm', 'neftAndPhotoId', 'hospitalBillsAndDischarge',
-          'medicalPractitionerCertificate', 'chemistBills', 'investigationReports',
-          'referralLetter', 'ambulanceBills'
-        ];
-
-        docs.forEach(doc => {
-          const file = req.files.find(f => f.fieldname === `${doc}_${index}`);
-          if (file) {
-            patient[`${doc}Url`] = `/uploads/${file.filename}`;
-          } else {
-            throw new Error(`Missing mandatory medical document: ${doc} for patient index ${index}`);
+          if (presFile) {
+            patient.prescriptionFileUrl = `/uploads/${presFile.filename}`;
           }
+          if (billFile) {
+            patient.estimatedBillUrl = `/uploads/${billFile.filename}`;
+          }
+
+          // New Mandatory Medical Claim Documents
+          const docs = [
+            'claimForm', 'neftAndPhotoId', 'hospitalBillsAndDischarge',
+            'medicalPractitionerCertificate', 'chemistBills', 'investigationReports',
+            'referralLetter', 'ambulanceBills'
+          ];
+
+          docs.forEach(doc => {
+            const file = req.files.find(f => f.fieldname === `${doc}_${index}`);
+            if (file) {
+              patient[`${doc}Url`] = `/uploads/${file.filename}`;
+            } else {
+              throw new Error(`Missing mandatory medical document: ${doc} for patient index ${index}`);
+            }
+          });
         });
-      });
+      }
     } catch (docErr) {
       return res.status(400).json({ success: false, message: docErr.message });
     }

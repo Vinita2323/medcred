@@ -14,8 +14,8 @@ export const STORAGE_KEYS = {
   USER_DATA: 'medcred_user_data',
 };
 
-export const SERVER_URL = import.meta.env.VITE_SERVER_URL || "http://localhost:5000";
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api/v1";
+export const SERVER_URL = import.meta.env.VITE_SERVER_URL || "https://medcred.onrender.com";
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://medcred.onrender.com/api/v1";
 
 // Helper to resolve image paths from backend
 const PLACEHOLDER_IMG = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'%3E%3Crect width='400' height='300' fill='%23f0f2f5'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='14' fill='%23aaa'%3ENo Image%3C/text%3E%3C/svg%3E`;
