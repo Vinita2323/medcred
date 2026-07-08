@@ -3,6 +3,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../../../services/api';
 import { ENDPOINTS } from '../../../services/types';
 
+import { DEFAULT_PLANS } from '../utils/storage';
+
 const planIcons = { individual: 'person', family: 'group', premium: 'workspace_premium' };
 const planGradients = {
   individual: 'from-[#1565C0] to-[#0A4DBF]',
@@ -32,19 +34,32 @@ export default function MembershipPlansPage() {
       try {
         // Add timestamp to bypass any stale CDN or browser cache
         const res = await api.get(`${ENDPOINTS.PLANS}?t=${new Date().getTime()}`);
-        if (res.data.success) {
-          const fetchedPlans = res.data.data || [];
+        if (res.data.success && res.data.data && res.data.data.length > 0) {
+          const fetchedPlans = res.data.data;
           setPlans(fetchedPlans);
           
-          if (fetchedPlans.length > 0) {
-            const defaultPlan = preSelectedPlanId
-              ? fetchedPlans.find(p => p.planId === preSelectedPlanId) || fetchedPlans[0]
-              : fetchedPlans.find(p => p.planId === 'family') || fetchedPlans[0];
-            if (defaultPlan) setSelectedPlanId(defaultPlan.planId);
-          }
+          const defaultPlan = preSelectedPlanId
+            ? fetchedPlans.find(p => p.planId === preSelectedPlanId) || fetchedPlans[0]
+            : fetchedPlans.find(p => p.planId === 'family') || fetchedPlans[0];
+          if (defaultPlan) setSelectedPlanId(defaultPlan.planId);
+        } else {
+          // Fallback to default plans
+          const fallbackPlans = Object.values(DEFAULT_PLANS);
+          setPlans(fallbackPlans);
+          const defaultPlan = preSelectedPlanId
+            ? fallbackPlans.find(p => p.planId === preSelectedPlanId) || fallbackPlans[0]
+            : fallbackPlans.find(p => p.planId === 'family') || fallbackPlans[0];
+          if (defaultPlan) setSelectedPlanId(defaultPlan.planId);
         }
       } catch (err) {
         console.error('Failed to fetch plans:', err);
+        // Fallback to default plans
+        const fallbackPlans = Object.values(DEFAULT_PLANS);
+        setPlans(fallbackPlans);
+        const defaultPlan = preSelectedPlanId
+          ? fallbackPlans.find(p => p.planId === preSelectedPlanId) || fallbackPlans[0]
+          : fallbackPlans.find(p => p.planId === 'family') || fallbackPlans[0];
+        if (defaultPlan) setSelectedPlanId(defaultPlan.planId);
       } finally {
         setLoading(false);
       }
@@ -174,7 +189,7 @@ export default function MembershipPlansPage() {
                     <div className="text-right">
                       <div className="bg-white/20 rounded-lg px-2 py-1.5 text-center">
                         <p className="text-[8px] opacity-80 uppercase font-bold">Coverage</p>
-                        <p className="text-sm font-black">₹{(plan.coverageAmount / 100000).toFixed(1)}L</p>
+                        <p className="text-sm font-black">{plan.coverageAmount ? `₹${(plan.coverageAmount / 100000).toFixed(1)}L` : plan.coverage}</p>
                       </div>
                     </div>
                   </div>
@@ -344,7 +359,7 @@ export default function MembershipPlansPage() {
             >
               <span>Proceed to Pay</span>
               <span className="font-extrabold text-lg">
-                ₹{sourceType === 'agent' && isCodeApplied ? (selectedPlan.price - 200).toLocaleString() : selectedPlan.price.toLocaleString()}
+                ₹{selectedPlan ? (sourceType === 'agent' && isCodeApplied ? (selectedPlan.price - 200).toLocaleString() : selectedPlan.price.toLocaleString()) : '0'}
               </span>
             </button>
           </div>
