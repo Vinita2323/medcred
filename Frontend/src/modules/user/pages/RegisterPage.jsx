@@ -4,6 +4,7 @@ import { saveUser, seedSelfMember, saveFamilyMembers, getAgeFromDob } from '../u
 import api from '../../../services/api';
 import { ENDPOINTS, STORAGE_KEYS } from '../../../services/types';
 import { compressImage } from '../../../utils/compressImage';
+import { useFormValidation } from '../../../hooks/useFormValidation';
 
 // ── Aadhaar formatter helper ─────────────────────────────────────
 function formatAadhaar(val) {
@@ -23,10 +24,22 @@ export default function RegisterPage() {
   const location = useLocation();
 
   // ── Personal form ────────────────────────────────────────────────
-  const [formData, setFormData] = useState({
-    name: '', mobile: location.state?.mobile || '', email: '', dob: '',
-    gender: '', aadhaar: '', address: '', password: '', consent: false
-  });
+  const { values: formData, errors, touched, handleChange, handleBlur, validateForm, setValues: setFormData } = useFormValidation(
+    {
+      name: '', mobile: location.state?.mobile || '', email: '', dob: '',
+      gender: '', aadhaar: '', address: '', password: '', consent: false
+    },
+    {
+      name: { required: true, pattern: /^[a-zA-Z\s]{2,50}$/, message: 'Enter a valid name (alphabets and spaces only)' },
+      mobile: { required: true, pattern: /^[6-9]\d{9}$/, message: 'Invalid mobile number (10 digits starting with 6-9)' },
+      email: { required: true, pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: 'Enter a valid email (e.g., name@example.com)' },
+      dob: { required: true },
+      gender: { required: true },
+      aadhaar: { pattern: /^\d{12}$/, message: 'Must be a valid 12-digit Aadhaar' },
+      address: { required: true },
+      password: { required: true, pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/, message: 'Password must be 8+ chars, 1 uppercase, 1 lowercase, 1 number, 1 special char' }
+    }
+  );
   const [profilePic, setProfilePic] = useState(null);
   const [profileFile, setProfileFile] = useState(null);
   const [aadhaarFrontPic, setAadhaarFrontPic] = useState(null);
@@ -93,15 +106,7 @@ export default function RegisterPage() {
   const [showAddMember, setShowAddMember] = useState(false);
   const [newMember, setNewMember] = useState({ ...EMPTY_MEMBER });
 
-  // ── Handlers: personal form ──────────────────────────────────────
-  const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
-  };
-
-  const handleAadhaarChange = (e) => {
-    setFormData(prev => ({ ...prev, aadhaar: formatAadhaar(e.target.value) }));
-  };
+  // Note: handleChange from useFormValidation is used instead of handleInputChange
 
   const handleImageChange = async (e, setPreview, setFile) => {
     if (e.target.files && e.target.files[0]) {
@@ -157,21 +162,13 @@ export default function RegisterPage() {
     setSuccessMsg('');
 
     // Form validations
-    if (!formData.name) return setErrorMsg('Full Name is required.');
-    if (!formData.mobile) return setErrorMsg('Mobile Number is required.');
-    if (!formData.email) return setErrorMsg('Email Address is required.');
-    if (!formData.dob) return setErrorMsg('Date of Birth is required.');
-    if (!formData.gender) return setErrorMsg('Gender is required.');
-    if (!formData.address) return setErrorMsg('Address is required.');
-    if (!formData.password) return setErrorMsg('Password is required.');
-    if (!formData.consent) {
-      alert('Please agree to the verification terms to continue.');
+    if (!validateForm()) {
+      setErrorMsg('Please fix the validation errors in the form.');
       return;
     }
-
-    const mobileRegex = /^[6-9]\d{9}$/;
-    if (!mobileRegex.test(formData.mobile)) {
-      setErrorMsg('Invalid mobile number. Must be exactly 10 digits.');
+    
+    if (!formData.consent) {
+      alert('Please agree to the verification terms to continue.');
       return;
     }
 
@@ -319,11 +316,12 @@ export default function RegisterPage() {
               <div className="space-y-1">
                 <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider px-0.5">Full Name *</label>
                 <input
-                  className="w-full h-11 px-3 bg-surface border border-outline-variant rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                  className={`w-full h-11 px-3 bg-surface border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all ${touched.name && errors.name ? 'border-red-500' : 'border-outline-variant'}`}
                   placeholder="e.g. Rahul Sharma"
                   type="text" name="name" value={formData.name}
-                  onChange={handleInputChange} required
+                  onChange={handleChange} onBlur={handleBlur} required
                 />
+                {touched.name && errors.name && <p className="text-red-500 text-[10px] mt-1">{errors.name}</p>}
               </div>
 
               {/* Mobile */}
@@ -332,34 +330,38 @@ export default function RegisterPage() {
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-on-surface-variant border-r border-outline-variant pr-2">+91</span>
                   <input
-                    className="w-full h-11 pl-14 pr-3 bg-surface border border-outline-variant rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                    className={`w-full h-11 pl-14 pr-3 bg-surface border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all ${touched.mobile && errors.mobile ? 'border-red-500' : 'border-outline-variant'}`}
                     placeholder="98765 43210"
                     type="tel" name="mobile" value={formData.mobile}
-                    onChange={handleInputChange} required
+                    maxLength={10}
+                    onChange={handleChange} onBlur={handleBlur} required
                   />
                 </div>
+                {touched.mobile && errors.mobile && <p className="text-red-500 text-[10px] mt-1">{errors.mobile}</p>}
               </div>
 
               {/* Email */}
               <div className="space-y-1">
                 <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider px-0.5">Email Address *</label>
                 <input
-                  className="w-full h-11 px-3 bg-surface border border-outline-variant rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                  className={`w-full h-11 px-3 bg-surface border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all ${touched.email && errors.email ? 'border-red-500' : 'border-outline-variant'}`}
                   placeholder="rahul@example.com"
                   type="email" name="email" value={formData.email}
-                  onChange={handleInputChange} required
+                  onChange={handleChange} onBlur={handleBlur} required
                 />
+                {touched.email && errors.email && <p className="text-red-500 text-[10px] mt-1">{errors.email}</p>}
               </div>
 
               {/* Password */}
               <div className="space-y-1">
                 <label className="text-[10px] lg:text-xs font-bold text-on-surface-variant uppercase tracking-wider px-0.5">Create Password *</label>
                 <input
-                  className="w-full h-11 lg:h-12 px-3 bg-surface border border-outline-variant rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                  className={`w-full h-11 lg:h-12 px-3 bg-surface border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all ${touched.password && errors.password ? 'border-red-500' : 'border-outline-variant'}`}
                   placeholder="At least 6 characters"
                   type="password" name="password" value={formData.password}
-                  onChange={handleInputChange} required minLength={6}
+                  onChange={handleChange} onBlur={handleBlur} required minLength={8}
                 />
+                {touched.password && errors.password && <p className="text-red-500 text-[10px] mt-1">{errors.password}</p>}
               </div>
               </div>
 
@@ -368,18 +370,19 @@ export default function RegisterPage() {
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider px-0.5">Date of Birth *</label>
                   <input
-                    className="w-full h-11 px-2 bg-surface border border-outline-variant rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                    className={`w-full h-11 px-2 bg-surface border rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all ${touched.dob && errors.dob ? 'border-red-500' : 'border-outline-variant'}`}
                     type="date" name="dob" value={formData.dob}
-                    onChange={handleInputChange} required
+                    onChange={handleChange} onBlur={handleBlur} required
                   />
+                  {touched.dob && errors.dob && <p className="text-red-500 text-[10px] mt-1">{errors.dob}</p>}
                 </div>
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider px-0.5">Gender *</label>
                   <div className="relative">
                     <select
-                      className="w-full h-11 pl-3 pr-8 bg-surface border border-outline-variant rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all appearance-none"
+                      className={`w-full h-11 pl-3 pr-8 bg-surface border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all appearance-none ${touched.gender && errors.gender ? 'border-red-500' : 'border-outline-variant'}`}
                       name="gender" value={formData.gender}
-                      onChange={handleInputChange} required
+                      onChange={handleChange} onBlur={handleBlur} required
                     >
                       <option value="" disabled>Select</option>
                       <option value="Male">Male</option>
@@ -393,12 +396,12 @@ export default function RegisterPage() {
 
               {/* Document Uploads */}
               <div className="space-y-2">
-                <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider px-0.5">Identity Documents *</label>
+                <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider px-0.5">Identity Documents (Optional)</label>
                 <div className="grid grid-cols-3 gap-3">
                   {/* User Photo */}
                   <div className="flex flex-col items-center gap-1.5">
                     <label className="w-full aspect-square border-2 border-dashed border-outline-variant rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-all overflow-hidden relative group">
-                      <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageChange(e, setProfilePic, setProfileFile)} required />
+                      <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageChange(e, setProfilePic, setProfileFile)} />
                       {!profilePic ? (
                         <span className="material-symbols-outlined text-on-surface-variant text-2xl group-hover:scale-110 transition-transform">account_circle</span>
                       ) : (
@@ -411,7 +414,7 @@ export default function RegisterPage() {
                   {/* Aadhaar Front */}
                   <div className="flex flex-col items-center gap-1.5">
                     <label className="w-full aspect-square border-2 border-dashed border-outline-variant rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-all overflow-hidden relative group">
-                      <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageChange(e, setAadhaarFrontPic, setAadhaarFrontFile)} required />
+                      <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageChange(e, setAadhaarFrontPic, setAadhaarFrontFile)} />
                       {!aadhaarFrontPic ? (
                         <span className="material-symbols-outlined text-on-surface-variant text-2xl group-hover:scale-110 transition-transform">badge</span>
                       ) : (
@@ -424,7 +427,7 @@ export default function RegisterPage() {
                   {/* Aadhaar Back */}
                   <div className="flex flex-col items-center gap-1.5">
                     <label className="w-full aspect-square border-2 border-dashed border-outline-variant rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-all overflow-hidden relative group">
-                      <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageChange(e, setAadhaarBackPic, setAadhaarBackFile)} required />
+                      <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageChange(e, setAadhaarBackPic, setAadhaarBackFile)} />
                       {!aadhaarBackPic ? (
                         <span className="material-symbols-outlined text-on-surface-variant text-2xl group-hover:scale-110 transition-transform">credit_card</span>
                       ) : (
@@ -438,24 +441,26 @@ export default function RegisterPage() {
 
               {/* Aadhaar Number */}
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider px-0.5">Aadhaar Card Number *</label>
+                <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider px-0.5">Aadhaar Card Number (Optional)</label>
                 <input
-                  className="w-full h-11 px-3 bg-surface border border-outline-variant rounded-lg text-sm tracking-wider focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-mono"
+                  className={`w-full h-11 px-3 bg-surface border rounded-lg text-sm tracking-wider focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-mono ${touched.aadhaar && errors.aadhaar ? 'border-red-500' : 'border-outline-variant'}`}
                   placeholder="0000 0000 0000"
-                  type="text" name="aadhaar" value={formData.aadhaar}
-                  onChange={handleAadhaarChange} maxLength={14} required
+                  type="text" name="aadhaar" value={formatAadhaar(formData.aadhaar)}
+                  onChange={handleChange} onBlur={handleBlur} maxLength={14}
                 />
+                {touched.aadhaar && errors.aadhaar && <p className="text-red-500 text-[10px] mt-1">{errors.aadhaar}</p>}
               </div>
 
               {/* Address */}
               <div className="space-y-1">
                 <label className="text-[10px] lg:text-xs font-bold text-on-surface-variant uppercase tracking-wider px-0.5">Permanent Address *</label>
                 <textarea
-                  className="w-full p-3 bg-surface border border-outline-variant rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none"
+                  className={`w-full p-3 bg-surface border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none ${touched.address && errors.address ? 'border-red-500' : 'border-outline-variant'}`}
                   placeholder="Street name, Building, Area, City, PIN"
                   rows={2} name="address" value={formData.address}
-                  onChange={handleInputChange} required
+                  onChange={handleChange} onBlur={handleBlur} required
                 />
+                {touched.address && errors.address && <p className="text-red-500 text-[10px] mt-1">{errors.address}</p>}
               </div>
             </div>
           </div>
@@ -601,7 +606,7 @@ export default function RegisterPage() {
               className="w-4 h-4 text-primary border-outline rounded focus:ring-primary cursor-pointer mt-0.5 shrink-0"
               id="consent" type="checkbox"
               name="consent" checked={formData.consent}
-              onChange={handleInputChange} required
+              onChange={handleChange} onBlur={handleBlur} required
             />
             <label className="text-[11px] text-on-surface-variant leading-relaxed cursor-pointer" htmlFor="consent">
               I give consent to MedCred India to verify my Aadhaar and credit details and those of my family members for creating a health credit profile.

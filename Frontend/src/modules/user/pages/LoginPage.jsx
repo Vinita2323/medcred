@@ -3,15 +3,26 @@ import { useNavigate } from 'react-router-dom';
 import api from '../../../services/api';
 import { ENDPOINTS, STORAGE_KEYS } from '../../../services/types';
 
+import { useFormValidation } from '../../../hooks/useFormValidation';
+
 export default function LoginPage() {
   const navigate = useNavigate();
-  const [mobile, setMobile] = useState('');
-  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loginMethod, setLoginMethod] = useState('password'); // 'password' or 'otp'
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+
+  const { values, errors, touched, handleChange, handleBlur, validateForm, setValues } = useFormValidation(
+    { mobile: '', password: '' },
+    {
+      mobile: { required: true, pattern: /^[6-9]\d{9}$/, message: 'Invalid mobile number. Must be exactly 10 digits starting with 6-9.' },
+      password: { required: true }
+    }
+  );
+  
+  const mobile = values.mobile;
+  const password = values.password;
 
   // OTP Login Flow States
   const [step, setStep] = useState('request'); // 'request' or 'verify'
@@ -69,8 +80,10 @@ export default function LoginPage() {
     setSuccessMsg('');
 
     if (loginMethod === 'password') {
-      if (!mobile || !password) {
-        setErrorMsg('Please fill in all fields.');
+      if (!validateForm() || !password) {
+        if (!password && !errors.password) {
+          setErrorMsg('Please fill in all fields.');
+        }
         return;
       }
       try {
@@ -89,16 +102,14 @@ export default function LoginPage() {
         setErrorMsg(error.response?.data?.message || 'Login failed. Please try again.');
         setLoading(false);
       }
-    } else {
       // OTP Logic
-      if (!mobile) {
+      if (!values.mobile) {
         setErrorMsg('Please enter your mobile number.');
         return;
       }
 
-      const mobileRegex = /^[6-9]\d{9}$/;
-      if (!mobileRegex.test(mobile)) {
-        setErrorMsg('Invalid mobile number. Must be exactly 10 digits.');
+      if (errors.mobile) {
+        setErrorMsg(errors.mobile);
         return;
       }
 
@@ -282,15 +293,18 @@ export default function LoginPage() {
                           <span className="material-symbols-outlined text-gray-400 text-[18px]">call</span>
                         </div>
                         <input 
-                          className="w-full pl-10 pr-3 py-3 bg-white lg:bg-transparent border border-gray-200 lg:border-gray-200 rounded-xl focus:ring-2 focus:ring-[#3267E3]/20 focus:border-[#3267E3] outline-none transition-all text-xs font-semibold text-[#1A2338]" 
+                          className={`w-full pl-10 pr-3 py-3 bg-white lg:bg-transparent border rounded-xl focus:ring-2 focus:ring-[#3267E3]/20 focus:border-[#3267E3] outline-none transition-all text-xs font-semibold text-[#1A2338] ${touched.mobile && errors.mobile ? 'border-red-500' : 'border-gray-200'}`}
                           id="mobile" 
                           name="mobile" 
                           placeholder="9988776655" 
                           type="tel"
-                          value={mobile}
-                          onChange={(e) => setMobile(e.target.value)}
+                          maxLength={10}
+                          value={values.mobile}
+                          onChange={handleChange}
+                          onBlur={handleBlur}
                         />
                       </div>
+                      {touched.mobile && errors.mobile && <p className="text-red-500 text-[10px] font-bold mt-1">{errors.mobile}</p>}
                     </div>
                   )}
 
@@ -358,13 +372,14 @@ export default function LoginPage() {
                           <span className="material-symbols-outlined text-gray-400 text-[18px]">lock</span>
                         </div>
                         <input 
-                          className="w-full pl-10 pr-10 py-3 bg-white lg:bg-transparent border border-gray-200 lg:border-gray-200 rounded-xl focus:ring-2 focus:ring-[#3267E3]/20 focus:border-[#3267E3] outline-none transition-all text-xs font-semibold text-[#1A2338]" 
+                          className={`w-full pl-10 pr-10 py-3 bg-white lg:bg-transparent border rounded-xl focus:ring-2 focus:ring-[#3267E3]/20 focus:border-[#3267E3] outline-none transition-all text-xs font-semibold text-[#1A2338] ${touched.password && errors.password ? 'border-red-500' : 'border-gray-200'}`}
                           id="password" 
                           name="password" 
                           placeholder="••••••••" 
                           type={showPassword ? "text" : "password"}
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
+                          value={values.password}
+                          onChange={handleChange}
+                          onBlur={handleBlur}
                         />
                         <button 
                           className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-[#3267E3] transition-colors cursor-pointer" 
@@ -374,6 +389,7 @@ export default function LoginPage() {
                           <span className="material-symbols-outlined text-[18px]">{showPassword ? "visibility_off" : "visibility"}</span>
                         </button>
                       </div>
+                      {touched.password && errors.password && <p className="text-red-500 text-[10px] font-bold mt-1">{errors.password}</p>}
                     </div>
                   )}
 

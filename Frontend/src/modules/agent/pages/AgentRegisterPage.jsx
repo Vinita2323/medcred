@@ -4,6 +4,7 @@ import api from '../../../services/api';
 import { ENDPOINTS } from '../../../services/types';
 import { compressImage } from '../../../utils/compressImage';
 import { indianTerritories } from '../../../utils/indianTerritories';
+import { useFormValidation } from '../../../hooks/useFormValidation';
 
 // Searchable dropdown for single select
 function SearchableSelect({ label, value, onChange, options, disabled, placeholder }) {
@@ -160,11 +161,19 @@ export default function AgentRegisterPage() {
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // STEP 1: Basic Info
-  const [fullName, setFullName] = useState('');
-  const [mobileNumber, setMobileNumber] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  // STEP 1: Basic Info (Validated)
+  const { values, errors, touched, handleChange, handleBlur, validateForm, setValues } = useFormValidation(
+    { fullName: '', mobileNumber: '', email: '', password: '' },
+    {
+      fullName: { required: true, pattern: /^[a-zA-Z\s]{2,50}$/, message: 'Enter a valid name (alphabets and spaces only)' },
+      mobileNumber: { required: true, pattern: /^[6-9]\d{9}$/, message: 'Invalid mobile number (10 digits starting with 6-9)' },
+      email: { required: true, pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: 'Enter a valid email (e.g., name@example.com)' },
+      password: { required: true, pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/, message: 'Password must be 8+ chars, 1 uppercase, 1 lowercase, 1 number, 1 special char' }
+    }
+  );
+  
+  const { fullName, mobileNumber, email, password } = values;
+
   const [managerJoinCode, setManagerJoinCode] = useState('');
   const [role, setRole] = useState('Field Agent'); // Super Agent, Agent, Field Agent
 
@@ -532,52 +541,71 @@ export default function AgentRegisterPage() {
                 <div className="space-y-4">
                   <div className="relative input-group">
                     <input 
-                      className="input-field block w-full px-4 py-3 bg-transparent border border-[#c3c6d6] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003d9b] focus:border-transparent text-sm" 
-                      id="full-name" 
+                      className={`input-field block w-full px-4 py-3 bg-transparent border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003d9b] focus:border-transparent text-sm ${touched.fullName && errors.fullName ? 'border-red-500' : 'border-[#c3c6d6]'}`} 
+                      id="fullName" 
+                      name="fullName"
                       placeholder=" " 
                       type="text"
                       value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
                     />
-                    <label className="absolute left-4 top-3 text-[#434654] text-xs" htmlFor="full-name">Full Name</label>
+                    <label className="absolute left-4 top-3 text-[#434654] text-xs" htmlFor="fullName">Full Name</label>
                   </div>
+                  {touched.fullName && errors.fullName && <p className="text-red-500 text-[10px] mt-1 ml-1">{errors.fullName}</p>}
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="relative input-group">
-                      <input 
-                        className="input-field block w-full px-4 py-3 bg-transparent border border-[#c3c6d6] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003d9b] focus:border-transparent text-sm" 
-                        id="mobile-number" 
-                        placeholder=" " 
-                        type="tel"
-                        value={mobileNumber}
-                        onChange={(e) => setMobileNumber(e.target.value)}
-                      />
-                      <label className="absolute left-4 top-3 text-[#434654] text-xs" htmlFor="mobile-number">Mobile Number</label>
+                    <div>
+                      <div className="relative input-group">
+                        <input 
+                          className={`input-field block w-full px-4 py-3 bg-transparent border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003d9b] focus:border-transparent text-sm ${touched.mobileNumber && errors.mobileNumber ? 'border-red-500' : 'border-[#c3c6d6]'}`} 
+                          id="mobileNumber" 
+                          name="mobileNumber"
+                          placeholder=" " 
+                          type="tel"
+                          maxLength={10}
+                          value={mobileNumber}
+                          onChange={handleChange}
+                          onBlur={handleBlur}
+                        />
+                        <label className="absolute left-4 top-3 text-[#434654] text-xs" htmlFor="mobileNumber">Mobile Number</label>
+                      </div>
+                      {touched.mobileNumber && errors.mobileNumber && <p className="text-red-500 text-[10px] mt-1 ml-1">{errors.mobileNumber}</p>}
                     </div>
 
-                    <div className="relative input-group">
-                      <input 
-                        className="input-field block w-full px-4 py-3 bg-transparent border border-[#c3c6d6] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003d9b] focus:border-transparent text-sm" 
-                        id="email" 
-                        placeholder=" " 
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                      />
-                      <label className="absolute left-4 top-3 text-[#434654] text-xs" htmlFor="email">Email Address</label>
+                    <div>
+                      <div className="relative input-group">
+                        <input 
+                          className={`input-field block w-full px-4 py-3 bg-transparent border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003d9b] focus:border-transparent text-sm ${touched.email && errors.email ? 'border-red-500' : 'border-[#c3c6d6]'}`} 
+                          id="email" 
+                          name="email"
+                          placeholder=" " 
+                          type="email"
+                          value={email}
+                          onChange={handleChange}
+                          onBlur={handleBlur}
+                        />
+                        <label className="absolute left-4 top-3 text-[#434654] text-xs" htmlFor="email">Email Address</label>
+                      </div>
+                      {touched.email && errors.email && <p className="text-red-500 text-[10px] mt-1 ml-1">{errors.email}</p>}
                     </div>
                   </div>
 
-                  <div className="relative input-group">
-                    <input 
-                      className="input-field block w-full px-4 py-3 bg-transparent border border-[#c3c6d6] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003d9b] focus:border-transparent text-sm" 
-                      id="password" 
-                      placeholder=" " 
-                      type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                    />
-                    <label className="absolute left-4 top-3 text-[#434654] text-xs" htmlFor="password">Login Password</label>
+                  <div>
+                    <div className="relative input-group">
+                      <input 
+                        className={`input-field block w-full px-4 py-3 bg-transparent border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003d9b] focus:border-transparent text-sm ${touched.password && errors.password ? 'border-red-500' : 'border-[#c3c6d6]'}`} 
+                        id="password" 
+                        name="password"
+                        placeholder=" " 
+                        type="password"
+                        value={password}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                      />
+                      <label className="absolute left-4 top-3 text-[#434654] text-xs" htmlFor="password">Login Password</label>
+                    </div>
+                    {touched.password && errors.password && <p className="text-red-500 text-[10px] mt-1 ml-1">{errors.password}</p>}
                   </div>
 
                   <div className="relative input-group">
@@ -621,12 +649,16 @@ export default function AgentRegisterPage() {
                   </div>
                 </div>
 
-                <div className="flex justify-end pt-2">
+                <div className="flex justify-end pt-4 border-t border-[#c3c6d6]/30 mt-6">
                   <button 
-                    onClick={() => goToStep(2)}
-                    className="bg-[#003d9b] text-white px-6 py-2.5 rounded-xl text-xs font-bold hover:bg-[#0052cc] transition-all flex items-center gap-1 cursor-pointer"
+                    onClick={() => {
+                      if (validateForm()) setStep(2);
+                      else alert('Please fix the validation errors in Step 1 before proceeding.');
+                    }}
+                    className="bg-[#003d9b] hover:bg-[#002f78] text-white px-8 py-3 rounded-lg font-bold text-sm shadow-md transition-all active:scale-95 flex items-center gap-2 cursor-pointer"
                   >
-                    Next Step <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                    Next Step
+                    <span className="material-symbols-outlined text-lg">arrow_forward</span>
                   </button>
                 </div>
               </div>
