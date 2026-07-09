@@ -114,11 +114,13 @@ export const getReferrals = async (req, res) => {
     if (referralCode) queryCodes.push(referralCode);
     if (customReferralCode) queryCodes.push(customReferralCode);
 
-    if (queryCodes.length === 0) {
-      return res.status(200).json({ success: true, count: 0, data: [] });
-    }
-
-    const referrals = await Card.find({ referralCodeUsed: { $in: queryCodes } })
+    const referrals = await Card.find({
+      $or: [
+        { agentId: req.user._id },
+        { referralCodeUsed: { $in: queryCodes.map(c => c.toUpperCase()) } },
+        { referralCodeUsed: { $in: queryCodes.map(c => c.toLowerCase()) } }
+      ]
+    })
       .populate('userId', 'fullName mobile email')
       .sort({ createdAt: -1 });
 

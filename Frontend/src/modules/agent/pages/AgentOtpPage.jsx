@@ -146,7 +146,7 @@ export default function AgentOtpPage() {
           </div>
 
           {/* OTP Card */}
-          <div className="bg-white border border-[#c3c6d6]/30 rounded-xl p-6 md:p-8 shadow-sm glass-background">
+          <div className="bg-white border border-[#c3c6d6]/30 rounded-xl p-4 sm:p-6 md:p-8 shadow-sm glass-background">
             <div className="text-center mb-8">
               <h1 className="text-xl md:text-2xl font-bold text-[#191b23] mb-2">Verify Mobile Number</h1>
               <p className="text-sm text-[#434654] max-w-[320px] mx-auto">
@@ -163,12 +163,12 @@ export default function AgentOtpPage() {
 
             <form className="space-y-6" onSubmit={handleSubmit}>
               {/* Inputs */}
-              <div className="flex justify-between gap-2 md:gap-3">
+              <div className="flex justify-between gap-1 sm:gap-2 md:gap-3">
                 {otp.map((digit, idx) => (
                   <input
                     key={idx}
                     ref={(el) => (inputRefs.current[idx] = el)}
-                    className="otp-input w-11 h-14 md:w-14 md:h-16 text-center text-xl font-bold rounded-lg border border-[#c3c6d6] bg-[#f3f3fd] focus:outline-none transition-all"
+                    className="otp-input w-9 h-12 sm:w-11 sm:h-14 md:w-14 md:h-16 text-center text-lg sm:text-xl font-bold rounded-lg border border-[#c3c6d6] bg-[#f3f3fd] focus:outline-none transition-all"
                     inputMode="numeric"
                     maxLength={1}
                     value={digit}

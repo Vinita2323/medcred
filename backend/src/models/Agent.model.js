@@ -30,6 +30,46 @@ const agentSchema = new mongoose.Schema(
     district: { type: String, trim: true },
     city: { type: String, trim: true },
     area: { type: String, trim: true },
+
+    managerJoinCode: { type: String, trim: true },
+    workingState: { type: String, trim: true },
+    workingDistricts: [{ type: String, trim: true }],
+    workingDistrict: { type: String, trim: true },
+    workingCity: { type: String, trim: true },
+
+    permanentAddress: {
+      houseNo: { type: String, trim: true },
+      street: { type: String, trim: true },
+      area: { type: String, trim: true },
+      landmark: { type: String, trim: true },
+      state: { type: String, trim: true },
+      district: { type: String, trim: true },
+      city: { type: String, trim: true },
+      pincode: { type: String, trim: true }
+    },
+
+    currentAddress: {
+      houseNo: { type: String, trim: true },
+      street: { type: String, trim: true },
+      area: { type: String, trim: true },
+      landmark: { type: String, trim: true },
+      state: { type: String, trim: true },
+      district: { type: String, trim: true },
+      city: { type: String, trim: true },
+      pincode: { type: String, trim: true }
+    },
+
+    panNumber: { type: String, trim: true },
+    panCardUrl: { type: String, trim: true },
+    chequePassbookUrl: { type: String, trim: true },
+
+    bankDetails: {
+      bankName: { type: String, trim: true },
+      accountHolderName: { type: String, trim: true },
+      accountNumber: { type: String, trim: true },
+      ifscCode: { type: String, trim: true }
+    },
+
     password: {
       type: String,
       required: [true, 'Password is required'],

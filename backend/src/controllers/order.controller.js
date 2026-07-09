@@ -47,6 +47,34 @@ export const createOrder = async (req, res) => {
     const orderId = `ORD-${Date.now()}`;
     const finalAmount = plan.price - discount;
 
+    // Verify ENV vars
+    if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+      console.error('Razorpay keys missing from env:', { key: process.env.RAZORPAY_KEY_ID });
+      return res.status(500).json({ success: false, message: 'Razorpay configuration missing.' });
+    }
+
+    const razorpay = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID,
+      key_secret: process.env.RAZORPAY_KEY_SECRET,
+    });
+
+    const amount = finalAmount > 0 ? finalAmount : 0;
+
+    // Create Razorpay Order
+    const options = {
+      amount: Math.round(amount * 100), // amount in paise
+      currency: "INR",
+      receipt: orderId,
+    };
+    
+    let razorpayOrder;
+    try {
+      razorpayOrder = await razorpay.orders.create(options);
+    } catch (rzpErr) {
+      console.error('Razorpay API Error:', rzpErr);
+      return res.status(500).json({ success: false, message: 'Payment gateway error.', error: rzpErr });
+    }
+
     const newOrder = await Order.create({
       orderId,
       userId: req.user._id,
@@ -55,17 +83,22 @@ export const createOrder = async (req, res) => {
       planName: plan.name,
       baseAmount: plan.price,
       discountAmount: discount,
-      finalAmount: finalAmount > 0 ? finalAmount : 0,
+      finalAmount: amount,
       referralCode,
       agentId: resolvedAgentId,
       agentDetail,
       paymentStatus: 'pending',
+      razorpayOrderId: razorpayOrder.id,
     });
 
     res.status(201).json({
       success: true,
       message: 'Order created successfully.',
-      data: newOrder,
+      data: {
+        order: newOrder,
+        razorpayOrder,
+        keyId: process.env.RAZORPAY_KEY_ID
+      },
     });
   } catch (error) {
     console.error('Create Order Error:', error);
@@ -81,7 +114,7 @@ export const createOrder = async (req, res) => {
 export const confirmPayment = async (req, res) => {
   try {
     const { orderId } = req.params;
-    const { paymentMethod, paymentDetails } = req.body;
+    const { paymentMethod, paymentDetails, razorpay_payment_id, razorpay_signature } = req.body;
 
     const order = await Order.findOne({ orderId, userId: req.user._id });
     if (!order) {
@@ -92,10 +125,25 @@ export const confirmPayment = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Order is already paid.' });
     }
 
+    // Verify signature
+    if (order.razorpayOrderId && razorpay_payment_id && razorpay_signature) {
+      const sign = order.razorpayOrderId + "|" + razorpay_payment_id;
+      const expectedSign = crypto
+        .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+        .update(sign.toString())
+        .digest("hex");
+
+      if (razorpay_signature !== expectedSign) {
+        return res.status(400).json({ success: false, message: 'Invalid signature sent!' });
+      }
+    }
+
     // 1. Mark order as paid
     order.paymentStatus = 'success';
-    order.paymentMethod = paymentMethod;
+    order.paymentMethod = paymentMethod || 'razorpay';
     order.paymentDetails = paymentDetails;
+    order.razorpayPaymentId = razorpay_payment_id;
+    order.razorpaySignature = razorpay_signature;
     order.paidAt = new Date();
     order.invoiceNumber = `MC-${Math.floor(100000 + Math.random() * 900000)}`;
     await order.save();

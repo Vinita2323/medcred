@@ -19,6 +19,7 @@ import AdminSupportPage from '../pages/AdminSupportPage';
 import AdminSettingsPage from '../pages/AdminSettingsPage';
 import AdminProductsPage from '../pages/AdminProductsPage';
 import AdminOrdersPage from '../pages/AdminOrdersPage';
+import AdminMembershipOrdersPage from '../pages/AdminMembershipOrdersPage';
 
 export default function AdminRoutes() {
   return (
@@ -43,6 +44,7 @@ export default function AdminRoutes() {
         <Route path="/admin/security"       element={<AdminSecurityPage />} />
         <Route path="/admin/support"        element={<AdminSupportPage />} />
         <Route path="/admin/notifications"  element={<AdminNotificationsPage />} />
+        <Route path="/admin/membership-orders" element={<AdminMembershipOrdersPage />} />
         <Route path="/admin/reports"        element={<AdminReportsPage />} />
         <Route path="/admin/settings"       element={<AdminSettingsPage />} />
       </Route>

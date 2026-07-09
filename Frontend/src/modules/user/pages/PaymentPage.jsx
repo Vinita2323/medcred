@@ -74,6 +74,22 @@ export default function PaymentPage() {
         throw new Error("Plan ID is missing. Please select a plan again.");
       }
 
+      // Load Razorpay SDK
+      const loadScript = (src) => {
+        return new Promise((resolve) => {
+          const script = document.createElement('script');
+          script.src = src;
+          script.onload = () => resolve(true);
+          script.onerror = () => resolve(false);
+          document.body.appendChild(script);
+        });
+      };
+      
+      const res = await loadScript('https://checkout.razorpay.com/v1/checkout.js');
+      if (!res) {
+        throw new Error('Razorpay SDK failed to load. Are you online?');
+      }
+
       // Step 1: Create Order
       const orderRes = await api.post(ENDPOINTS.ORDERS_CREATE, {
         planId: planObjId,
@@ -86,48 +102,86 @@ export default function PaymentPage() {
         throw new Error(orderRes.data.message || 'Failed to create order');
       }
       
-      const orderId = orderRes.data.data.orderId;
+      const { order: newOrder, razorpayOrder, keyId } = orderRes.data.data;
+      const orderId = newOrder.orderId;
 
-      // Step 2: Confirm Payment (Simulating gateway processing delay)
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // 2. Initialize Razorpay options
+      const options = {
+        key: keyId || import.meta.env.VITE_RAZORPAY_KEY_ID,
+        amount: razorpayOrder.amount,
+        currency: razorpayOrder.currency,
+        name: "MedCred Health",
+        description: `Purchase of ${plan.name}`,
+        image: "https://medcred.in/logo.png",
+        order_id: razorpayOrder.id,
+        handler: async function (response) {
+          try {
+            setProcessing(true);
 
-      const paymentDetails = {
-        upiId: method === 'upi' ? upiId : undefined,
-        bankName: method === 'netbank' ? bank : undefined,
-        cardLast4: method === 'card' ? card.number.slice(-4) : undefined,
-        cardHolderName: method === 'card' ? card.name : undefined,
+            // Step 2: Confirm Payment with Razorpay signature
+            const paymentDetails = {
+              upiId: method === 'upi' ? upiId : undefined,
+              bankName: method === 'netbank' ? bank : undefined,
+              cardLast4: method === 'card' ? card.number.slice(-4) : undefined,
+              cardHolderName: method === 'card' ? card.name : undefined,
+            };
+
+            const confirmRes = await api.post(ENDPOINTS.ORDERS_CONFIRM(orderId), {
+              paymentMethod: method,
+              paymentDetails,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+            });
+
+            if (!confirmRes.data.success) {
+              throw new Error(confirmRes.data.message || 'Failed to confirm payment');
+            }
+
+            const { card: newCard, order } = confirmRes.data.data;
+
+            // Step 3: Update local state & context
+            updateUser({ cardId: newCard._id });
+            
+            saveMembership(planId, { method, txnId: newCard.cardNumber, price: finalPrice });
+            
+            setMembership({
+              planName: newCard.planName,
+              cardNumber: newCard.cardNumber,
+              expiresAt: newCard.validTill,
+              price: finalPrice,
+              transactionId: order.orderId,
+            });
+
+            setProcessing(false);
+            setSuccess(true);
+          } catch (error) {
+            console.error('Payment Error:', error);
+            alert(error.response?.data?.message || error.message || 'Payment failed. Please try again.');
+            setProcessing(false);
+          }
+        },
+        prefill: {
+          name: "Customer Name",
+          email: "customer@example.com",
+          contact: "9999999999"
+        },
+        theme: {
+          color: "#0c56d0"
+        },
+        modal: {
+          ondismiss: function() {
+            setProcessing(false);
+          }
+        }
       };
 
-      const confirmRes = await api.post(ENDPOINTS.ORDERS_CONFIRM(orderId), {
-        paymentMethod: method,
-        paymentDetails,
-      });
+      const paymentObject = new window.Razorpay(options);
+      paymentObject.open();
 
-      if (!confirmRes.data.success) {
-        throw new Error(confirmRes.data.message || 'Failed to confirm payment');
-      }
-
-      const { card: newCard, order } = confirmRes.data.data;
-
-      // Step 3: Update local state & context
-      updateUser({ cardId: newCard._id });
-      
-      // Update local storage for backward compatibility with Dashboard
-      saveMembership(planId, { method, txnId: newCard.cardNumber, price: finalPrice });
-      
-      setMembership({
-        planName: newCard.planName,
-        cardNumber: newCard.cardNumber,
-        expiresAt: newCard.validTill,
-        price: finalPrice,
-        transactionId: order.orderId,
-      });
-
-      setProcessing(false);
-      setSuccess(true);
     } catch (error) {
       console.error('Payment Error:', error);
-      alert(error.response?.data?.message || error.message || 'Payment failed. Please try again.');
+      alert(error.response?.data?.message || error.message || 'Payment initialized failed. Please try again.');
       setProcessing(false);
     }
   };

@@ -52,6 +52,33 @@ export default function AgentLoginPage() {
     }
   };
 
+  const handleOtpLogin = async () => {
+    setErrorMsg('');
+    if (!mobile) {
+      setErrorMsg('Please enter your mobile number.');
+      return;
+    }
+
+    const mobileRegex = /^[6-9]\d{9}$/;
+    if (!mobileRegex.test(mobile)) {
+      setErrorMsg('Invalid mobile number. Must be exactly 10 digits.');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const res = await api.post(ENDPOINTS.AGENT_SEND_OTP, { mobileNumber: mobile.trim(), purpose: 'login' });
+
+      if (res.data.success) {
+        navigate('/agent/otp', { state: { mobileNumber: mobile.trim(), purpose: 'login' } });
+      }
+    } catch (error) {
+      setErrorMsg(error.response?.data?.message || 'Failed to send OTP. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="bg-[#faf8ff] text-[#191b23] min-h-screen flex flex-col font-body-md overflow-x-hidden relative">
       <style dangerouslySetInnerHTML={{__html: `
@@ -129,7 +156,6 @@ export default function AgentLoginPage() {
                     className="block w-full bg-transparent border-none p-0 text-[#191b23] font-body-md focus:ring-0 outline-none focus:outline-none placeholder-transparent" 
                     id="password" 
                     placeholder=" " 
-                    required 
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -189,9 +215,10 @@ export default function AgentLoginPage() {
 
               {/* OTP Login */}
               <button 
-                className="w-full flex items-center justify-center border border-[#003d9b] text-[#003d9b] py-3 rounded-lg font-semibold hover:bg-[#003d9b]/5 active:scale-[0.98] transition-all duration-200" 
+                className="w-full flex items-center justify-center border border-[#003d9b] text-[#003d9b] py-3 rounded-lg font-semibold hover:bg-[#003d9b]/5 active:scale-[0.98] transition-all duration-200 disabled:opacity-70" 
                 type="button"
-                onClick={() => navigate('/agent/otp')}
+                onClick={handleOtpLogin}
+                disabled={loading}
               >
                 <span className="material-symbols-outlined mr-2">passkey</span>
                 Login with OTP

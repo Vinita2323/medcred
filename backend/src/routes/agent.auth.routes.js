@@ -5,11 +5,15 @@ import {
   agentVerifyOtp,
   agentSendOtp,
   forgotPassword,
-  resetPassword
+  resetPassword,
+  validateJoinCode
 } from '../controllers/agent.auth.controller.js';
 import { upload } from '../middlewares/upload.middleware.js';
 
 const router = express.Router();
+
+// GET /api/v1/agent/auth/validate-join-code/:code
+router.get('/validate-join-code/:code', validateJoinCode);
 
 // POST /api/v1/agent/auth/register
 router.post(
@@ -18,6 +22,8 @@ router.post(
     { name: 'profilePic', maxCount: 1 },
     { name: 'aadhaarFront', maxCount: 1 },
     { name: 'aadhaarBack', maxCount: 1 },
+    { name: 'panCard', maxCount: 1 },
+    { name: 'chequePassbook', maxCount: 1 },
   ]),
   agentRegister
 );

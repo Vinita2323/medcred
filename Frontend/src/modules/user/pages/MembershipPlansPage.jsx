@@ -113,7 +113,7 @@ export default function MembershipPlansPage() {
         referralCode: isCodeApplied ? referralCode : null,
         planName: selectedPlan.name,
         validity: selectedPlan.validity,
-        coverage: `₹${(selectedPlan.coverageAmount / 100000).toFixed(1)}L`,
+        coverage: selectedPlan.name.toLowerCase().includes('family') ? '2 lac/person' : '2 lac',
         members: selectedPlan.maxMembers
       } 
     });
@@ -189,7 +189,7 @@ export default function MembershipPlansPage() {
                     <div className="text-right">
                       <div className="bg-white/20 rounded-lg px-2 py-1.5 text-center">
                         <p className="text-[8px] opacity-80 uppercase font-bold">Coverage</p>
-                        <p className="text-sm font-black">{plan.coverageAmount ? `₹${(plan.coverageAmount / 100000).toFixed(1)}L` : plan.coverage}</p>
+                        <p className="text-sm font-black">{plan.name.toLowerCase().includes('family') ? '2 lac/person' : '2 lac'}</p>
                       </div>
                     </div>
                   </div>

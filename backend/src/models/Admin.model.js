@@ -36,6 +36,10 @@ const adminSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    joinCode: {
+      type: String,
+      default: 'ADMIN10',
+    },
 
     // ── Tokens ─────────────────────────────────────────────────
     refreshToken: {

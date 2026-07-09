@@ -13,6 +13,7 @@ const menuGroups = [
       { label: 'Family Cards',    icon: 'family_history',        route: '/admin/family-cards' },
       { label: 'Products',        icon: 'inventory_2',           route: '/admin/products' },
       { label: 'Orders',          icon: 'local_shipping',        route: '/admin/orders' },
+      { label: 'Membership Card', icon: 'card_membership',       route: '/admin/membership-orders' },
       { label: 'Agents',          icon: 'badge',                 route: '/admin/agents' },
       { label: 'Hospitals',       icon: 'local_hospital',        route: '/admin/hospitals' },
     ]
@@ -43,6 +44,7 @@ const PAGE_TITLES = {
   '/admin/users':         'User Management',
   '/admin/products':      'Product Catalog',
   '/admin/orders':        'Product Orders',
+  '/admin/membership-orders': 'Membership Card',
   '/admin/family-cards':  'Family Card Management',
   '/admin/claims':        'Claim Management',
   '/admin/loans':         'Loan Eligibility Monitor',

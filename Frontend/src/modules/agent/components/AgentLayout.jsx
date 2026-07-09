@@ -105,9 +105,9 @@ export default function AgentLayout() {
       {/* Desktop Sidebar (hidden on mobile) */}
       <aside className="hidden md:flex flex-col w-64 bg-white border-r border-[#c3c6d6]/20 h-screen fixed top-0 left-0 z-40">
         {/* Brand/Logo */}
-        <div className="h-28 flex flex-col justify-center items-center border-b border-[#c3c6d6]/20 py-3 bg-[#fdfcff]">
-          <img src="/Logo (5).png" alt="MedCred Logo" className="h-16 w-auto object-contain" />
-          <span className="text-[11px] font-extrabold text-[#003d9b] uppercase tracking-widest mt-2">Agent Panel</span>
+        <div className="h-32 flex flex-col justify-center items-center border-b border-[#c3c6d6]/20 py-3 bg-[#fdfcff]">
+          <img src="/Logo (5).png" alt="MedCred Logo" className="h-20 w-auto object-contain" />
+          <span className="text-[11px] font-extrabold text-[#003d9b] uppercase tracking-widest mt-1">Agent Panel</span>
         </div>
 
         {/* Sidebar Navigation */}
@@ -134,7 +134,10 @@ export default function AgentLayout() {
 
         {/* Sidebar Footer / Agent Profile Summary */}
         <div className="p-4 border-t border-[#c3c6d6]/20 bg-[#faf8ff]">
-          <div className="flex items-center gap-3 mb-4">
+          <div 
+            onClick={() => navigate('/agent/profile')}
+            className="flex items-center gap-3 mb-4 cursor-pointer hover:bg-[#f3f3fd] p-1.5 rounded-lg transition-all"
+          >
             <div className="w-10 h-10 rounded-full overflow-hidden border border-[#003d9b]/20 flex-shrink-0 bg-[#003d9b]/10 flex items-center justify-center font-bold text-[#003d9b] text-sm">
               {currentUser ? currentUser.fullName.charAt(0) : 'A'}
             </div>
@@ -163,10 +166,10 @@ export default function AgentLayout() {
             className="w-64 bg-white h-full flex flex-col shadow-2xl animate-slide-in-right"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="h-28 flex items-start justify-between px-4 border-b border-[#c3c6d6]/20 py-4 relative bg-[#fdfcff]">
-              <div className="flex flex-col items-center w-full mt-2">
-                <img src="/Logo (5).png" alt="MedCred Logo" className="h-14 w-auto object-contain" />
-                <span className="text-[10px] font-extrabold text-[#003d9b] uppercase tracking-widest mt-1.5">Agent Panel</span>
+            <div className="h-32 flex items-start justify-between px-4 border-b border-[#c3c6d6]/20 py-4 relative bg-[#fdfcff]">
+              <div className="flex flex-col items-center w-full mt-1">
+                <img src="/Logo (5).png" alt="MedCred Logo" className="h-18 w-auto object-contain" />
+                <span className="text-[10px] font-extrabold text-[#003d9b] uppercase tracking-widest mt-1">Agent Panel</span>
               </div>
               <button
                 onClick={() => setIsMobileDrawerOpen(false)}
@@ -195,9 +198,24 @@ export default function AgentLayout() {
               })}
             </nav>
             <div className="p-3 border-t border-[#c3c6d6]/20 bg-[#faf8ff]">
+              <div 
+                onClick={() => {
+                  setIsMobileDrawerOpen(false);
+                  navigate('/agent/profile');
+                }}
+                className="flex items-center gap-3 mb-3 cursor-pointer hover:bg-[#f3f3fd] p-1.5 rounded-lg transition-all"
+              >
+                <div className="w-10 h-10 rounded-full overflow-hidden border border-[#003d9b]/20 flex-shrink-0 bg-[#003d9b]/10 flex items-center justify-center font-bold text-[#003d9b] text-sm">
+                  {currentUser ? currentUser.fullName.charAt(0) : 'A'}
+                </div>
+                <div className="min-w-0 flex-grow">
+                  <p className="text-xs font-bold text-[#191b23] truncate">{currentUser ? currentUser.fullName : 'Loading...'}</p>
+                  <p className="text-[10px] text-[#0052cc] font-semibold">{currentUser ? `${currentUser.role} (${currentUser.rank || 'Partner'})` : 'Partner'}</p>
+                </div>
+              </div>
               <button
                 onClick={handleLogout}
-                className="w-full flex items-center justify-center gap-2 py-2 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 text-xs font-bold"
+                className="w-full flex items-center justify-center gap-2 py-2 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 text-xs font-bold cursor-pointer"
               >
                 <span className="material-symbols-outlined text-[16px]">logout</span>
                 <span>Sign Out</span>
@@ -224,10 +242,6 @@ export default function AgentLayout() {
           </div>
 
           <div className="flex items-center gap-4">
-            <button className="p-2 rounded-full hover:bg-[#f3f3fd] transition-colors duration-200 relative cursor-pointer">
-              <span className="material-symbols-outlined text-[#434654]">notifications</span>
-              <span className="absolute top-1 right-1 w-2 h-2 bg-[#a33500] rounded-full"></span>
-            </button>
             <div
               onClick={() => navigate('/agent/profile')}
               className="w-9 h-9 rounded-full bg-[#0052cc] flex items-center justify-center text-white font-bold cursor-pointer hover:opacity-90 transition-opacity text-sm shadow-sm"

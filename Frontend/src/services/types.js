@@ -47,6 +47,7 @@ export const ENDPOINTS = {
   AGENT_VERIFY_OTP: '/agent/auth/verify-otp',
   AGENT_FORGOT_PASSWORD: '/agent/auth/forgot-password',
   AGENT_RESET_PASSWORD: '/agent/auth/reset-password',
+  AGENT_VALIDATE_JOIN_CODE: '/agent/auth/validate-join-code',
 
   // ADMIN AUTH
   ADMIN_LOGIN: '/admin/auth/login',
@@ -134,6 +135,7 @@ export const ENDPOINTS = {
   ADMIN_ORDERS: '/admin/orders',
   ADMIN_ORDERS_PENDING_COUNT: '/admin/orders/pending-count',
   ADMIN_ORDER_UPDATE: (id) => `/admin/orders/${id}/status`,
+  ADMIN_MEMBERSHIP_ORDERS: '/admin/orders/memberships',
 
   // HOSPITALS
   HOSPITALS: '/hospitals',

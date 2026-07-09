@@ -1,4 +1,5 @@
 import Agent from '../models/Agent.model.js';
+import Admin from '../models/Admin.model.js';
 import { saveOtp, verifyOtp } from '../services/otp.service.js';
 import { generateAccessToken, generateRefreshToken } from '../utils/generateToken.js';
 
@@ -192,9 +193,17 @@ const agentRegister = async (req, res) => {
       mobileNumber,
       email,
       password,
-      referralCodeUsed, // they send this as referralCodeUsed or referralCode
+      referralCodeUsed, // this will be the managerJoinCode
       aadhaarNumber,
       role,
+      workingState,
+      workingDistricts,
+      workingDistrict,
+      workingCity,
+      permanentAddress,
+      currentAddress,
+      panNumber,
+      bankDetails
     } = req.body;
 
     if (!fullName || !mobileNumber || !email || !password || !role) {
@@ -202,7 +211,7 @@ const agentRegister = async (req, res) => {
     }
 
     if (!req.files || !req.files.profilePic || !req.files.aadhaarFront || !req.files.aadhaarBack) {
-      return res.status(400).json({ success: false, message: 'Please upload all required documents (Profile Photo, Aadhaar Front, Aadhaar Back)' });
+      return res.status(400).json({ success: false, message: 'Please upload all required identity documents (Profile Photo, Aadhaar Front, Aadhaar Back)' });
     }
 
     // Check if agent already exists
@@ -214,41 +223,112 @@ const agentRegister = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Agent with this mobile or email already exists' });
     }
 
+    // Parse stringified JSON payloads if they are sent as strings
+    let parsedWorkingDistricts = [];
+    if (workingDistricts) {
+      try {
+        parsedWorkingDistricts = typeof workingDistricts === 'string' ? JSON.parse(workingDistricts) : workingDistricts;
+      } catch (e) {
+        parsedWorkingDistricts = [workingDistricts];
+      }
+    }
+
+    let parsedPermanentAddress = {};
+    if (permanentAddress) {
+      try {
+        parsedPermanentAddress = typeof permanentAddress === 'string' ? JSON.parse(permanentAddress) : permanentAddress;
+      } catch (e) {
+        parsedPermanentAddress = {};
+      }
+    }
+
+    let parsedCurrentAddress = {};
+    if (currentAddress) {
+      try {
+        parsedCurrentAddress = typeof currentAddress === 'string' ? JSON.parse(currentAddress) : currentAddress;
+      } catch (e) {
+        parsedCurrentAddress = {};
+      }
+    }
+
+    let parsedBankDetails = {};
+    if (bankDetails) {
+      try {
+        parsedBankDetails = typeof bankDetails === 'string' ? JSON.parse(bankDetails) : bankDetails;
+      } catch (e) {
+        parsedBankDetails = {};
+      }
+    }
+
     // Determine paths for uploaded files
     let profilePicPath = null;
     let aadhaarFrontPath = null;
     let aadhaarBackPath = null;
+    let panCardPath = null;
+    let chequePassbookPath = null;
 
     if (req.files) {
       if (req.files.profilePic && req.files.profilePic[0]) profilePicPath = `/uploads/${req.files.profilePic[0].filename}`;
       if (req.files.aadhaarFront && req.files.aadhaarFront[0]) aadhaarFrontPath = `/uploads/${req.files.aadhaarFront[0].filename}`;
       if (req.files.aadhaarBack && req.files.aadhaarBack[0]) aadhaarBackPath = `/uploads/${req.files.aadhaarBack[0].filename}`;
+      if (req.files.panCard && req.files.panCard[0]) panCardPath = `/uploads/${req.files.panCard[0].filename}`;
+      if (req.files.chequePassbook && req.files.chequePassbook[0]) chequePassbookPath = `/uploads/${req.files.chequePassbook[0].filename}`;
     }
 
-    // Role specific logic
-    let suggManagerName = '';
+    // Verify Manager Join Code and territory logic
     let suggManagerId = null;
+    let suggManagerName = '';
     let commissionRate = 2.5;
-    
+
     if (role === 'Agent') {
       commissionRate = 1.5;
     } else if (role === 'Field Agent') {
       commissionRate = 2.5;
     } else if (role === 'Super Agent') {
-      suggManagerName = 'System Administrator';
       commissionRate = 1.0;
     }
 
     if (referralCodeUsed) {
-      // Look up manager by either joinCode or referralCode
-      const manager = await Agent.findOne({
-        $or: [
-          { joinCode: referralCodeUsed },
-          { referralCode: referralCodeUsed }
-        ],
-        status: 'Approved'
-      });
-      if (manager) {
+      // Look up in Admin collection
+      const admin = await Admin.findOne({ $or: [{ adminId: referralCodeUsed }, { joinCode: referralCodeUsed }] });
+      if (admin) {
+        if (role !== 'Super Agent') {
+          return res.status(400).json({ success: false, message: 'Admin join codes can only be used by Super Agents.' });
+        }
+        suggManagerId = admin._id;
+        suggManagerName = admin.fullName;
+      } else {
+        // Look up in Agent collection
+        const manager = await Agent.findOne({
+          $or: [{ joinCode: referralCodeUsed }, { referralCode: referralCodeUsed }],
+          status: 'Approved'
+        });
+
+        if (!manager) {
+          return res.status(400).json({ success: false, message: 'Invalid or inactive manager join code.' });
+        }
+
+        if (role === 'Agent') {
+          if (manager.role !== 'Super Agent') {
+            return res.status(400).json({ success: false, message: 'Agents can only register under a Super Agent.' });
+          }
+          if (workingState !== manager.workingState) {
+            return res.status(400).json({ success: false, message: 'Working state must match manager\'s assigned state.' });
+          }
+        } else if (role === 'Field Agent') {
+          if (manager.role !== 'Agent') {
+            return res.status(400).json({ success: false, message: 'Field Agents can only register under an Agent.' });
+          }
+          if (workingState !== manager.workingState) {
+            return res.status(400).json({ success: false, message: 'Working state must match manager\'s assigned state.' });
+          }
+          if (!manager.workingDistricts.includes(workingDistrict)) {
+            return res.status(400).json({ success: false, message: 'Working district must match one of manager\'s assigned districts.' });
+          }
+        } else if (role === 'Super Agent') {
+          return res.status(400).json({ success: false, message: 'Super Agents can only register under Admin.' });
+        }
+
         suggManagerId = manager._id;
         suggManagerName = manager.fullName;
       }
@@ -271,8 +351,19 @@ const agentRegister = async (req, res) => {
       email,
       password,
       referralCodeUsed: referralCodeUsed || '',
+      managerJoinCode: referralCodeUsed || '',
       aadhaarNumber,
       role,
+      workingState,
+      workingDistricts: parsedWorkingDistricts,
+      workingDistrict,
+      workingCity,
+      permanentAddress: parsedPermanentAddress,
+      currentAddress: parsedCurrentAddress,
+      panNumber,
+      panCardUrl: panCardPath,
+      chequePassbookUrl: chequePassbookPath,
+      bankDetails: parsedBankDetails,
       reportingManagerId: suggManagerId,
       reportingManagerName: suggManagerName,
       commissionRate,
@@ -369,4 +460,64 @@ const resetPassword = async (req, res) => {
   }
 };
 
-export { agentRegister, agentLogin, agentVerifyOtp, agentSendOtp, forgotPassword, resetPassword };
+// ─────────────────────────────────────────────────────────────────
+// @route   GET /api/v1/agent/auth/validate-join-code/:code
+// @desc    Validate manager join code and return details
+// @access  Public
+// ─────────────────────────────────────────────────────────────────
+const validateJoinCode = async (req, res) => {
+  try {
+    const { code } = req.params;
+
+    if (!code) {
+      return res.status(400).json({ success: false, message: 'Join code is required.' });
+    }
+
+    // 1. Search Admin collection
+    const admin = await Admin.findOne({ $or: [{ adminId: code }, { joinCode: code }] });
+    if (admin) {
+      return res.status(200).json({
+        success: true,
+        type: 'admin',
+        managerName: admin.fullName,
+        managerId: admin._id
+      });
+    }
+
+    // 2. Search Agent collection (must be Approved)
+    const agent = await Agent.findOne({
+      $or: [{ joinCode: code }, { referralCode: code }],
+      status: 'Approved'
+    });
+
+    if (agent) {
+      if (agent.role === 'Super Agent') {
+        return res.status(200).json({
+          success: true,
+          type: 'super_agent',
+          managerName: agent.fullName,
+          managerId: agent._id,
+          state: agent.workingState
+        });
+      } else if (agent.role === 'Agent') {
+        return res.status(200).json({
+          success: true,
+          type: 'agent',
+          managerName: agent.fullName,
+          managerId: agent._id,
+          state: agent.workingState,
+          districts: agent.workingDistricts
+        });
+      } else {
+        return res.status(400).json({ success: false, message: 'This join code belongs to a Field Agent and cannot be used as a manager code.' });
+      }
+    }
+
+    return res.status(404).json({ success: false, message: 'Invalid or inactive manager join code.' });
+  } catch (error) {
+    console.error('Validate Join Code Error:', error);
+    res.status(500).json({ success: false, message: 'Server error. Please try again.' });
+  }
+};
+
+export { agentRegister, agentLogin, agentVerifyOtp, agentSendOtp, forgotPassword, resetPassword, validateJoinCode };
