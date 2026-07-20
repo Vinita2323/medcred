@@ -16,6 +16,7 @@ export default function AgentForgotPasswordPage() {
 
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const isSubmitting = useRef(false);
 
   useEffect(() => {
     if (step === 'otp' && timer > 0) {
@@ -37,9 +38,11 @@ export default function AgentForgotPasswordPage() {
   };
 
   const handleSendOtp = async () => {
+    if (isSubmitting.current) return;
     if (mobile.length < 10) { setErrorMsg('Enter a valid 10-digit mobile number.'); return; }
     setErrorMsg('');
     try {
+      isSubmitting.current = true;
       setLoading(true);
       await api.post(ENDPOINTS.AGENT_FORGOT_PASSWORD, { mobileNumber: mobile });
       setStep('otp');
@@ -48,6 +51,7 @@ export default function AgentForgotPasswordPage() {
       setErrorMsg(error.response?.data?.message || 'Failed to send OTP.');
     } finally {
       setLoading(false);
+      isSubmitting.current = false;
     }
   };
 
@@ -186,13 +190,13 @@ export default function AgentForgotPasswordPage() {
                 {step === 'otp' && (
                   <>
                     <p className="text-sm text-[#434654] -mt-4 mb-4 ml-11">Enter the 6-digit code sent to +91 {mobile}</p>
-                    <div className="flex justify-between gap-2">
+                    <div className="flex justify-center gap-2 sm:gap-3">
                       {otp.map((digit, idx) => (
                         <input
                           key={idx} ref={el => inputRefs.current[idx] = el}
                           type="text" inputMode="numeric" maxLength={1} value={digit}
                           onChange={e => handleOtpChange(e, idx)} onKeyDown={e => handleOtpKey(e, idx)}
-                          className="flex-1 h-14 text-center text-lg font-bold border border-[#737685] rounded-lg focus:outline-none focus:border-[#003d9b] focus:ring-1 focus:ring-[#003d9b] bg-white/50 transition-all"
+                          className="w-10 h-12 sm:w-12 sm:h-14 min-w-0 flex-shrink-0 text-center text-lg font-bold border border-[#737685] rounded-lg focus:outline-none focus:border-[#003d9b] focus:ring-1 focus:ring-[#003d9b] bg-white/50 transition-all"
                         />
                       ))}
                     </div>
@@ -207,7 +211,7 @@ export default function AgentForgotPasswordPage() {
                       onClick={() => { if (otp.join('').length < 6) { setErrorMsg('Enter complete 6-digit OTP'); return; } setErrorMsg(''); setStep('newpass'); }}
                       className="w-full mt-4 bg-[#003d9b] text-white py-3 rounded-lg font-bold shadow-md hover:bg-[#0052cc] transition-all"
                     >
-                      Verify Code
+                      Next
                     </button>
                   </>
                 )}

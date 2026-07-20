@@ -36,11 +36,14 @@ export default function ForgotPasswordPage() {
 
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const isSubmitting = useRef(false);
 
   const handleSendOtp = async () => {
+    if (isSubmitting.current) return;
     if (mobile.length < 10) { setErrorMsg('Enter valid 10-digit mobile number'); return; }
     setErrorMsg('');
     try {
+      isSubmitting.current = true;
       setLoading(true);
       await api.post(ENDPOINTS.USER_FORGOT_PASSWORD, { mobile });
       setStep('otp');
@@ -49,6 +52,7 @@ export default function ForgotPasswordPage() {
       setErrorMsg(error.response?.data?.message || 'Failed to send OTP.');
     } finally {
       setLoading(false);
+      isSubmitting.current = false;
     }
   };
 
@@ -173,7 +177,7 @@ export default function ForgotPasswordPage() {
             {/* Step: OTP */}
             {step === 'otp' && (
               <div className="space-y-5">
-                <div className="flex justify-between gap-2">
+                <div className="flex justify-center gap-2 sm:gap-3">
                   {otp.map((digit, idx) => (
                     <input
                       key={idx}
@@ -181,7 +185,7 @@ export default function ForgotPasswordPage() {
                       type="text" inputMode="numeric" maxLength={1} value={digit}
                       onChange={e => handleOtpChange(e, idx)}
                       onKeyDown={e => handleOtpKey(e, idx)}
-                      className="flex-1 h-14 text-center text-xl font-black border-2 border-outline-variant rounded-2xl focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/30 transition-all bg-surface-container-low"
+                      className="w-10 h-12 sm:w-12 sm:h-14 min-w-0 flex-shrink-0 text-center text-xl font-black border-2 border-outline-variant rounded-2xl focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/30 transition-all bg-surface-container-low"
                     />
                   ))}
                 </div>
@@ -199,7 +203,7 @@ export default function ForgotPasswordPage() {
                   onClick={() => { if (otp.join('').length < 6) { setErrorMsg('Enter complete 6-digit OTP'); return; } setErrorMsg(''); setStep('newpass'); }}
                   className="w-full py-4 bg-primary text-white font-black rounded-2xl shadow-lg hover:opacity-90 cursor-pointer transition-all active:scale-[0.98]"
                 >
-                  Verify OTP
+                  Next
                 </button>
               </div>
             )}
