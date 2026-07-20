@@ -21,7 +21,7 @@ export const getProfile = async (req, res) => {
 // @access  Private (Agent only)
 export const updateProfile = async (req, res) => {
   try {
-    const { fullName, email, mobileNumber } = req.body;
+    const { fullName, email, mobileNumber, bankDetails } = req.body;
 
     const agent = await Agent.findById(req.user._id);
     if (!agent) {
@@ -31,6 +31,18 @@ export const updateProfile = async (req, res) => {
     if (fullName) agent.fullName = fullName;
     if (email) agent.email = email;
     if (mobileNumber) agent.mobileNumber = mobileNumber;
+    
+    if (bankDetails) {
+      if (!agent.bankDetails) agent.bankDetails = {};
+      if (bankDetails.bankName !== undefined) agent.bankDetails.bankName = bankDetails.bankName;
+      if (bankDetails.accountHolderName !== undefined) agent.bankDetails.accountHolderName = bankDetails.accountHolderName;
+      if (bankDetails.accountNumber !== undefined) agent.bankDetails.accountNumber = bankDetails.accountNumber;
+      if (bankDetails.ifscCode !== undefined) agent.bankDetails.ifscCode = bankDetails.ifscCode;
+    }
+
+    if (req.file) {
+      agent.profilePhotoUrl = `/uploads/${req.file.filename}`;
+    }
 
     await agent.save({ validateModifiedOnly: true });
 
@@ -57,13 +69,17 @@ export const getDashboardStats = async (req, res) => {
 
     // Role based stats
     let subordinateStats = null;
+    let networkSalesAmt = agent.totalSalesRevenue || 0; // Now accurately fetched from exact dynamic plan amounts
+    let networkOverride = agent.earnings || 0; // Agent's earnings naturally reflect exact commission from dynamic plans
+
     if (agent.role === 'Super Agent') {
-      const agents = await Agent.countDocuments({ role: 'Agent', reportingManagerId: agent._id });
-      const fieldAgents = await Agent.countDocuments({ role: 'Field Agent', reportingManagerId: { $in: await Agent.find({ reportingManagerId: agent._id }).distinct('_id') } });
-      subordinateStats = { agents, fieldAgents };
+      const agentsList = await Agent.find({ role: 'Agent', reportingManagerId: agent._id });
+      const agentIds = agentsList.map(a => a._id);
+      const fieldAgentsList = await Agent.find({ role: 'Field Agent', reportingManagerId: { $in: [...agentIds, agent._id] } });
+      subordinateStats = { agents: agentsList.length, fieldAgents: fieldAgentsList.length };
     } else if (agent.role === 'Agent') {
-      const fieldAgents = await Agent.countDocuments({ role: 'Field Agent', reportingManagerId: agent._id });
-      subordinateStats = { fieldAgents };
+      const fieldAgentsList = await Agent.find({ role: 'Field Agent', reportingManagerId: agent._id });
+      subordinateStats = { fieldAgents: fieldAgentsList.length };
     } else if (agent.role === 'Admin') {
       const pendingAgents = await Agent.countDocuments({ status: 'Pending Approval' });
       const approvedAgents = await Agent.countDocuments({ status: 'Approved' });
@@ -83,6 +99,8 @@ export const getDashboardStats = async (req, res) => {
         salesCount: agent.salesCount,
         totalRegistrations: agent.totalRegistrations,
         earnings: agent.earnings,
+        networkSalesAmt,
+        networkOverride,
         subordinateStats
       }
     });

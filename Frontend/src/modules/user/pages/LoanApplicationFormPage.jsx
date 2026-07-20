@@ -15,7 +15,7 @@ const GuarantorSection = ({ title, data, files, onDataChange, onFileChange }) =>
       </div>
       <div className="space-y-1">
         <label className="text-[10px] font-bold text-on-surface-variant">Mobile No. <span className="text-error">*</span></label>
-        <input type="text" value={data.mobile || ''} onChange={(e) => onDataChange('mobile', e.target.value)} className="w-full bg-surface-container-low border border-outline-variant/50 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" required />
+        <input type="text" value={data.mobile || ''} onChange={(e) => onDataChange('mobile', e.target.value)} pattern="[0-9]{10}" title="10-digit mobile number" className="w-full bg-surface-container-low border border-outline-variant/50 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" required />
       </div>
       <div className="space-y-1">
         <label className="text-[10px] font-bold text-on-surface-variant">Email <span className="text-error">*</span></label>
@@ -72,7 +72,7 @@ const GuarantorSection = ({ title, data, files, onDataChange, onFileChange }) =>
       </div>
       <div className="space-y-1">
         <label className="text-[10px] font-bold text-on-surface-variant">PAN No. <span className="text-error">*</span></label>
-        <input type="text" value={data.panNumber || ''} onChange={(e) => onDataChange('panNumber', e.target.value)} className="w-full bg-surface-container-low border border-outline-variant/50 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all uppercase" maxLength={10} required />
+        <input type="text" value={data.panNumber || ''} onChange={(e) => onDataChange('panNumber', e.target.value)} pattern="[A-Za-z]{5}[0-9]{4}[A-Za-z]{1}" title="Format: ABCDE1234F" className="w-full bg-surface-container-low border border-outline-variant/50 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all uppercase" maxLength={10} required />
       </div>
       <div className="space-y-1">
         <label className="text-[10px] font-bold text-on-surface-variant">Bank A/C No. <span className="text-error">*</span></label>
@@ -80,11 +80,11 @@ const GuarantorSection = ({ title, data, files, onDataChange, onFileChange }) =>
       </div>
       <div className="space-y-1">
         <label className="text-[10px] font-bold text-on-surface-variant">IFSC Code <span className="text-error">*</span></label>
-        <input type="text" value={data.ifscCode || ''} onChange={(e) => onDataChange('ifscCode', e.target.value)} className="w-full bg-surface-container-low border border-outline-variant/50 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all uppercase" required />
+        <input type="text" value={data.ifscCode || ''} onChange={(e) => onDataChange('ifscCode', e.target.value)} pattern="^[A-Za-z]{4}0[A-Za-z0-9]{6}$" title="Format: ABCD0123456" className="w-full bg-surface-container-low border border-outline-variant/50 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all uppercase" required />
       </div>
       <div className="space-y-1 col-span-2">
         <label className="text-[10px] font-bold text-on-surface-variant">CIBIL Score <span className="text-error">*</span></label>
-        <input type="number" value={data.cibilScore || ''} onChange={(e) => onDataChange('cibilScore', e.target.value)} className="w-full bg-surface-container-low border border-outline-variant/50 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" required />
+        <input type="number" value={data.cibilScore || ''} onChange={(e) => onDataChange('cibilScore', e.target.value)} min={300} max={900} className="w-full bg-surface-container-low border border-outline-variant/50 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" required />
       </div>
     </div>
 
@@ -101,9 +101,12 @@ const GuarantorSection = ({ title, data, files, onDataChange, onFileChange }) =>
           { label: '9. CIBIL Report', field: 'cibilScoreFile' },
         ].map(({ label, field }) => (
           <label key={field} className="border border-dashed border-outline-variant rounded-xl p-2 flex flex-col items-center justify-center gap-1 bg-surface-container-lowest hover:bg-surface-container-low transition-colors cursor-pointer relative overflow-hidden text-center h-20">
-            <input type="file" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept=".jpg,.jpeg,.png,.pdf" onChange={(e) => onFileChange(e, field)} required={!files[field]} />
-            <span className={`material-symbols-outlined text-base ${files[field] ? 'text-primary' : 'text-on-surface-variant'}`}>{files[field] ? 'check_circle' : 'upload_file'}</span>
-            <p className={`text-[8px] font-bold leading-tight ${files[field] ? 'text-primary line-clamp-2' : 'text-on-surface'}`}>{files[field] ? files[field].name : label}</p>
+            <input type="file" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept="image/*, application/pdf" capture="environment" onChange={(e) => onFileChange(e, field)} required={!files[field]} />
+            {files[field] && files[field].type.startsWith('image/') ? (
+              <img src={URL.createObjectURL(files[field])} alt={label} className="absolute inset-0 w-full h-full object-cover opacity-40" />
+            ) : null}
+            <span className={`material-symbols-outlined text-base z-10 ${files[field] ? 'text-primary' : 'text-on-surface-variant'}`}>{files[field] ? 'check_circle' : 'upload_file'}</span>
+            <p className={`text-[8px] font-bold leading-tight z-10 ${files[field] ? 'text-primary line-clamp-2' : 'text-on-surface'}`}>{files[field] ? files[field].name : label}</p>
           </label>
         ))}
       </div>
@@ -148,6 +151,8 @@ const RequirementSection = ({ title, showName, data, files, onDataChange, onFile
           value={data.panNumber || ''}
           onChange={(e) => onDataChange('panNumber', e.target.value)}
           placeholder="10-char PAN"
+          pattern="[A-Za-z]{5}[0-9]{4}[A-Za-z]{1}"
+          title="Format: ABCDE1234F"
           className="w-full bg-surface-container-low border border-outline-variant/50 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all uppercase"
           maxLength={10}
           required
@@ -171,6 +176,8 @@ const RequirementSection = ({ title, showName, data, files, onDataChange, onFile
           value={data.ifscCode || ''}
           onChange={(e) => onDataChange('ifscCode', e.target.value)}
           placeholder="IFSC Code"
+          pattern="^[A-Za-z]{4}0[A-Za-z0-9]{6}$"
+          title="Format: ABCD0123456"
           className="w-full bg-surface-container-low border border-outline-variant/50 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all uppercase"
           required
         />
@@ -182,6 +189,8 @@ const RequirementSection = ({ title, showName, data, files, onDataChange, onFile
           value={data.cibilScore || ''}
           onChange={(e) => onDataChange('cibilScore', e.target.value)}
           placeholder="Enter CIBIL Score"
+          min={300}
+          max={900}
           className="w-full bg-surface-container-low border border-outline-variant/50 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
           required
         />
@@ -208,10 +217,13 @@ const RequirementSection = ({ title, showName, data, files, onDataChange, onFile
               onChange={(e) => onFileChange(e, field)}
               required={!files[field]}
             />
-            <span className={`material-symbols-outlined text-base ${files[field] ? 'text-primary' : 'text-on-surface-variant'}`}>
+            {files[field] && files[field].type.startsWith('image/') ? (
+              <img src={URL.createObjectURL(files[field])} alt={label} className="absolute inset-0 w-full h-full object-cover opacity-40" />
+            ) : null}
+            <span className={`material-symbols-outlined text-base z-10 ${files[field] ? 'text-primary' : 'text-on-surface-variant'}`}>
               {files[field] ? 'check_circle' : 'upload_file'}
             </span>
-            <p className={`text-[8px] font-bold leading-tight ${files[field] ? 'text-primary line-clamp-2' : 'text-on-surface'}`}>
+            <p className={`text-[8px] font-bold leading-tight z-10 ${files[field] ? 'text-primary line-clamp-2' : 'text-on-surface'}`}>
               {files[field] ? files[field].name : label}
             </p>
           </label>
@@ -227,10 +239,23 @@ export default function LoanApplicationFormPage() {
   const state = location.state || { type: 'Individual', limit: 200000 };
 
   const [familyMembers, setFamilyMembers] = useState([]);
+  const [hospitals, setHospitals] = useState([]);
 
   useEffect(() => {
     fetchFamily();
+    fetchHospitals();
   }, []);
+
+  const fetchHospitals = async () => {
+    try {
+      const res = await api.get(ENDPOINTS.HOSPITALS);
+      if (res.data.success) {
+        setHospitals(res.data.data.filter(h => h.isActive));
+      }
+    } catch (err) {
+      console.error('Failed to fetch hospitals', err);
+    }
+  };
 
   const fetchFamily = async () => {
     try {
@@ -317,8 +342,8 @@ export default function LoanApplicationFormPage() {
     }
   };
 
-  const [loanAmount, setLoanAmount] = useState(state.limit);
-  const [tenure, setTenure] = useState(12);
+  const [loanAmount, setLoanAmount] = useState(state.amount || state.limit);
+  const [tenure, setTenure] = useState(state.tenure || 12);
   const [isApplying, setIsApplying] = useState(false);
   const [applied, setApplied] = useState(false);
 
@@ -341,18 +366,13 @@ export default function LoanApplicationFormPage() {
 
   const handleMemberSelect = (member) => {
     setSelectedMemberIds(prev => {
-      const isSelected = prev.includes(member.id);
-      if (isSelected) {
-        return prev.filter(id => id !== member.id);
-      } else {
-        return [...prev, member.id];
-      }
+      if (prev.includes(member.id)) return []; // Deselect
+      return [member.id]; // Select only one
     });
 
     setPatientsData(prev => {
       if (!prev[member.id]) {
         return {
-          ...prev,
           [member.id]: {
             patientName: member.name || '',
             relationship: member.relationship || '',
@@ -364,7 +384,7 @@ export default function LoanApplicationFormPage() {
           }
         };
       }
-      return prev;
+      return { [member.id]: prev[member.id] };
     });
   };
 
@@ -422,7 +442,10 @@ export default function LoanApplicationFormPage() {
   };
 
   const calculateEMI = () => {
-    return Math.round(loanAmount / tenure);
+    // Flat 12% annual interest rate
+    const interest = loanAmount * 0.12 * (tenure / 12);
+    const totalRepayment = loanAmount + interest;
+    return Math.round(totalRepayment / tenure);
   };
 
   const handleSubmit = async (e) => {
@@ -569,8 +592,8 @@ export default function LoanApplicationFormPage() {
   };
 
   return (
-    <div className="flex-grow flex flex-col bg-surface text-on-surface font-body-md min-h-screen pb-20 animate-fade-in relative">
-      <header className="flex items-center gap-3 px-4 h-16 sticky top-0 z-40 bg-surface shadow-sm border-b border-outline-variant/30">
+    <div className="flex-grow flex flex-col bg-surface text-on-surface font-body-md min-h-screen pb-32 animate-fade-in relative">
+      <header className="flex items-center gap-3 px-4 h-16 fixed top-0 left-0 w-full z-40 bg-surface shadow-sm border-b border-outline-variant/30">
         {!applied && (
           <button onClick={() => navigate(-1)} className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-surface-container-low cursor-pointer transition-colors">
             <span className="material-symbols-outlined text-primary">arrow_back</span>
@@ -581,7 +604,7 @@ export default function LoanApplicationFormPage() {
         </h1>
       </header>
 
-      <main className="p-4 space-y-6 max-w-md mx-auto w-full">
+      <main className="p-4 pt-20 space-y-6 max-w-md mx-auto w-full">
         {applied ? (
           <div className="flex flex-col items-center justify-center py-16 text-center space-y-4 animate-fade-in">
             <div className="w-20 h-20 rounded-full bg-tertiary/10 flex items-center justify-center text-tertiary">
@@ -698,16 +721,20 @@ export default function LoanApplicationFormPage() {
                       </div>
                     </div>
 
-                    <div className="space-y-1">
+                    <div className="space-y-1 relative">
                       <label className="text-xs font-bold text-on-surface-variant">Hospital Name <span className="text-error">*</span></label>
-                      <input 
-                        type="text"
+                      <select 
                         value={data.hospitalName}
                         onChange={(e) => handlePatientChange(id, 'hospitalName', e.target.value)}
-                        placeholder="Enter hospital name"
-                        className="w-full bg-surface-container-low border border-outline-variant/50 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                        className="w-full bg-surface-container-low border border-outline-variant/50 rounded-xl px-4 py-3 text-sm appearance-none focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
                         required
-                      />
+                      >
+                        <option value="" disabled>Select Hospital</option>
+                        {hospitals.map(h => (
+                          <option key={h._id} value={h.name}>{h.name}</option>
+                        ))}
+                      </select>
+                      <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-xl mt-3">expand_more</span>
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">
@@ -750,10 +777,13 @@ export default function LoanApplicationFormPage() {
                           onChange={(e) => handlePatientFileChange(e, id, 'prescriptionFile')}
                           required
                         />
-                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                        {data.prescriptionFile && data.prescriptionFile.type.startsWith('image/') ? (
+                          <img src={URL.createObjectURL(data.prescriptionFile)} alt="Prescription" className="absolute inset-0 w-full h-full object-cover opacity-40" />
+                        ) : null}
+                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center z-10">
                           <span className="material-symbols-outlined text-primary">{data.prescriptionFile ? 'check_circle' : 'upload_file'}</span>
                         </div>
-                        <div className="text-center">
+                        <div className="text-center z-10">
                           <p className="text-xs font-bold text-primary">
                             {data.prescriptionFile ? data.prescriptionFile.name : 'Click to upload or take a picture'}
                           </p>
@@ -773,10 +803,13 @@ export default function LoanApplicationFormPage() {
                           accept=".jpg,.jpeg,.png,.pdf"
                           onChange={(e) => handlePatientFileChange(e, id, 'billFile')}
                         />
-                        <div className="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center">
+                        {data.billFile && data.billFile.type.startsWith('image/') ? (
+                          <img src={URL.createObjectURL(data.billFile)} alt="Bill" className="absolute inset-0 w-full h-full object-cover opacity-40" />
+                        ) : null}
+                        <div className="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center z-10">
                           <span className="material-symbols-outlined text-secondary">{data.billFile ? 'check_circle' : 'receipt_long'}</span>
                         </div>
-                        <div className="text-center">
+                        <div className="text-center z-10">
                           <p className="text-xs font-bold text-secondary">
                             {data.billFile ? data.billFile.name : 'Upload Estimated Bill'}
                           </p>
@@ -800,10 +833,13 @@ export default function LoanApplicationFormPage() {
                               onChange={(e) => handlePatientFileChange(e, id, docKey)}
                               required
                             />
-                            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                            {data[docKey] && data[docKey].type.startsWith('image/') ? (
+                              <img src={URL.createObjectURL(data[docKey])} alt={DOC_LABELS[docKey]} className="absolute inset-0 w-full h-full object-cover opacity-40" />
+                            ) : null}
+                            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center z-10">
                               <span className="material-symbols-outlined text-primary">{data[docKey] ? 'check_circle' : 'upload_file'}</span>
                             </div>
-                            <div className="text-center">
+                            <div className="text-center z-10">
                               <p className="text-xs font-bold text-primary">
                                 {data[docKey] ? data[docKey].name : 'Click to upload'}
                               </p>
@@ -908,16 +944,16 @@ export default function LoanApplicationFormPage() {
 
               <div className="bg-surface-container-low p-4 rounded-xl space-y-2 border border-outline-variant/30 text-xs">
                 <div className="flex justify-between items-center">
-                  <span className="text-on-surface-variant">Monthly EMI (Principal)</span>
+                  <span className="text-on-surface-variant">Monthly EMI</span>
                   <span className="font-extrabold text-on-surface text-sm">₹{calculateEMI().toLocaleString('en-IN')} / mo</span>
                 </div>
                 <div className="flex justify-between items-center text-[10px] text-outline">
-                  <span>Interest Charges (0%)</span>
-                  <span className="font-bold text-tertiary">₹0</span>
+                  <span>Interest Charges (Flat 12% p.a.)</span>
+                  <span className="font-bold text-tertiary">₹{(calculateEMI() * tenure - loanAmount).toLocaleString('en-IN')}</span>
                 </div>
                 <div className="border-t border-outline-variant/30 pt-2 flex justify-between items-center font-bold text-on-surface">
-                  <span>Total Repayable</span>
-                  <span className="text-primary text-sm">₹{loanAmount.toLocaleString('en-IN')}</span>
+                  <span>Total Repayable (Principal + Interest)</span>
+                  <span className="text-primary text-sm">₹{(calculateEMI() * tenure).toLocaleString('en-IN')}</span>
                 </div>
               </div>
             </section>
@@ -959,6 +995,8 @@ export default function LoanApplicationFormPage() {
               <input
                 type="number"
                 value={customAmountInput}
+                min="1000"
+                max={maxLimit}
                 onChange={(e) => setCustomAmountInput(e.target.value)}
                 placeholder="e.g. 50000"
                 className="w-full bg-surface-container-low border border-outline-variant/50 rounded-xl px-4 py-3 text-lg font-bold text-center focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"

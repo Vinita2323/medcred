@@ -9,7 +9,7 @@ import Card from '../models/Card.model.js';
 // @access  Private (User only)
 export const getProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id);
+    const user = await User.findById(req.user._id).populate('kycRef');
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }

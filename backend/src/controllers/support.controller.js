@@ -2,6 +2,8 @@ import SupportTicket from '../models/SupportTicket.model.js';
 import User from '../models/User.model.js';
 import Agent from '../models/Agent.model.js';
 import Admin from '../models/Admin.model.js';
+import Notification from '../models/Notification.model.js';
+import { sendPushNotification } from '../services/notification.service.js';
 
 // @route   POST /api/v1/support/tickets
 // @desc    Create a new support ticket
@@ -120,6 +122,38 @@ export const adminUpdateTicket = async (req, res) => {
     }
 
     await ticket.save();
+
+    // Send push notification if status changed to resolved or admin replied
+    if (status === 'resolved' || adminNotes !== undefined) {
+      try {
+        const user = await User.findById(ticket.userId) || await Agent.findById(ticket.userId);
+        if (user) {
+          const title = status === 'resolved' ? 'Ticket Resolved' : 'Support Ticket Update';
+          const body = status === 'resolved' 
+            ? `Your ticket "${ticket.subject}" has been resolved.`
+            : `An admin has replied to your ticket "${ticket.subject}".`;
+
+          await Notification.create({
+            userId: user._id,
+            title,
+            message: body,
+            type: status === 'resolved' ? 'success' : 'info',
+            icon: 'support_agent',
+            link: '/support'
+          });
+
+          if (user.fcmToken) {
+            await sendPushNotification({
+              token: user.fcmToken,
+              title,
+              body
+            });
+          }
+        }
+      } catch (notifErr) {
+        console.error('Error sending ticket update notification:', notifErr);
+      }
+    }
 
     res.status(200).json({
       success: true,

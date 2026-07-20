@@ -31,6 +31,10 @@ export const useFormValidation = (initialValues = {}, validationRules = {}) => {
     if (name === 'mobile' || name === 'phone' || name === 'phoneNumber') {
       formattedVal = typeof val === 'string' ? val.replace(/\D/g, '').substring(0, 10) : val;
     }
+    // Restrict Aadhaar to numbers and max 12 chars
+    if (name === 'aadhaar' || name === 'aadhaarNumber') {
+      formattedVal = typeof val === 'string' ? val.replace(/\D/g, '').substring(0, 12) : val;
+    }
     // Restrict Name to alphabets and spaces only
     if (name === 'name' || name === 'fullName' || name === 'city' || name === 'state') {
       formattedVal = typeof val === 'string' ? val.replace(/[^a-zA-Z\s]/g, '') : val;

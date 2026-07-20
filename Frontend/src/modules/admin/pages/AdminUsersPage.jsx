@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import api from '../../../services/api';
 import { ENDPOINTS, SERVER_URL } from '../../../services/types';
 
@@ -282,7 +283,7 @@ export default function AdminUsersPage() {
       </div>
 
       {/* ── User Detail Drawer ─────────────────────────────── */}
-      {drawer && (
+      {drawer && createPortal(
         <div className="fixed inset-0 bg-black/40 z-50 flex justify-end sm:items-start sm:p-4" onClick={() => setDrawer(null)}>
           <div
             className="w-full max-w-[320px] bg-white h-full sm:h-fit sm:max-h-full sm:rounded-2xl overflow-y-auto shadow-2xl flex flex-col animate-slide-up"
@@ -442,7 +443,8 @@ export default function AdminUsersPage() {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

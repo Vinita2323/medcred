@@ -24,7 +24,7 @@ import NotificationsPage from '../pages/NotificationsPage';
 import LoanPage from '../pages/LoanPage';
 import LoanDetailsPage from '../pages/LoanDetailsPage';
 import LoanApplicationFormPage from '../pages/LoanApplicationFormPage';
-import WalletPage from '../pages/WalletPage';
+
 import InsurancePage from '../pages/InsurancePage';
 import CheckupBookingPage from '../pages/CheckupBookingPage';
 import HospitalsPage from '../pages/HospitalsPage';
@@ -66,7 +66,7 @@ export default function UserRoutes() {
         <Route path="/loan-details" element={<LoanDetailsPage />} />
         <Route path="/loan-details/:id" element={<LoanDetailsPage />} />
         <Route path="/loan-application-form" element={<LoanApplicationFormPage />} />
-        <Route path="/wallet"     element={<WalletPage />} />
+
         <Route path="/insurance"  element={<InsurancePage />} />
         <Route path="/book-checkup" element={<CheckupBookingPage />} />
         <Route path="/hospitals"  element={<HospitalsPage />} />

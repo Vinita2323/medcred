@@ -5,6 +5,13 @@ import { ENDPOINTS, STORAGE_KEYS } from '../../../services/types';
 
 export default function AgentLoginPage() {
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (localStorage.getItem(STORAGE_KEYS.USER_DATA)) {
+      navigate('/agent/dashboard');
+    }
+  }, [navigate]);
+
   const [mobile, setMobile] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -80,7 +87,7 @@ export default function AgentLoginPage() {
   };
 
   return (
-    <div className="bg-[#faf8ff] text-[#191b23] min-h-screen flex flex-col font-body-md overflow-x-hidden relative">
+    <div className="bg-[#faf8ff] text-[#191b23] h-screen flex flex-col font-body-md overflow-hidden relative">
       <style dangerouslySetInnerHTML={{__html: `
         .glass-card {
           background: rgba(255, 255, 255, 0.85);
@@ -141,8 +148,13 @@ export default function AgentLoginPage() {
                     placeholder=" " 
                     required 
                     type="tel"
+                    maxLength={10}
+                    pattern="[0-9]{10}"
                     value={mobile}
-                    onChange={(e) => setMobile(e.target.value)}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, '').slice(0, 10);
+                      setMobile(val);
+                    }}
                   />
                   <label className="absolute left-12 top-3 text-[#737685] pointer-events-none transition-all duration-200" htmlFor="mobile">Mobile Number</label>
                 </div>
@@ -233,11 +245,11 @@ export default function AgentLoginPage() {
               <Link className="text-[#003d9b] font-bold hover:underline ml-1" to="/agent/register">Apply for Partnership</Link>
             </p>
             <div className="flex justify-center gap-4 mt-6 text-xs text-[#737685] font-semibold">
-              <a className="hover:text-[#003d9b] transition-colors" href="#terms">Terms</a>
+              <Link className="hover:text-[#003d9b] transition-colors" to="/terms">Terms</Link>
               <span>•</span>
-              <a className="hover:text-[#003d9b] transition-colors" href="#privacy">Privacy</a>
+              <Link className="hover:text-[#003d9b] transition-colors" to="/privacy">Privacy</Link>
               <span>•</span>
-              <a className="hover:text-[#003d9b] transition-colors" href="#support">Support</a>
+              <Link className="hover:text-[#003d9b] transition-colors" to="/support">Support</Link>
             </div>
           </div>
         </div>

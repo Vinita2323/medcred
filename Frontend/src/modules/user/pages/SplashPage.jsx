@@ -1,12 +1,17 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { isLoggedIn } from '../utils/storage';
 
 export default function SplashPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      navigate('/onboarding/1');
+      if (isLoggedIn()) {
+        navigate('/dashboard');
+      } else {
+        navigate('/onboarding/1');
+      }
     }, 3500);
 
     return () => clearTimeout(timer);

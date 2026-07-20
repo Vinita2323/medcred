@@ -37,6 +37,14 @@ export default function AdminAgentsPage() {
   const [filterDistrict, setFilterDistrict] = useState('');
   const [filterCity, setFilterCity] = useState('');
 
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab, search, filterDistrict, filterCity]);
+
   // Commission Engine State
   const [commissions, setCommissions] = useState({});
   const [editingPlan, setEditingPlan] = useState(null);
@@ -185,6 +193,15 @@ export default function AdminAgentsPage() {
   };
 
   const saveCommissionConfig = async () => {
+    const fa = parseFloat(editFa);
+    const tl = parseFloat(editTl);
+    const sa = parseFloat(editSa);
+
+    if (isNaN(fa) || fa < 0 || fa > 100 || isNaN(tl) || tl < 0 || tl > 100 || isNaN(sa) || sa < 0 || sa > 100) {
+      setError('Commission percentages must be exactly between 0 and 100.');
+      return;
+    }
+
     try {
       const planId = commissions[editingPlan].id;
       const plansUpdate = {
@@ -364,7 +381,7 @@ export default function AdminAgentsPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {Object.keys(commissions).map((planName) => (
             <div key={planName} className="border border-[#c3c6d6]/30 p-5 rounded-xl space-y-4 bg-white shadow-sm hover:shadow-md transition-shadow">
-              <h4 className="font-extrabold text-[#003d9b] text-base capitalize">{planName} Plan</h4>
+              <h4 className="font-extrabold text-[#003d9b] text-base capitalize">{planName}</h4>
               <div className="space-y-2 text-sm mt-4">
                 <div className="flex justify-between items-center">
                   <span className="font-bold text-[#516161] text-xs">Field Agent</span>
@@ -512,18 +529,21 @@ export default function AdminAgentsPage() {
                 Loading...
               </div>
             ) : (
+              <>
               <table className="w-full text-sm text-left">
                 <thead>
                   <tr className="bg-[#faf8ff] text-[#737685] text-xs font-bold border-b border-[#c3c6d6]/20">
                     <th className="px-5 py-3">Agent Details</th>
                     <th className="px-5 py-3">Location</th>
                     <th className="px-5 py-3">Referral Code</th>
+                    <th className="px-5 py-3">Status</th>
+                    <th className="px-5 py-3">Role Type</th>
                     {activeTab !== 'Super Agents' && <th className="px-5 py-3">Parent Agent</th>}
                     <th className="px-5 py-3 text-center">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#c3c6d6]/10">
-                  {listByTab(activeTab).map(agent => (
+                  {listByTab(activeTab).slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map(agent => (
                     <tr key={agent._id} className="hover:bg-[#faf8ff]/60 transition-colors">
                       <td className="px-5 py-3.5">
                         <div className="flex items-center gap-2.5">
@@ -547,7 +567,26 @@ export default function AdminAgentsPage() {
                         )}
                       </td>
                       <td className="px-5 py-3.5 font-mono text-xs font-bold text-[#0052cc]">
-                        {agent.referralCode || '—'}
+                        {agent.status === 'Approved' ? (agent.referralCode || '—') : '—'}
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <span className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wide ${
+                          agent.status === 'Approved' ? 'bg-green-100 text-green-700' :
+                          agent.status === 'Pending Approval' ? 'bg-yellow-100 text-yellow-700' :
+                          agent.status === 'Rejected' ? 'bg-red-100 text-red-700' :
+                          'bg-gray-100 text-gray-700'
+                        }`}>
+                          {agent.status}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border ${
+                          agent.role === 'Super Agent' ? 'bg-purple-50 text-purple-700 border-purple-200' :
+                          agent.role === 'Agent' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                          'bg-[#f5f8ff] text-[#003d9b] border-[#dae2ff]'
+                        }`}>
+                          {agent.role}
+                        </span>
                       </td>
                       {activeTab !== 'Super Agents' && (
                         <td className="px-5 py-3.5 text-xs">
@@ -591,7 +630,7 @@ export default function AdminAgentsPage() {
                   ))}
                   {listByTab(activeTab).length === 0 && (
                     <tr>
-                      <td colSpan={5} className="text-center py-12 text-[#516161] text-sm">
+                      <td colSpan={7} className="text-center py-12 text-[#516161] text-sm">
                         <span className="material-symbols-outlined text-3xl block mb-2 text-[#c3c6d6]">badge</span>
                         No agents found in this category.
                       </td>
@@ -599,6 +638,16 @@ export default function AdminAgentsPage() {
                   )}
                 </tbody>
               </table>
+              <div className="flex justify-between items-center px-5 py-4 border-t border-[#c3c6d6]/20 bg-white">
+                <span className="text-xs text-[#737685]">
+                  Showing {listByTab(activeTab).length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} to {Math.min(currentPage * itemsPerPage, listByTab(activeTab).length)} of {listByTab(activeTab).length} Entries
+                </span>
+                <div className="flex gap-2">
+                  <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)} className="px-3 py-1.5 rounded-lg border border-[#c3c6d6] text-xs font-bold disabled:opacity-50 text-[#516161]">Prev</button>
+                  <button disabled={currentPage >= Math.ceil(listByTab(activeTab).length / itemsPerPage) || Math.ceil(listByTab(activeTab).length / itemsPerPage) === 0} onClick={() => setCurrentPage(p => p + 1)} className="px-3 py-1.5 rounded-lg border border-[#c3c6d6] text-xs font-bold disabled:opacity-50 text-[#516161]">Next</button>
+                </div>
+              </div>
+              </>
             )}
           </div>
         )}
@@ -722,29 +771,106 @@ export default function AdminAgentsPage() {
               </div>
               <div>
                 <p className="text-xs text-[#737685] font-semibold">Referral Code</p>
-                <p className="font-bold text-[#0052cc] font-mono">{detailsAgent.referralCode || 'N/A'}</p>
+                <p className="font-bold text-[#0052cc] font-mono">{detailsAgent.status === 'Approved' ? (detailsAgent.referralCode || 'N/A') : 'N/A'}</p>
               </div>
               <div>
                 <p className="text-xs text-[#737685] font-semibold">Status</p>
                 <p className="font-bold text-[#191b23]">{detailsAgent.status}</p>
               </div>
               <div className="col-span-2 border-t border-[#c3c6d6]/20 pt-4 mt-2">
-                <p className="text-xs font-bold text-[#003d9b] uppercase tracking-wider mb-2">Location Information</p>
-                <div className="grid grid-cols-3 gap-2">
+                <p className="text-xs font-bold text-[#003d9b] uppercase tracking-wider mb-2">Identity Information</p>
+                <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-[10px] text-[#737685] font-semibold">District</p>
-                    <p className="font-semibold text-xs text-[#191b23]">{detailsAgent.district || '—'}</p>
+                    <p className="text-[10px] text-[#737685] font-semibold">Aadhaar Number</p>
+                    <p className="font-semibold text-xs text-[#191b23] font-mono">{detailsAgent.aadhaarNumber || '—'}</p>
                   </div>
                   <div>
-                    <p className="text-[10px] text-[#737685] font-semibold">City</p>
-                    <p className="font-semibold text-xs text-[#191b23]">{detailsAgent.city || '—'}</p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] text-[#737685] font-semibold">Area</p>
-                    <p className="font-semibold text-xs text-[#191b23]">{detailsAgent.area || '—'}</p>
+                    <p className="text-[10px] text-[#737685] font-semibold">PAN Number</p>
+                    <p className="font-semibold text-xs text-[#191b23] font-mono uppercase">{detailsAgent.panNumber || '—'}</p>
                   </div>
                 </div>
               </div>
+
+              <div className="col-span-2 border-t border-[#c3c6d6]/20 pt-4 mt-2">
+                <p className="text-xs font-bold text-[#003d9b] uppercase tracking-wider mb-2">Address Details</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-[10px] text-[#737685] font-semibold mb-1">Permanent Address</p>
+                    <p className="text-xs text-[#191b23] leading-relaxed">
+                      {detailsAgent.permanentAddress?.houseNo ? `${detailsAgent.permanentAddress.houseNo}, ` : ''}
+                      {detailsAgent.permanentAddress?.street ? `${detailsAgent.permanentAddress.street}, ` : ''}
+                      {detailsAgent.permanentAddress?.area ? `${detailsAgent.permanentAddress.area}, ` : ''}
+                      {detailsAgent.permanentAddress?.city ? `${detailsAgent.permanentAddress.city}, ` : ''}
+                      {detailsAgent.permanentAddress?.district ? `${detailsAgent.permanentAddress.district}, ` : ''}
+                      {detailsAgent.permanentAddress?.state ? `${detailsAgent.permanentAddress.state} - ` : ''}
+                      {detailsAgent.permanentAddress?.pincode ? detailsAgent.permanentAddress.pincode : 'Not Provided'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-[#737685] font-semibold mb-1">Current/Working Address</p>
+                    <p className="text-xs text-[#191b23] leading-relaxed">
+                      {detailsAgent.currentAddress?.houseNo ? `${detailsAgent.currentAddress.houseNo}, ` : ''}
+                      {detailsAgent.currentAddress?.street ? `${detailsAgent.currentAddress.street}, ` : ''}
+                      {detailsAgent.currentAddress?.area ? `${detailsAgent.currentAddress.area}, ` : ''}
+                      {detailsAgent.currentAddress?.city ? `${detailsAgent.currentAddress.city}, ` : ''}
+                      {detailsAgent.currentAddress?.district ? `${detailsAgent.currentAddress.district}, ` : ''}
+                      {detailsAgent.currentAddress?.state ? `${detailsAgent.currentAddress.state} - ` : ''}
+                      {detailsAgent.currentAddress?.pincode ? detailsAgent.currentAddress.pincode : 'Not Provided'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="col-span-2 border-t border-[#c3c6d6]/20 pt-4 mt-2">
+                <p className="text-xs font-bold text-[#003d9b] uppercase tracking-wider mb-2">Banking Information</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-[10px] text-[#737685] font-semibold">Bank Name</p>
+                    <p className="font-semibold text-xs text-[#191b23]">{detailsAgent.bankDetails?.bankName || '—'}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-[#737685] font-semibold">Account Holder</p>
+                    <p className="font-semibold text-xs text-[#191b23]">{detailsAgent.bankDetails?.accountHolderName || '—'}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-[#737685] font-semibold">Account Number</p>
+                    <p className="font-semibold text-xs text-[#191b23] font-mono">{detailsAgent.bankDetails?.accountNumber || '—'}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-[#737685] font-semibold">IFSC Code</p>
+                    <p className="font-semibold text-xs text-[#191b23] font-mono uppercase">{detailsAgent.bankDetails?.ifscCode || '—'}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="col-span-2 border-t border-[#c3c6d6]/20 pt-4 mt-2">
+                <p className="text-xs font-bold text-[#003d9b] uppercase tracking-wider mb-2">KYC Documents</p>
+                <div className="flex gap-4 overflow-x-auto pb-2">
+                  {[
+                    { label: 'Profile Photo', url: detailsAgent.profilePhotoUrl },
+                    { label: 'Aadhaar Front', url: detailsAgent.aadhaarFrontUrl },
+                    { label: 'Aadhaar Back', url: detailsAgent.aadhaarBackUrl },
+                    { label: 'PAN Card', url: detailsAgent.panCardUrl },
+                    { label: 'Bank Passbook', url: detailsAgent.chequePassbookUrl }
+                  ].map((doc, idx) => (
+                    doc.url ? (
+                      <a key={idx} href={`http://localhost:5000${doc.url}`} target="_blank" rel="noreferrer" className="flex-shrink-0 w-24 aspect-square bg-[#f5f8ff] rounded-xl overflow-hidden border border-[#c3c6d6]/40 hover:border-[#003d9b] transition-colors group relative">
+                        <img src={`http://localhost:5000${doc.url}`} alt={doc.label} className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <span className="material-symbols-outlined text-white text-sm">open_in_new</span>
+                        </div>
+                        <span className="absolute bottom-0 inset-x-0 bg-black/70 text-white text-[8px] font-bold text-center py-1 uppercase">{doc.label}</span>
+                      </a>
+                    ) : (
+                      <div key={idx} className="flex-shrink-0 w-24 aspect-square bg-[#f5f8ff] rounded-xl border border-dashed border-[#c3c6d6] flex flex-col items-center justify-center text-[#737685]">
+                        <span className="material-symbols-outlined text-xl mb-1 opacity-50">image_not_supported</span>
+                        <span className="text-[8px] font-bold uppercase text-center leading-tight px-1">{doc.label}<br/>Missing</span>
+                      </div>
+                    )
+                  ))}
+                </div>
+              </div>
+
               <div className="col-span-2 border-t border-[#c3c6d6]/20 pt-4">
                 <p className="text-xs font-bold text-[#003d9b] uppercase tracking-wider mb-2">Hierarchy</p>
                 <div className="bg-[#f5f8ff] p-3 rounded-lg flex justify-between items-center">
@@ -814,21 +940,30 @@ export default function AdminAgentsPage() {
               <div className="space-y-1">
                 <label className="text-xs font-semibold text-[#516161]">Field Agent (%)</label>
                 <input 
-                  type="number" step="0.1" value={editFa} onChange={(e) => setEditFa(e.target.value)} 
+                  type="number" step="0.1" min="0" max="100" 
+                  value={editFa} 
+                  onKeyDown={(e) => { if (e.key === '-' || e.key === 'e' || e.key === 'E') e.preventDefault(); }}
+                  onChange={(e) => setEditFa(e.target.value < 0 ? 0 : e.target.value)} 
                   className="w-full bg-[#f3f3fd] border border-[#c3c6d6]/40 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#003d9b] font-bold"
                 />
               </div>
               <div className="space-y-1">
                 <label className="text-xs font-semibold text-[#516161]">Agent (%)</label>
                 <input 
-                  type="number" step="0.1" value={editTl} onChange={(e) => setEditTl(e.target.value)} 
+                  type="number" step="0.1" min="0" max="100" 
+                  value={editTl} 
+                  onKeyDown={(e) => { if (e.key === '-' || e.key === 'e' || e.key === 'E') e.preventDefault(); }}
+                  onChange={(e) => setEditTl(e.target.value < 0 ? 0 : e.target.value)} 
                   className="w-full bg-[#f3f3fd] border border-[#c3c6d6]/40 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#003d9b] font-bold"
                 />
               </div>
               <div className="space-y-1">
                 <label className="text-xs font-semibold text-[#516161]">Super Agent (%)</label>
                 <input 
-                  type="number" step="0.1" value={editSa} onChange={(e) => setEditSa(e.target.value)} 
+                  type="number" step="0.1" min="0" max="100" 
+                  value={editSa} 
+                  onKeyDown={(e) => { if (e.key === '-' || e.key === 'e' || e.key === 'E') e.preventDefault(); }}
+                  onChange={(e) => setEditSa(e.target.value < 0 ? 0 : e.target.value)} 
                   className="w-full bg-[#f3f3fd] border border-[#c3c6d6]/40 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#003d9b] font-bold"
                 />
               </div>

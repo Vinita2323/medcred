@@ -254,8 +254,10 @@ export default function AdminSettingsPage() {
               <label className="text-xs font-bold text-[#516161] uppercase tracking-wider">Hospital Claim Limit (₹)</label>
               <input
                 type="number"
+                min="0"
+                onKeyDown={(e) => { if (e.key === '-' || e.key === 'e' || e.key === 'E') e.preventDefault(); }}
                 value={limits.hospitalClaimLimit}
-                onChange={e => setLimits({ ...limits, hospitalClaimLimit: Number(e.target.value) })}
+                onChange={e => setLimits({ ...limits, hospitalClaimLimit: Math.max(0, Number(e.target.value)) })}
                 className="w-full bg-[#f5f8ff] border border-[#c3c6d6]/40 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#003d9b] font-bold text-[#191b23]"
               />
             </div>
@@ -263,8 +265,10 @@ export default function AdminSettingsPage() {
               <label className="text-xs font-bold text-[#516161] uppercase tracking-wider">Home Treatment Limit (₹)</label>
               <input
                 type="number"
+                min="0"
+                onKeyDown={(e) => { if (e.key === '-' || e.key === 'e' || e.key === 'E') e.preventDefault(); }}
                 value={limits.homeClaimLimit}
-                onChange={e => setLimits({ ...limits, homeClaimLimit: Number(e.target.value) })}
+                onChange={e => setLimits({ ...limits, homeClaimLimit: Math.max(0, Number(e.target.value)) })}
                 className="w-full bg-[#f5f8ff] border border-[#c3c6d6]/40 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#003d9b] font-bold text-[#191b23]"
               />
             </div>
@@ -272,8 +276,10 @@ export default function AdminSettingsPage() {
               <label className="text-xs font-bold text-[#516161] uppercase tracking-wider">Loan Waiting Period (Days)</label>
               <input
                 type="number"
+                min="0"
+                onKeyDown={(e) => { if (e.key === '-' || e.key === 'e' || e.key === 'E') e.preventDefault(); }}
                 value={limits.loanWaitDays}
-                onChange={e => setLimits({ ...limits, loanWaitDays: Number(e.target.value) })}
+                onChange={e => setLimits({ ...limits, loanWaitDays: Math.max(0, Number(e.target.value)) })}
                 className="w-full bg-[#f5f8ff] border border-[#c3c6d6]/40 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#003d9b] font-bold text-[#191b23]"
               />
             </div>
@@ -330,8 +336,10 @@ export default function AdminSettingsPage() {
                     <label className="text-[10px] font-bold text-[#737685] uppercase">Price (₹)</label>
                     <input
                       type="number"
+                      min="0"
+                      onKeyDown={(e) => { if (e.key === '-' || e.key === 'e' || e.key === 'E') e.preventDefault(); }}
                       value={plans[planId].price}
-                      onChange={e => setPlans({ ...plans, [planId]: { ...plans[planId], price: Number(e.target.value) } })}
+                      onChange={e => setPlans({ ...plans, [planId]: { ...plans[planId], price: Math.max(0, Number(e.target.value)) } })}
                       className="w-full bg-white border border-[#c3c6d6]/40 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#003d9b] font-bold"
                     />
                   </div>
@@ -350,8 +358,10 @@ export default function AdminSettingsPage() {
                       <label className="text-[10px] font-bold text-[#737685] uppercase">Members</label>
                       <input
                         type="number"
+                        min="0"
+                        onKeyDown={(e) => { if (e.key === '-' || e.key === 'e' || e.key === 'E') e.preventDefault(); }}
                         value={plans[planId].maxMembers}
-                        onChange={e => setPlans({ ...plans, [planId]: { ...plans[planId], maxMembers: Number(e.target.value) } })}
+                        onChange={e => setPlans({ ...plans, [planId]: { ...plans[planId], maxMembers: Math.max(0, Number(e.target.value)) } })}
                         className="w-full bg-white border border-[#c3c6d6]/40 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#003d9b]"
                       />
                     </div>
@@ -363,8 +373,10 @@ export default function AdminSettingsPage() {
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#737685] text-sm">₹</span>
                       <input
                         type="number"
+                        min="0"
+                        onKeyDown={(e) => { if (e.key === '-' || e.key === 'e' || e.key === 'E') e.preventDefault(); }}
                         value={plans[planId].coverageAmount}
-                        onChange={e => setPlans({ ...plans, [planId]: { ...plans[planId], coverageAmount: Number(e.target.value) } })}
+                        onChange={e => setPlans({ ...plans, [planId]: { ...plans[planId], coverageAmount: Math.max(0, Number(e.target.value)) } })}
                         className="w-full bg-white border border-[#c3c6d6]/40 rounded-lg pl-7 pr-3 py-2 text-sm focus:outline-none focus:border-[#003d9b]"
                       />
                     </div>
@@ -412,9 +424,11 @@ export default function AdminSettingsPage() {
                   <label className="text-xs font-semibold text-[#516161]">Price (₹)</label>
                   <input 
                     type="number" 
+                    min="0"
+                    onKeyDown={(e) => { if (e.key === '-' || e.key === 'e' || e.key === 'E') e.preventDefault(); }}
                     required
                     value={newPlan.price} 
-                    onChange={(e) => setNewPlan({ ...newPlan, price: e.target.value })} 
+                    onChange={(e) => setNewPlan({ ...newPlan, price: Math.max(0, Number(e.target.value)) })} 
                     className="w-full bg-[#f3f3fd] border border-[#c3c6d6]/40 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#003d9b] font-bold"
                   />
                 </div>
@@ -437,8 +451,9 @@ export default function AdminSettingsPage() {
                     type="number" 
                     required
                     min="1"
+                    onKeyDown={(e) => { if (e.key === '-' || e.key === 'e' || e.key === 'E') e.preventDefault(); }}
                     value={newPlan.maxMembers} 
-                    onChange={(e) => setNewPlan({ ...newPlan, maxMembers: e.target.value })} 
+                    onChange={(e) => setNewPlan({ ...newPlan, maxMembers: Math.max(1, Number(e.target.value)) })} 
                     className="w-full bg-[#f3f3fd] border border-[#c3c6d6]/40 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#003d9b] font-bold"
                   />
                 </div>
@@ -446,9 +461,11 @@ export default function AdminSettingsPage() {
                   <label className="text-xs font-semibold text-[#516161]">Coverage (₹)</label>
                   <input 
                     type="number" 
+                    min="0"
+                    onKeyDown={(e) => { if (e.key === '-' || e.key === 'e' || e.key === 'E') e.preventDefault(); }}
                     required
                     value={newPlan.coverageAmount} 
-                    onChange={(e) => setNewPlan({ ...newPlan, coverageAmount: e.target.value })} 
+                    onChange={(e) => setNewPlan({ ...newPlan, coverageAmount: Math.max(0, Number(e.target.value)) })} 
                     className="w-full bg-[#f3f3fd] border border-[#c3c6d6]/40 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#003d9b] font-bold"
                   />
                 </div>

@@ -21,6 +21,7 @@ export default function LoanPage() {
   const [daysUntilEligible, setDaysUntilEligible] = useState(0);
   const [daysActive, setDaysActive] = useState(0);
   const [progressPct, setProgressPct] = useState(0);
+  const [requiredWaitDays, setRequiredWaitDays] = useState(30);
   const [maxLimit, setMaxLimit] = useState(200000);
   const [activeLoan, setActiveLoan] = useState(null);
   const [loanHistory, setLoanHistory] = useState([]);
@@ -42,6 +43,7 @@ export default function LoanPage() {
           daysActive: dActive,
           daysRemaining: dRemaining,
           progressPct: pPct,
+          requiredWaitDays: reqWaitDays,
           maxLoanAmount,
           activeLoan: aLoan,
         } = res.data.data;
@@ -51,6 +53,7 @@ export default function LoanPage() {
         setDaysActive(dActive || 0);
         setDaysUntilEligible(dRemaining || 0);
         setProgressPct(pPct || 0);
+        setRequiredWaitDays(reqWaitDays !== undefined ? reqWaitDays : 30);
         if (maxLoanAmount) setMaxLimit(maxLoanAmount);
         
         if (aLoan) {
@@ -75,14 +78,22 @@ export default function LoanPage() {
   };
 
   const calculateEMI = () => {
-    // 12% annual interest rate -> 1% monthly
-    const r = 12 / 12 / 100;
-    const n = tenure;
-    const emi = (loanAmount * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+    // Flat 12% annual interest rate
+    const interest = loanAmount * 0.12 * (tenure / 12);
+    const totalRepayment = loanAmount + interest;
+    const emi = totalRepayment / tenure;
     return Math.round(emi);
   };
 
   const handleApply = () => {
+    if (!isMember) {
+      alert("Please activate a membership plan to proceed with the loan application.");
+      return;
+    }
+    if (!loanEligible) {
+      alert(`Your loan eligibility is locked. Please complete the ${requiredWaitDays}-day waiting period.`);
+      return;
+    }
     navigate('/loan-application-form', { state: { type: loanType, limit: maxLimit, amount: loanAmount, tenure } });
   };
 
@@ -106,7 +117,12 @@ export default function LoanPage() {
           </button>
           <h1 className="text-sm font-bold text-primary">Medical Loan</h1>
         </div>
-        <button className="material-symbols-outlined text-primary p-2 hover:bg-surface-variant rounded-full cursor-pointer">notifications</button>
+        <button 
+          onClick={() => navigate('/notifications')}
+          className="material-symbols-outlined text-primary p-2 hover:bg-surface-variant rounded-full cursor-pointer"
+        >
+          notifications
+        </button>
       </header>
 
       {/* Main Content */}
@@ -143,7 +159,7 @@ export default function LoanPage() {
             <div>
               <h3 className="text-lg font-black text-on-surface">Almost There!</h3>
               <p className="text-xs text-on-surface-variant mt-1 max-w-[260px] mx-auto leading-relaxed">
-                Loan eligibility unlocks after 30 days of active membership.
+                Loan eligibility unlocks after {requiredWaitDays} days of active membership.
               </p>
             </div>
             <div className="w-full bg-white border border-outline-variant rounded-xl p-4 space-y-3">
@@ -158,7 +174,7 @@ export default function LoanPage() {
                 />
               </div>
               <div className="flex justify-between text-[10px] text-on-surface-variant">
-                <span>Day {daysActive} of 30</span>
+                <span>Day {daysActive} of {requiredWaitDays}</span>
                 <span className="font-bold text-primary">{daysUntilEligible} days remaining</span>
               </div>
               <div className="bg-primary/5 rounded-lg p-2.5 flex items-center gap-2.5">
@@ -320,16 +336,20 @@ export default function LoanPage() {
 
               {/* EMI Calculation Summary Box */}
               <div className="bg-surface-container-low p-4 rounded-xl space-y-2 border border-outline-variant/30 text-xs">
+                <div className="flex justify-between items-center text-[10px] text-outline">
+                  <span>Requested Loan Amount</span>
+                  <span className="font-bold text-on-surface-variant">₹{loanAmount.toLocaleString('en-IN')}</span>
+                </div>
+                <div className="flex justify-between items-center text-[10px] text-outline">
+                  <span>Interest Charges (Flat 12% p.a.)</span>
+                  <span className="font-bold text-tertiary">₹{(calculateEMI() * tenure - loanAmount).toLocaleString('en-IN')}</span>
+                </div>
                 <div className="flex justify-between items-center">
                   <span className="text-on-surface-variant">Monthly EMI</span>
                   <span className="font-extrabold text-on-surface text-sm">₹{calculateEMI().toLocaleString('en-IN')} / mo</span>
                 </div>
-                <div className="flex justify-between items-center text-[10px] text-outline">
-                  <span>Interest Charges (12% p.a.)</span>
-                  <span className="font-bold text-tertiary">₹{(calculateEMI() * tenure - loanAmount).toLocaleString('en-IN')}</span>
-                </div>
                 <div className="border-t border-outline-variant/30 pt-2 flex justify-between items-center font-bold text-on-surface">
-                  <span>Total Repayable</span>
+                  <span>Total Repayable (Principal + Interest)</span>
                   <span className="text-primary text-sm">₹{(calculateEMI() * tenure).toLocaleString('en-IN')}</span>
                 </div>
               </div>
@@ -355,8 +375,8 @@ export default function LoanPage() {
             {/* Apply Action */}
             <button
               onClick={handleApply}
-              disabled={isApplying}
-              className={`w-full ${isApplying ? 'bg-primary/80 cursor-wait' : 'bg-primary hover:opacity-90 cursor-pointer'} text-white py-3 rounded-xl font-bold shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-2 text-xs`}
+              disabled={isApplying || !isMember || !loanEligible}
+              className={`w-full ${isApplying || !isMember || !loanEligible ? 'bg-primary/60 cursor-not-allowed' : 'bg-primary hover:opacity-90 cursor-pointer'} text-white py-3 rounded-xl font-bold shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-2 text-xs`}
             >
               {isApplying ? (
                 <>

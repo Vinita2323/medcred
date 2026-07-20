@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import BottomNavBar from '../components/Navigation/BottomNavBar';
 import api from '../../../services/api';
-import { ENDPOINTS } from '../../../services/types';
-import { SERVER_URL } from '../../../services/types'; // To load images if needed, or use relative paths
+import { ENDPOINTS, SERVER_URL, getImageUrl } from '../../../services/types'; // To load images if needed, or use relative paths
+import { getUser } from '../utils/storage';
 
 const DEFAULT_AVATAR = null; // no avatar fallback needed — we use icon
 
@@ -24,7 +24,24 @@ export default function FamilyManagementPage() {
       setLoading(true);
       const res = await api.get(ENDPOINTS.FAMILY_MEMBERS);
       if (res.data.success) {
-        setMembers(res.data.data);
+        let fetchedMembers = res.data.data;
+        const currentUser = getUser();
+        if (currentUser) {
+           const selfMember = {
+             _id: currentUser.userId || 'self',
+             memberId: currentUser.userId || 'SELF',
+             name: currentUser.name,
+             relationship: 'Self',
+             dob: currentUser.dob || null,
+             age: currentUser.age || null,
+             gender: currentUser.gender || null,
+             bloodGroup: currentUser.bloodGroup || '',
+             profilePhoto: currentUser.profilePhoto || null,
+             verificationStatus: currentUser.kycStatus === 'verified' ? 'verified' : 'pending'
+           };
+           fetchedMembers = [selfMember, ...fetchedMembers];
+        }
+        setMembers(fetchedMembers);
       }
     } catch (err) {
       console.error('Failed to fetch family members:', err);
@@ -159,7 +176,7 @@ export default function FamilyManagementPage() {
                 {/* Avatar */}
                 <div className="w-14 h-14 rounded-full border-2 border-primary-container overflow-hidden bg-surface-container-high flex items-center justify-center shrink-0">
                   {member.profilePhoto ? (
-                    <img alt={member.name} src={member.profilePhoto.startsWith('http') ? member.profilePhoto : `${SERVER_URL}${member.profilePhoto}`} className="w-full h-full object-cover" />
+                    <img alt={member.name} src={getImageUrl(member.profilePhoto)} className="w-full h-full object-cover" />
                   ) : (
                     <span className="material-symbols-outlined text-2xl text-primary/50">person</span>
                   )}
@@ -233,7 +250,7 @@ export default function FamilyManagementPage() {
       {/* Floating Action Button (Mobile Only) */}
       <button
         onClick={() => navigate('/family/add')}
-        className="fixed bottom-20 right-4 bg-primary text-on-primary flex items-center gap-2 px-5 py-3 rounded-full shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all z-40 cursor-pointer md:hidden"
+        className="fixed bottom-28 right-4 bg-primary text-on-primary flex items-center gap-2 px-5 py-3 rounded-full shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all z-40 cursor-pointer md:hidden"
       >
         <span className="material-symbols-outlined font-bold text-lg">add</span>
         <span className="text-xs font-bold">Add Member</span>

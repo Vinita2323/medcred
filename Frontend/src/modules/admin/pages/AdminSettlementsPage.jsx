@@ -11,6 +11,10 @@ export default function AdminSettlementsPage() {
   const [processing, setProcessing]     = useState(null);
   const [loading, setLoading]           = useState(true);
 
+  // Approval Modal State
+  const [selectedSettlement, setSelectedSettlement] = useState(null);
+  const [bankTxnId, setBankTxnId] = useState('');
+
   const fetchSettlements = async (status = statusFilter) => {
     setLoading(true);
     try {
@@ -31,17 +35,33 @@ export default function AdminSettlementsPage() {
     fetchSettlements();
   }, []);
 
-  const handleApprove = async (txnId, agentName, amount) => {
-    if (!window.confirm(`Approve ₹${amount.toLocaleString('en-IN')} payout for ${agentName}?`)) return;
-    setProcessing(txnId);
+  const handleApproveClick = (settlement) => {
+    setSelectedSettlement(settlement);
+    setBankTxnId('');
+  };
+
+  const handleConfirmApprove = async (e) => {
+    e.preventDefault();
+    if (!bankTxnId.trim()) {
+      alert("Please enter a Bank Transaction ID.");
+      return;
+    }
+
+    if (!window.confirm(`Approve ₹${selectedSettlement.amount.toLocaleString('en-IN')} payout for ${selectedSettlement.agent.name}?`)) return;
+    
+    setProcessing(selectedSettlement.txnId);
     try {
-      const res = await api.patch(ENDPOINTS.ADMIN_SETTLEMENT_APPROVE(txnId));
+      const res = await api.patch(ENDPOINTS.ADMIN_SETTLEMENT_APPROVE(selectedSettlement.txnId), {
+        bankTransactionId: bankTxnId
+      });
       if (res.data?.success) {
         alert(`✅ ${res.data.message}`);
+        setSelectedSettlement(null);
+        setBankTxnId('');
         fetchSettlements();
       }
     } catch (error) {
-      alert('Failed to approve settlement');
+      alert(error.response?.data?.message || 'Failed to approve settlement');
     } finally {
       setProcessing(null);
     }
@@ -169,6 +189,13 @@ export default function AdminSettlementsPage() {
                     <td className="px-5 py-3.5">
                       <p className="font-bold text-[#191b23]">{s.agent.name}</p>
                       <p className="text-[10px] text-[#737685] font-mono">{s.agent.agentId} · {s.agent.mobile}</p>
+                      {s.agent.bankDetails && (
+                        <div className="mt-1.5 p-1.5 bg-[#f5f8ff] rounded-md border border-[#003d9b]/10 text-[10px]">
+                          <p className="font-semibold text-[#003d9b]">{s.agent.bankDetails.bankName}</p>
+                          <p className="text-[#516161]">A/C: <span className="font-mono font-bold text-[#191b23]">{s.agent.bankDetails.accountNumber}</span></p>
+                          <p className="text-[#516161]">IFSC: <span className="font-mono font-bold text-[#191b23]">{s.agent.bankDetails.ifscCode}</span></p>
+                        </div>
+                      )}
                     </td>
                     <td className="px-5 py-3.5 text-xs font-semibold text-[#516161]">{s.agent.role}</td>
                     <td className="px-5 py-3.5">
@@ -188,7 +215,7 @@ export default function AdminSettlementsPage() {
                       <td className="px-5 py-3.5">
                         <div className="flex gap-2 justify-center">
                           <button
-                            onClick={() => handleApprove(s.txnId, s.agent.name, s.amount)}
+                            onClick={() => handleApproveClick(s)}
                             disabled={processing === s.txnId}
                             className="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
                           >
@@ -225,6 +252,52 @@ export default function AdminSettlementsPage() {
           )}
         </div>
       </div>
+
+      {/* Approval Modal */}
+      {selectedSettlement && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-xl relative animate-fade-in">
+            <h3 className="text-xl font-bold text-[#191b23] mb-2">Approve Settlement</h3>
+            <p className="text-sm text-[#516161] mb-6">
+              You are approving a payout of <span className="font-bold text-[#003d9b]">₹{selectedSettlement.amount.toLocaleString('en-IN')}</span> for <span className="font-bold text-[#191b23]">{selectedSettlement.agent.name}</span>.
+            </p>
+
+            <form onSubmit={handleConfirmApprove} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-[#516161] mb-1">Bank Transaction ID (Proof of Transfer)</label>
+                <input 
+                  type="text" 
+                  required
+                  value={bankTxnId}
+                  onChange={(e) => setBankTxnId(e.target.value)}
+                  className="w-full bg-[#faf8ff] border border-[#c3c6d6]/40 rounded-xl px-4 py-2.5 text-sm font-mono focus:outline-none focus:border-[#003d9b] transition-colors"
+                  placeholder="e.g. UTR1234567890"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button 
+                  type="button" 
+                  onClick={() => {
+                    setSelectedSettlement(null);
+                    setBankTxnId('');
+                  }}
+                  className="flex-1 px-4 py-2.5 rounded-xl border border-[#c3c6d6] text-[#516161] font-bold hover:bg-gray-50 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={processing === selectedSettlement.txnId}
+                  className="flex-1 px-4 py-2.5 rounded-xl bg-green-600 text-white font-bold hover:bg-green-700 disabled:opacity-50 transition-colors cursor-pointer"
+                >
+                  {processing === selectedSettlement.txnId ? 'Approving...' : 'Confirm Approval'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

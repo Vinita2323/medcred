@@ -3,7 +3,7 @@ import Card from '../models/Card.model.js';
 
 export const getAdminOrders = async (req, res) => {
   try {
-    const orders = await Order.find({ orderType: 'medical_equipment' })
+    const orders = await Order.find({ orderType: 'medical_equipment', paymentStatus: 'success' })
       .populate('userId', 'fullName email mobile')
       .populate('productId', 'name price imageUrl')
       .sort({ createdAt: -1 });
@@ -16,7 +16,7 @@ export const getAdminOrders = async (req, res) => {
 
 export const getAdminMembershipOrders = async (req, res) => {
   try {
-    const orders = await Order.find({ orderType: 'membership_card' })
+    const orders = await Order.find({ orderType: 'membership_card', paymentStatus: 'success' })
       .populate('userId', 'fullName email mobile')
       .populate('planId', 'name price validityDays')
       .populate('agentId', 'fullName agentId referralCode')
@@ -89,7 +89,7 @@ export const updateOrderStatus = async (req, res) => {
 
 export const getPendingOrdersCount = async (req, res) => {
   try {
-    const count = await Order.countDocuments({ orderType: 'medical_equipment', deliveryStatus: 'pending' });
+    const count = await Order.countDocuments({ orderType: 'medical_equipment', deliveryStatus: 'pending', paymentStatus: 'success' });
     res.status(200).json({ success: true, count });
   } catch (error) {
     console.error('Error fetching pending orders count:', error);

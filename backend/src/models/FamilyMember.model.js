@@ -19,7 +19,7 @@ const familyMemberSchema = new mongoose.Schema(
     cardId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Card',
-      required: true,
+      required: false,
     },
     name: {
       type: String,

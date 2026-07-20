@@ -116,11 +116,6 @@ export default function AddFamilyMemberPage() {
       </header>
 
       <main className="flex-grow overflow-y-auto px-4 py-4 max-w-md mx-auto w-full">
-        {/* Progress Indicator */}
-        <div className="w-full flex justify-center gap-2 mb-6">
-          <div className="h-1.5 w-12 rounded-full bg-primary"></div>
-          <div className="h-1.5 w-12 rounded-full bg-surface-container-highest"></div>
-        </div>
 
         {/* Header Section */}
         <section className="text-center mb-6">
@@ -140,7 +135,7 @@ export default function AddFamilyMemberPage() {
                   ) : (
                     <span className="material-symbols-outlined text-outline text-4xl">person_add</span>
                   )}
-                  <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+                  <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileChange} />
                 </div>
                 <div className="absolute bottom-0 right-0 bg-primary text-white w-8 h-8 rounded-full flex items-center justify-center shadow-md pointer-events-none">
                   <span className="material-symbols-outlined text-sm">photo_camera</span>
@@ -177,11 +172,15 @@ export default function AddFamilyMemberPage() {
                   onChange={handleInputChange}
                   required
                 >
-                  <option value="" disabled>Select Relationship</option>
+                  <option value="" disabled>Select</option>
                   <option value="Spouse">Spouse</option>
-                  <option value="Child">Child</option>
-                  <option value="Parent">Parent</option>
-                  <option value="Sibling">Sibling</option>
+                  <option value="Son">Son</option>
+                  <option value="Daughter">Daughter</option>
+                  <option value="Father">Father</option>
+                  <option value="Mother">Mother</option>
+                  <option value="Brother">Brother</option>
+                  <option value="Sister">Sister</option>
+                  <option value="Other">Other</option>
                 </select>
                 <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-xl">expand_more</span>
               </div>
@@ -196,6 +195,7 @@ export default function AddFamilyMemberPage() {
                   type="date"
                   name="dob"
                   value={formData.dob}
+                  max={new Date().toISOString().split('T')[0]}
                   onChange={handleInputChange}
                   required
                 />
@@ -223,6 +223,7 @@ export default function AddFamilyMemberPage() {
                   <input 
                     type="file" 
                     accept="image/*" 
+                    capture="environment"
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                     onChange={handleAadhaarFrontChange}
                     required
@@ -240,6 +241,7 @@ export default function AddFamilyMemberPage() {
                   <input 
                     type="file" 
                     accept="image/*" 
+                    capture="environment"
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                     onChange={handleAadhaarBackChange}
                     required

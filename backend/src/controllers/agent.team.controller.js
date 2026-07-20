@@ -51,11 +51,17 @@ export const getAgentTeam = async (req, res) => {
       fieldAgents = [];
     }
 
+    // Fetch the current user's exact dynamic stats from DB
+    const currentAgent = await Agent.findById(_id).select('totalSalesRevenue earnings salesCount');
+
     res.status(200).json({
       success: true,
       data: {
         agents,
         fieldAgents,
+        networkSalesAmt: currentAgent?.totalSalesRevenue || 0,
+        networkOverride: currentAgent?.earnings || 0,
+        networkSalesCount: currentAgent?.salesCount || 0
       },
     });
   } catch (error) {

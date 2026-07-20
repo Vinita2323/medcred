@@ -392,6 +392,8 @@ export default function ClaimsPage() {
                     <input
                       type="number"
                       value={formData.claimAmount}
+                      min="1000"
+                      max="500000"
                       onChange={e => setFormData({...formData, claimAmount: e.target.value})}
                       placeholder="5000"
                       className="w-full h-12 px-4 mt-1 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
@@ -440,7 +442,8 @@ export default function ClaimsPage() {
                             <div className="relative w-full h-12 bg-surface-container-lowest border border-outline-variant border-dashed rounded-lg flex items-center justify-center overflow-hidden hover:bg-surface-container-low transition-colors">
                               <input 
                                 type="file" 
-                                accept="image/*,.pdf" 
+                                accept="image/*, application/pdf" 
+                                capture="environment"
                                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                 onChange={(e) => handleSpecificFileSelect(e, docKey)}
                               />

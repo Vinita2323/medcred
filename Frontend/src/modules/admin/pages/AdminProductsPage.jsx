@@ -47,9 +47,15 @@ export default function AdminProductsPage() {
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
+    
+    let processedValue = type === 'checkbox' ? checked : value;
+    if (type === 'number') {
+      processedValue = Math.max(0, Number(value));
+    }
+
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: processedValue
     }));
   };
 
@@ -313,6 +319,7 @@ export default function AdminProductsPage() {
                     name="price"
                     value={formData.price}
                     onChange={handleInputChange}
+                    onKeyDown={(e) => { if (e.key === '-' || e.key === 'e' || e.key === 'E') e.preventDefault(); }}
                     required
                     min="0"
                     className="w-full px-4 py-2 border border-[#c3c6d6] rounded-xl focus:outline-none focus:border-[#0c56d0] text-sm"
@@ -325,6 +332,7 @@ export default function AdminProductsPage() {
                     name="discountedPrice"
                     value={formData.discountedPrice}
                     onChange={handleInputChange}
+                    onKeyDown={(e) => { if (e.key === '-' || e.key === 'e' || e.key === 'E') e.preventDefault(); }}
                     min="0"
                     className="w-full px-4 py-2 border border-[#c3c6d6] rounded-xl focus:outline-none focus:border-[#0c56d0] text-sm"
                   />
@@ -339,6 +347,7 @@ export default function AdminProductsPage() {
                     name="stockCount"
                     value={formData.stockCount}
                     onChange={handleInputChange}
+                    onKeyDown={(e) => { if (e.key === '-' || e.key === 'e' || e.key === 'E') e.preventDefault(); }}
                     min="0"
                     className="w-full px-4 py-2 border border-[#c3c6d6] rounded-xl focus:outline-none focus:border-[#0c56d0] text-sm"
                   />

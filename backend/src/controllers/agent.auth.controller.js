@@ -1,5 +1,6 @@
 import Agent from '../models/Agent.model.js';
 import Admin from '../models/Admin.model.js';
+import Notification from '../models/Notification.model.js';
 import { saveOtp, verifyOtp } from '../services/otp.service.js';
 import { generateAccessToken, generateRefreshToken } from '../utils/generateToken.js';
 
@@ -360,6 +361,9 @@ const agentRegister = async (req, res) => {
       workingCity,
       permanentAddress: parsedPermanentAddress,
       currentAddress: parsedCurrentAddress,
+      district: workingDistrict || parsedCurrentAddress?.district || parsedPermanentAddress?.district || '',
+      city: workingCity || parsedCurrentAddress?.city || parsedPermanentAddress?.city || '',
+      area: parsedCurrentAddress?.area || parsedPermanentAddress?.area || '',
       panNumber,
       panCardUrl: panCardPath,
       chequePassbookUrl: chequePassbookPath,
@@ -375,6 +379,18 @@ const agentRegister = async (req, res) => {
       aadhaarFrontUrl: aadhaarFrontPath,
       aadhaarBackUrl: aadhaarBackPath,
     });
+
+    // Create Admin Notification
+    try {
+      await Notification.create({
+        title: 'New Agent Registration',
+        message: `Agent ${newAgent.fullName} (${newAgent.mobileNumber}) has registered and is pending approval.`,
+        type: 'info',
+        forAdmin: true
+      });
+    } catch (err) {
+      console.error('Failed to create admin notification:', err);
+    }
 
     res.status(201).json({
       success: true,

@@ -45,8 +45,8 @@ export default function AgentDashboardPage() {
           setStats([
             { label: 'Agents', value: tls.toString(), icon: 'partner_exchange', color: 'text-[#003d9b]', bg: 'bg-[#dae2ff]', route: '/agent/team' },
             { label: 'Field Agents', value: fas.toString(), icon: 'badge', color: 'text-[#0c56d0]', bg: 'bg-[#d4e6e5]', route: '/agent/team' },
-            { label: 'Network Sales', value: agent.salesCount.toString(), icon: 'payments', color: 'text-[#7b2600]', bg: 'bg-[#ffdbcf]' },
-            { label: 'Overriding Earnings', value: `₹${(agent.earnings || 0).toLocaleString('en-IN')}`, icon: 'account_balance_wallet', color: 'text-green-700', bg: 'bg-green-100', route: '/agent/wallet' },
+            { label: 'Network Sales', value: `₹${(agent.networkSalesAmt || 0).toLocaleString('en-IN')}`, icon: 'payments', color: 'text-[#7b2600]', bg: 'bg-[#ffdbcf]' },
+            { label: 'Overriding Earnings', value: `₹${(agent.networkOverride || 0).toLocaleString('en-IN')}`, icon: 'account_balance_wallet', color: 'text-green-700', bg: 'bg-green-100', route: '/agent/wallet' },
           ]);
 
           setQuickActions([
@@ -61,8 +61,8 @@ export default function AgentDashboardPage() {
           setStats([
             { label: 'Field Agents Managed', value: fas.toString(), icon: 'badge', color: 'text-[#003d9b]', bg: 'bg-[#dae2ff]', route: '/agent/team' },
             { label: 'Active Leads', value: (fas * 8).toString(), icon: 'group', color: 'text-[#0c56d0]', bg: 'bg-[#d4e6e5]', route: '/agent/team' },
-            { label: 'Team Revenue', value: `₹${(agent.salesCount * 5000).toLocaleString('en-IN')}`, icon: 'payments', color: 'text-[#7b2600]', bg: 'bg-[#ffdbcf]' },
-            { label: 'My Override', value: `₹${(agent.earnings || 0).toLocaleString('en-IN')}`, icon: 'account_balance_wallet', color: 'text-green-700', bg: 'bg-green-100', route: '/agent/wallet' },
+            { label: 'Team Revenue', value: `₹${(agent.networkSalesAmt || 0).toLocaleString('en-IN')}`, icon: 'payments', color: 'text-[#7b2600]', bg: 'bg-[#ffdbcf]' },
+            { label: 'My Override', value: `₹${(agent.networkOverride || 0).toLocaleString('en-IN')}`, icon: 'account_balance_wallet', color: 'text-green-700', bg: 'bg-green-100', route: '/agent/wallet' },
           ]);
 
           setQuickActions([

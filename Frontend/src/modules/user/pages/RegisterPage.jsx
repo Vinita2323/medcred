@@ -35,7 +35,7 @@ export default function RegisterPage() {
       email: { required: true, pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: 'Enter a valid email (e.g., name@example.com)' },
       dob: { required: true },
       gender: { required: true },
-      aadhaar: { pattern: /^\d{12}$/, message: 'Must be a valid 12-digit Aadhaar' },
+      aadhaar: { pattern: /^(\d\s*){12}$/, message: 'Enter a valid 12-digit Aadhaar number' },
       address: { required: true },
       password: { required: true, pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/, message: 'Password must be 8+ chars, 1 uppercase, 1 lowercase, 1 number, 1 special char' }
     }
@@ -56,6 +56,7 @@ export default function RegisterPage() {
   const [resendTimer, setResendTimer] = useState(30);
   const [successMsg, setSuccessMsg] = useState('');
   const inputRefs = useRef([]);
+
 
   useEffect(() => {
     let timer;
@@ -105,6 +106,27 @@ export default function RegisterPage() {
   const [familyMembers, setFamilyMembers] = useState([]);
   const [showAddMember, setShowAddMember] = useState(false);
   const [newMember, setNewMember] = useState({ ...EMPTY_MEMBER });
+  const [showPassword, setShowPassword] = useState(false);
+
+  // Initialize from sessionStorage if available
+  useEffect(() => {
+    const savedData = sessionStorage.getItem('medcred_user_reg');
+    if (savedData) {
+      try {
+        const parsed = JSON.parse(savedData);
+        if (parsed.formData) setFormData(parsed.formData);
+        if (parsed.familyMembers) setFamilyMembers(parsed.familyMembers);
+      } catch (e) {
+        console.error('Error parsing saved registration data', e);
+      }
+    }
+  }, [setFormData]);
+
+  // Save to sessionStorage when changed
+  useEffect(() => {
+    const dataToSave = { formData, familyMembers };
+    sessionStorage.setItem('medcred_user_reg', JSON.stringify(dataToSave));
+  }, [formData, familyMembers]);
 
   // Note: handleChange from useFormValidation is used instead of handleInputChange
 
@@ -218,6 +240,7 @@ export default function RegisterPage() {
       payload.append('address', formData.address);
       payload.append('password', formData.password);
       payload.append('consent', formData.consent);
+      payload.append('familyMembers', JSON.stringify(familyMembers));
       
       if (profileFile) {
         payload.append('profilePic', profileFile);
@@ -260,6 +283,7 @@ export default function RegisterPage() {
 
         setShowOtpModal(false);
         setShowSuccess(true);
+        sessionStorage.removeItem('medcred_user_reg');
         setTimeout(() => {
           setShowSuccess(false);
           navigate('/dashboard');
@@ -275,12 +299,12 @@ export default function RegisterPage() {
   const relationshipOptions = ['Spouse', 'Son', 'Daughter', 'Father', 'Mother', 'Brother', 'Sister', 'Other'];
 
   return (
-    <div className="flex-grow flex flex-col bg-surface lg:bg-[#F4F7FD] text-on-surface font-body-md relative animate-fade-in min-h-screen">
+    <div className="flex-grow flex flex-col bg-surface lg:bg-[#F4F7FD] text-on-surface font-body-md relative animate-fade-in h-screen overflow-hidden">
       {/* Decorative desktop backgrounds */}
       <div className="hidden lg:block absolute inset-0 pointer-events-none opacity-40 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4IiBoZWlnaHQ9IjgiPgo8cmVjdCB3aWR0aD0iOCIgaGVpZ2h0PSI4IiBmaWxsPSIjZmZmIj48L3JlY3Q+CjxjaXJjbGUgY3g9IjMiIGN5PSIzIiByPSIxIiBmaWxsPSIjZDVkOWU0Ij48L2NpcmNsZT4KPC9zdmc+')] [mask-image:radial-gradient(ellipse_at_top_left,black_20%,transparent_70%)]"></div>
       
       {/* TopAppBar */}
-      <header className="flex justify-between items-center px-4 lg:px-8 w-full h-16 lg:h-20 sticky top-0 z-40 bg-surface lg:bg-white shadow-sm border-b border-outline-variant/30">
+      <header className="flex justify-between items-center px-4 lg:px-8 w-full h-16 lg:h-20 shrink-0 z-40 bg-surface lg:bg-white shadow-sm border-b border-outline-variant/30">
         <div className="flex items-center gap-3 lg:gap-5">
           <button
             onClick={() => navigate(-1)}
@@ -290,7 +314,10 @@ export default function RegisterPage() {
           </button>
           <img src="/FinalLogo.png" alt="MedCred Logo" className="h-10 lg:h-12 w-auto object-contain" />
         </div>
-        <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-surface-container-high lg:bg-blue-50 flex items-center justify-center text-primary cursor-pointer hover:bg-blue-100 transition-colors">
+        <div 
+          onClick={() => navigate('/support')}
+          className="w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-surface-container-high lg:bg-blue-50 flex items-center justify-center text-primary cursor-pointer hover:bg-blue-100 transition-colors"
+        >
           <span className="material-symbols-outlined lg:text-xl">help_outline</span>
         </div>
       </header>
@@ -355,12 +382,21 @@ export default function RegisterPage() {
               {/* Password */}
               <div className="space-y-1">
                 <label className="text-[10px] lg:text-xs font-bold text-on-surface-variant uppercase tracking-wider px-0.5">Create Password *</label>
-                <input
-                  className={`w-full h-11 lg:h-12 px-3 bg-surface border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all ${touched.password && errors.password ? 'border-red-500' : 'border-outline-variant'}`}
-                  placeholder="At least 6 characters"
-                  type="password" name="password" value={formData.password}
-                  onChange={handleChange} onBlur={handleBlur} required minLength={8}
-                />
+                <div className="relative">
+                  <input
+                    className={`w-full h-11 lg:h-12 px-3 pr-10 bg-surface border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all ${touched.password && errors.password ? 'border-red-500' : 'border-outline-variant'}`}
+                    placeholder="At least 8 characters"
+                    type={showPassword ? "text" : "password"} name="password" value={formData.password}
+                    onChange={handleChange} onBlur={handleBlur} required minLength={8}
+                  />
+                  <button 
+                    type="button" 
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-primary transition-colors cursor-pointer flex items-center justify-center"
+                  >
+                    <span className="material-symbols-outlined text-[20px]">{showPassword ? 'visibility_off' : 'visibility'}</span>
+                  </button>
+                </div>
                 {touched.password && errors.password && <p className="text-red-500 text-[10px] mt-1">{errors.password}</p>}
               </div>
               </div>
@@ -371,7 +407,7 @@ export default function RegisterPage() {
                   <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider px-0.5">Date of Birth *</label>
                   <input
                     className={`w-full h-11 px-2 bg-surface border rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all ${touched.dob && errors.dob ? 'border-red-500' : 'border-outline-variant'}`}
-                    type="date" name="dob" value={formData.dob}
+                    type="date" name="dob" value={formData.dob} max={new Date().toISOString().split('T')[0]}
                     onChange={handleChange} onBlur={handleBlur} required
                   />
                   {touched.dob && errors.dob && <p className="text-red-500 text-[10px] mt-1">{errors.dob}</p>}
@@ -401,11 +437,11 @@ export default function RegisterPage() {
                   {/* User Photo */}
                   <div className="flex flex-col items-center gap-1.5">
                     <label className="w-full aspect-square border-2 border-dashed border-outline-variant rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-all overflow-hidden relative group">
-                      <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageChange(e, setProfilePic, setProfileFile)} />
+                      <input type="file" className="hidden" accept="image/*" capture="user" onChange={(e) => handleImageChange(e, setProfilePic, setProfileFile)} />
                       {!profilePic ? (
                         <span className="material-symbols-outlined text-on-surface-variant text-2xl group-hover:scale-110 transition-transform">account_circle</span>
                       ) : (
-                        <img src={profilePic} className="w-full h-full object-cover" alt="Profile" />
+                        <img src={profilePic} className="w-full h-full object-contain bg-surface-container" alt="Profile" />
                       )}
                     </label>
                     <span className="text-[9px] font-bold text-on-surface-variant text-center leading-tight">User Photo</span>
@@ -414,11 +450,11 @@ export default function RegisterPage() {
                   {/* Aadhaar Front */}
                   <div className="flex flex-col items-center gap-1.5">
                     <label className="w-full aspect-square border-2 border-dashed border-outline-variant rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-all overflow-hidden relative group">
-                      <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageChange(e, setAadhaarFrontPic, setAadhaarFrontFile)} />
+                      <input type="file" className="hidden" accept="image/*" capture="environment" onChange={(e) => handleImageChange(e, setAadhaarFrontPic, setAadhaarFrontFile)} />
                       {!aadhaarFrontPic ? (
                         <span className="material-symbols-outlined text-on-surface-variant text-2xl group-hover:scale-110 transition-transform">badge</span>
                       ) : (
-                        <img src={aadhaarFrontPic} className="w-full h-full object-cover" alt="Aadhaar Front" />
+                        <img src={aadhaarFrontPic} className="w-full h-full object-contain bg-surface-container" alt="Aadhaar Front" />
                       )}
                     </label>
                     <span className="text-[9px] font-bold text-on-surface-variant text-center leading-tight">Aadhaar Front</span>
@@ -427,11 +463,11 @@ export default function RegisterPage() {
                   {/* Aadhaar Back */}
                   <div className="flex flex-col items-center gap-1.5">
                     <label className="w-full aspect-square border-2 border-dashed border-outline-variant rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-all overflow-hidden relative group">
-                      <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageChange(e, setAadhaarBackPic, setAadhaarBackFile)} />
+                      <input type="file" className="hidden" accept="image/*" capture="environment" onChange={(e) => handleImageChange(e, setAadhaarBackPic, setAadhaarBackFile)} />
                       {!aadhaarBackPic ? (
                         <span className="material-symbols-outlined text-on-surface-variant text-2xl group-hover:scale-110 transition-transform">credit_card</span>
                       ) : (
-                        <img src={aadhaarBackPic} className="w-full h-full object-cover" alt="Aadhaar Back" />
+                        <img src={aadhaarBackPic} className="w-full h-full object-contain bg-surface-container" alt="Aadhaar Back" />
                       )}
                     </label>
                     <span className="text-[9px] font-bold text-on-surface-variant text-center leading-tight">Aadhaar Back</span>
@@ -551,7 +587,7 @@ export default function RegisterPage() {
                       <label className="text-[10px] font-bold text-on-surface-variant">Date of Birth *</label>
                       <input
                         className="w-full h-10 px-2 bg-white border border-outline-variant rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                        type="date" name="dob" value={newMember.dob}
+                        type="date" name="dob" value={newMember.dob} max={new Date().toISOString().split('T')[0]}
                         onChange={handleMemberChange}
                       />
                     </div>
@@ -635,13 +671,21 @@ export default function RegisterPage() {
                 Login here
               </span>
             </p>
+
+            <div className="pt-2 flex items-center justify-center gap-4 text-[10px] text-on-surface-variant/80 font-medium">
+              <button type="button" onClick={() => navigate('/terms')} className="hover:text-primary hover:underline cursor-pointer">Terms</button>
+              <span>•</span>
+              <button type="button" onClick={() => navigate('/privacy')} className="hover:text-primary hover:underline cursor-pointer">Privacy</button>
+              <span>•</span>
+              <button type="button" onClick={() => navigate('/support')} className="hover:text-primary hover:underline cursor-pointer">Support</button>
+            </div>
           </div>
         </form>
 
         {/* OTP Verification Modal Overlay */}
         {showOtpModal && (
           <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
-            <div className="w-full max-w-[400px] bg-surface-container-lowest border border-outline-variant rounded-2xl p-6 shadow-2xl space-y-6 animate-scale-up">
+            <div className="w-full max-w-[400px] max-h-[90vh] overflow-y-auto bg-surface-container-lowest border border-outline-variant rounded-2xl p-6 shadow-2xl space-y-6 animate-scale-up">
               <div className="text-center">
                 <h2 className="text-lg font-bold text-on-surface mb-2">Verify Mobile Number</h2>
                 <p className="text-xs text-on-surface-variant max-w-[280px] mx-auto leading-relaxed">

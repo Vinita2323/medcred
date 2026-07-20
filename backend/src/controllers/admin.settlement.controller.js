@@ -1,6 +1,8 @@
 import Transaction from '../models/Transaction.model.js';
 import Wallet from '../models/Wallet.model.js';
 import Agent from '../models/Agent.model.js';
+import Notification from '../models/Notification.model.js';
+import { sendPushNotification } from '../services/notification.service.js';
 
 // ─────────────────────────────────────────────────────────────────
 // @route   GET /api/v1/admin/settlements?status=pending
@@ -42,6 +44,7 @@ export const adminGetSettlements = async (req, res) => {
         agentId: t.ownerId?.agentId || '-',
         role: t.ownerId?.role || '-',
         mobile: t.ownerId?.mobile || '-',
+        bankDetails: t.ownerId?.bankDetails || null,
       },
       amount: t.amount,
       status: t.status,
@@ -71,6 +74,7 @@ export const adminGetSettlements = async (req, res) => {
 export const adminApproveSettlement = async (req, res) => {
   try {
     const { txnId } = req.params;
+    const { bankTransactionId } = req.body;
 
     const txn = await Transaction.findById(txnId);
     if (!txn) {
@@ -83,8 +87,13 @@ export const adminApproveSettlement = async (req, res) => {
       return res.status(400).json({ success: false, message: `Transaction is already ${txn.status}` });
     }
 
-    // Update transaction status
+    if (!bankTransactionId) {
+      return res.status(400).json({ success: false, message: 'Bank Transaction ID is required to approve settlement.' });
+    }
+
+    // Update transaction status and store proof
     txn.status = 'completed';
+    txn.detailDescription = `Payout Approved | Bank TXN: ${bankTransactionId}`;
     await txn.save();
 
     // Update agent wallet:
@@ -105,6 +114,35 @@ export const adminApproveSettlement = async (req, res) => {
       success: true,
       message: `Settlement of ₹${txn.amount.toLocaleString('en-IN')} approved successfully`,
     });
+
+    // Fire-and-forget push notification
+    try {
+      const agent = await Agent.findById(txn.ownerId);
+      if (agent) {
+        const title = 'Settlement Approved';
+        const message = `Your settlement of ₹${txn.amount.toLocaleString('en-IN')} has been approved (TXN: ${bankTransactionId}).`;
+        
+        // Save Notification in DB
+        await Notification.create({
+          userId: agent._id,
+          title,
+          message,
+          type: 'success',
+          icon: 'account_balance_wallet',
+        });
+
+        // Send Push
+        if (agent.fcmToken) {
+          await sendPushNotification({
+            token: agent.fcmToken,
+            title,
+            body: message,
+          });
+        }
+      }
+    } catch (notifErr) {
+      console.error('Failed to send push notification on settlement approve:', notifErr);
+    }
   } catch (error) {
     console.error('Admin Approve Settlement Error:', error);
     res.status(500).json({ success: false, message: 'Server error' });
@@ -153,6 +191,35 @@ export const adminRejectSettlement = async (req, res) => {
       success: true,
       message: `Settlement rejected. ₹${txn.amount.toLocaleString('en-IN')} returned to agent wallet`,
     });
+
+    // Fire-and-forget push notification
+    try {
+      const agent = await Agent.findById(txn.ownerId);
+      if (agent) {
+        const title = 'Settlement Rejected';
+        const message = `Your settlement of ₹${txn.amount.toLocaleString('en-IN')} was rejected. Reason: ${rejectionReason}. Amount returned to wallet.`;
+        
+        // Save Notification in DB
+        await Notification.create({
+          userId: agent._id,
+          title,
+          message,
+          type: 'error',
+          icon: 'cancel',
+        });
+
+        // Send Push
+        if (agent.fcmToken) {
+          await sendPushNotification({
+            token: agent.fcmToken,
+            title,
+            body: message,
+          });
+        }
+      }
+    } catch (notifErr) {
+      console.error('Failed to send push notification on settlement reject:', notifErr);
+    }
   } catch (error) {
     console.error('Admin Reject Settlement Error:', error);
     res.status(500).json({ success: false, message: 'Server error' });

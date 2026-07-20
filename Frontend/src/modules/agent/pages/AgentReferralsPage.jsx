@@ -81,16 +81,29 @@ export default function AgentReferralsPage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
             {plans.map((plan) => {
-              let rate = 0;
-              if (currentUser.role === 'Field Agent') rate = plan.fieldAgentCommissionPct || 12;
-              else if (currentUser.role === 'Agent') rate = plan.agentCommissionPct || 4;
-              else if (currentUser.role === 'Super Agent') rate = plan.superAgentCommissionPct || 3;
+              let directRate = plan.fieldAgentCommissionPct || 12;
+              let overrideRate = 0;
+              
+              if (currentUser.role === 'Agent') overrideRate = plan.agentCommissionPct || 4;
+              else if (currentUser.role === 'Super Agent') overrideRate = plan.superAgentCommissionPct || 3;
               
               return (
-                <div key={plan.planId} className="bg-[#f3f3fd] rounded-xl p-4 flex flex-col items-center justify-center text-center border border-[#003d9b]/10">
-                  <p className="text-[#516161] font-semibold text-xs uppercase tracking-wider mb-1">{plan.name}</p>
-                  <p className="text-2xl font-extrabold text-[#0c56d0]">{rate}%</p>
-                  <p className="text-[10px] text-[#737685] mt-1">Per {plan.name} Card Sold</p>
+                <div key={plan.planId} className="bg-[#f3f3fd] rounded-xl p-4 flex flex-col items-center justify-center text-center border border-[#003d9b]/10 space-y-3">
+                  <p className="text-[#516161] font-semibold text-xs uppercase tracking-wider">{plan.name}</p>
+                  
+                  <div className="w-full space-y-2">
+                    <div className="bg-white rounded-lg p-2 flex justify-between items-center shadow-sm">
+                      <span className="text-[10px] font-bold text-[#516161]">Direct Sale</span>
+                      <span className="text-sm font-extrabold text-[#0c56d0]">{directRate}%</span>
+                    </div>
+                    
+                    {overrideRate > 0 && (
+                      <div className="bg-[#e8ecf4] rounded-lg p-2 flex justify-between items-center shadow-sm">
+                        <span className="text-[10px] font-bold text-[#516161]">Team Override</span>
+                        <span className="text-sm font-extrabold text-[#003d9b]">{overrideRate}%</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               );
             })}

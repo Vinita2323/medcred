@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import BottomNavBar from '../components/Navigation/BottomNavBar';
 import { getUser, updateUser, getFamilyMembers, clearUser, formatDobDisplay, getAgeFromDob, isLoggedIn } from '../utils/storage';
 import api from '../../../services/api';
-import { ENDPOINTS, SERVER_URL } from '../../../services/types';
+import { ENDPOINTS, SERVER_URL, getImageUrl } from '../../../services/types';
 import { compressImage } from '../../../utils/compressImage';
 
 const DEFAULT_AVATAR = null;
@@ -34,7 +34,7 @@ export default function ProfilePage() {
   const [card, setCard] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [familyMembers, setFamilyMembers] = useState([]);
-  const [imageErrors, setImageErrors] = useState({ front: false, back: false });
+  const [imageErrors, setImageErrors] = useState({ front: false, back: false, profile: false });
 
   // Temp edit fields
   const [tempName, setTempName] = useState('');
@@ -43,6 +43,7 @@ export default function ProfilePage() {
   const [tempAddress, setTempAddress] = useState('');
   const [tempOccupation, setTempOccupation] = useState('');
   const [tempIncome, setTempIncome] = useState('');
+  const [tempBloodGroup, setTempBloodGroup] = useState('');
 
   // File upload ref
   const fileInputRef = React.useRef(null);
@@ -66,6 +67,18 @@ export default function ProfilePage() {
       navigate('/login');
     }
   }, []);
+
+  // Prevent background scroll when modals are open
+  useEffect(() => {
+    if (isEditing || isHealthEditing || isDeleteModalOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isEditing, isHealthEditing, isDeleteModalOpen]);
 
   const fetchProfile = async () => {
     try {
@@ -149,6 +162,7 @@ export default function ProfilePage() {
     setTempAddress(user?.address || '');
     setTempOccupation(user?.occupation || '');
     setTempIncome(user?.annualIncome || user?.income || '');
+    setTempBloodGroup(user?.bloodGroup || '');
     setIsEditing(true);
   };
 
@@ -158,15 +172,30 @@ export default function ProfilePage() {
       alert('Name, Email and Phone are required.');
       return;
     }
+    if (tempName.trim().length < 3) {
+      alert('Name must be at least 3 characters long.');
+      return;
+    }
+    if (!/^[6-9]\d{9}$/.test(tempPhone)) {
+      alert('Please enter a valid 10-digit phone number.');
+      return;
+    }
+    if (tempIncome && Number(tempIncome) < 0) {
+      alert('Income cannot be negative.');
+      return;
+    }
+
     try {
-      const response = await api.patch(ENDPOINTS.USER_PROFILE, {
+      const data = {
         name: tempName,
         email: tempEmail,
         mobile: tempPhone,
         address: tempAddress,
         occupation: tempOccupation,
-        income: tempIncome
-      });
+        income: tempIncome,
+        bloodGroup: tempBloodGroup,
+      };
+      const response = await api.patch(ENDPOINTS.USER_PROFILE, data);
       if (response.data.success) {
         const updatedUser = {
           ...user,
@@ -176,7 +205,8 @@ export default function ProfilePage() {
           address: response.data.data.address,
           occupation: response.data.data.occupation,
           annualIncome: response.data.data.annualIncome,
-          income: response.data.data.annualIncome
+          income: response.data.data.annualIncome,
+          bloodGroup: response.data.data.bloodGroup
         };
         setUser(updatedUser);
         updateUser(updatedUser);
@@ -197,9 +227,10 @@ export default function ProfilePage() {
       const formData = new FormData();
       formData.append('profilePhoto', compressed);
 
+      // Let the browser automatically set the correct multipart/form-data header with the boundary
       const response = await api.patch(ENDPOINTS.USER_PROFILE, formData, {
         headers: {
-          'Content-Type': 'multipart/form-data'
+          'Content-Type': undefined
         }
       });
 
@@ -210,6 +241,7 @@ export default function ProfilePage() {
         };
         setUser(updatedUser);
         updateUser(updatedUser);
+        setImageErrors(prev => ({ ...prev, profile: false }));
       }
     } catch (error) {
       console.error('Error uploading photo:', error);
@@ -290,24 +322,32 @@ export default function ProfilePage() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-grow overflow-y-auto p-4 lg:p-8 space-y-5 lg:space-y-0 max-w-md lg:max-w-6xl mx-auto w-full animate-fade-in relative z-10 lg:grid lg:grid-cols-12 lg:gap-8 lg:items-start">
+      <main className={`flex-grow ${isEditing || isHealthEditing || isDeleteModalOpen ? 'overflow-hidden' : 'overflow-y-auto'} p-4 lg:p-8 space-y-5 lg:space-y-0 max-w-md lg:max-w-6xl mx-auto w-full animate-fade-in relative z-10 lg:grid lg:grid-cols-12 lg:gap-8 lg:items-start`}>
 
         {/* Left Column (Desktop) / Top (Mobile) */}
         <div className="lg:col-span-4 lg:sticky lg:top-28 space-y-5">
         {/* Hero Profile Section */}
         <section className="flex flex-col items-center text-center mt-2 lg:mt-0 lg:bg-white lg:p-8 lg:rounded-[32px] lg:shadow-xl lg:border lg:border-blue-100">
           <div className="relative inline-block">
-            <div className="w-24 h-24 rounded-full p-1 bg-gradient-to-tr from-primary to-secondary shadow-lg relative cursor-pointer" onClick={() => fileInputRef.current?.click()}>
-              {profilePic ? (
-                <img alt={profileName} className="w-full h-full rounded-full border-4 border-surface object-cover" src={profilePic} />
+            <div className="w-24 h-24 rounded-full p-1 bg-gradient-to-tr from-primary to-secondary shadow-lg relative cursor-pointer group" onClick={() => fileInputRef.current?.click()}>
+              {profilePic && !imageErrors.profile ? (
+                <img 
+                  alt={profileName} 
+                  className="w-full h-full rounded-full border-4 border-surface object-cover" 
+                  src={getImageUrl(profilePic)} 
+                  onError={() => setImageErrors(prev => ({...prev, profile: true}))}
+                />
               ) : (
                 <div className="w-full h-full rounded-full border-4 border-surface bg-surface-container flex items-center justify-center">
                   <span className="material-symbols-outlined text-4xl text-primary/50">person</span>
                 </div>
               )}
-              {/* Camera Icon Overlay */}
-              <div className="absolute inset-0 bg-black/30 rounded-full flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                <span className="material-symbols-outlined text-white text-2xl">photo_camera</span>
+              {/* Edit Icon Overlay */}
+              <div className="absolute inset-1 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <span className="material-symbols-outlined text-white text-2xl">edit</span>
+              </div>
+              <div className="absolute bottom-1 right-1 bg-white rounded-full p-1 shadow-md flex items-center justify-center pointer-events-none z-10 border border-outline-variant/30">
+                <span className="material-symbols-outlined text-primary text-[14px] font-bold" style={{ fontVariationSettings: "'FILL' 1" }}>edit</span>
               </div>
             </div>
             {/* Hidden file input */}
@@ -331,41 +371,7 @@ export default function ProfilePage() {
                 <span className="material-symbols-outlined text-tertiary text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
               </div>
             )}
-
-            {user?.kycStatus === 'pending' && (
-              <div className="flex items-center justify-center gap-1 mt-1">
-                <span className="text-secondary font-bold text-[10px] uppercase tracking-wider">KYC Under Review</span>
-                <span className="material-symbols-outlined text-secondary text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>pending_actions</span>
-              </div>
-            )}
-
-            {user?.kycStatus === 'rejected' && (
-              <div className="flex flex-col items-center justify-center mt-2">
-                <div className="flex items-center gap-1">
-                  <span className="text-error font-bold text-[10px] uppercase tracking-wider">KYC Rejected</span>
-                  <span className="material-symbols-outlined text-error text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>error</span>
-                </div>
-                <button
-                  onClick={() => navigate('/kyc')}
-                  className="mt-1 bg-error/10 text-error px-3 py-1 rounded-full text-xs font-bold hover:bg-error/20 transition-colors cursor-pointer"
-                >
-                  Resubmit KYC
-                </button>
-              </div>
-            )}
-
-            {(!user?.kycStatus || user?.kycStatus === 'not_submitted') && (
-              <div className="mt-2">
-                <button
-                  onClick={() => navigate('/kyc')}
-                  className="bg-primary text-white px-4 py-1.5 rounded-full text-xs font-bold shadow-md hover:bg-primary/90 transition-colors cursor-pointer"
-                >
-                  Complete KYC
-                </button>
-              </div>
-            )}
           </div>
-
 
         </section>
 
@@ -574,6 +580,22 @@ export default function ProfilePage() {
             <SectionHeader icon="credit_card" title="MedCred Card" section="card" />
             {openSection === 'card' && (
               <div className="p-4 pt-2 border-t border-outline-variant/30">
+                {!card ? (
+                  <div className="text-center py-6">
+                    <div className="w-16 h-16 bg-surface-container-high rounded-full flex items-center justify-center mx-auto mb-3">
+                      <span className="material-symbols-outlined text-3xl text-on-surface-variant">credit_card_off</span>
+                    </div>
+                    <h3 className="font-bold text-on-surface text-sm mb-1">No Active Plan</h3>
+                    <p className="text-xs text-on-surface-variant mb-4 max-w-[250px] mx-auto">Purchase a MedCred health plan to get your digital card.</p>
+                    <button 
+                      onClick={() => navigate('/membership-plans')}
+                      className="bg-primary text-white text-xs font-bold py-2.5 px-6 rounded-xl hover:opacity-90 active:scale-95 transition-all shadow-sm"
+                    >
+                      View Plans
+                    </button>
+                  </div>
+                ) : (
+                <>
                 <div
                   onClick={() => navigate('/card')}
                   className="relative w-full md:max-w-[420px] md:mx-auto aspect-[1.58/1] rounded-2xl overflow-hidden shadow-lg bg-gradient-to-br from-primary to-secondary p-5 text-white cursor-pointer hover:scale-[1.01] transition-transform"
@@ -608,6 +630,8 @@ export default function ProfilePage() {
                     <p className="font-bold text-tertiary mt-0.5">Active</p>
                   </div>
                 </div>
+                </>
+                )}
               </div>
             )}
           </div>
@@ -662,9 +686,9 @@ export default function ProfilePage() {
                       <div className="flex flex-col gap-1">
                         <span className="text-[9px] font-bold text-on-surface-variant text-center">Front</span>
                         <div className="w-full aspect-[1.58/1] bg-surface-container rounded-xl overflow-hidden border border-outline-variant/50 flex items-center justify-center">
-                          {(user?.kyc?.aadhaarFrontUrl || user?.aadhaarFrontUrl) && !imageErrors.front ? (
+                          {(user?.kycRef?.aadhaarFrontUrl || user?.aadhaarFrontUrl) && !imageErrors.front ? (
                             <img 
-                              src={getImageUrl(user?.kyc?.aadhaarFrontUrl || user?.aadhaarFrontUrl)} 
+                              src={getImageUrl(user?.kycRef?.aadhaarFrontUrl || user?.aadhaarFrontUrl)} 
                               alt="Aadhaar Front" 
                               className="w-full h-full object-cover" 
                               onError={() => setImageErrors(prev => ({ ...prev, front: true }))}
@@ -677,9 +701,9 @@ export default function ProfilePage() {
                       <div className="flex flex-col gap-1">
                         <span className="text-[9px] font-bold text-on-surface-variant text-center">Back</span>
                         <div className="w-full aspect-[1.58/1] bg-surface-container rounded-xl overflow-hidden border border-outline-variant/50 flex items-center justify-center">
-                          {(user?.kyc?.aadhaarBackUrl || user?.aadhaarBackUrl) && !imageErrors.back ? (
+                          {(user?.kycRef?.aadhaarBackUrl || user?.aadhaarBackUrl) && !imageErrors.back ? (
                             <img 
-                              src={getImageUrl(user?.kyc?.aadhaarBackUrl || user?.aadhaarBackUrl)} 
+                              src={getImageUrl(user?.kycRef?.aadhaarBackUrl || user?.aadhaarBackUrl)} 
                               alt="Aadhaar Back" 
                               className="w-full h-full object-cover" 
                               onError={() => setImageErrors(prev => ({ ...prev, back: true }))}
@@ -702,7 +726,8 @@ export default function ProfilePage() {
             {openSection === 'settings' && (
               <div className="p-4 pt-2 border-t border-outline-variant/30 space-y-1 text-xs">
                 {[
-                  { icon: 'notifications', label: 'Push Notifications', value: 'Enabled' },
+                  { icon: 'badge', label: 'KYC Verification', value: user?.kycStatus === 'verified' ? 'Verified' : user?.kycStatus === 'pending' ? 'Under Review' : 'Pending', action: () => navigate('/kyc') },
+                  { icon: 'notifications', label: 'Push Notifications', value: 'Enabled', action: () => alert('Push notifications are managed in your device settings.') },
                   { icon: 'privacy_tip', label: 'Privacy Policy', value: '', action: () => navigate('/privacy') },
                   { icon: 'gavel', label: 'Terms & Conditions', value: '', action: () => navigate('/terms') },
                 ].map(item => (
@@ -751,7 +776,7 @@ export default function ProfilePage() {
       {/* Edit Profile Modal */}
       {isEditing && (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center animate-fade-in p-4">
-          <div className="bg-white border border-outline-variant/50 w-full max-w-[340px] rounded-2xl p-5 shadow-2xl flex flex-col space-y-4 animate-scale-up">
+          <div className="bg-white border border-outline-variant/50 w-full max-w-[340px] rounded-2xl p-5 shadow-2xl flex flex-col space-y-4 animate-scale-up h-auto max-h-[80vh] overflow-y-auto hide-scrollbar">
             <div className="flex justify-between items-center pb-2 border-b border-outline-variant/20">
               <h3 className="font-bold text-sm text-primary">Edit Profile</h3>
               <button
@@ -771,6 +796,7 @@ export default function ProfilePage() {
                   onChange={(e) => setTempName(e.target.value)}
                   className="w-full px-3 py-2 bg-surface border border-outline-variant rounded-xl text-xs font-semibold focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
                   required
+                  minLength={3}
                 />
               </div>
 
@@ -793,6 +819,9 @@ export default function ProfilePage() {
                   onChange={(e) => setTempPhone(e.target.value)}
                   className="w-full px-3 py-2 bg-surface border border-outline-variant rounded-xl text-xs font-semibold focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
                   required
+                  pattern="[6-9][0-9]{9}"
+                  maxLength={10}
+                  title="Please enter a valid 10-digit Indian phone number starting with 6-9"
                 />
               </div>
 
@@ -823,7 +852,27 @@ export default function ProfilePage() {
                   value={tempIncome}
                   onChange={(e) => setTempIncome(e.target.value)}
                   className="w-full px-3 py-2 bg-surface border border-outline-variant rounded-xl text-xs font-semibold focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                  min={0}
                 />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-on-surface-variant">Blood Group</label>
+                <select
+                  value={tempBloodGroup}
+                  onChange={(e) => setTempBloodGroup(e.target.value)}
+                  className="w-full px-3 py-2 bg-surface border border-outline-variant rounded-xl text-xs font-semibold focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                >
+                  <option value="">Select Blood Group</option>
+                  <option value="A+">A+</option>
+                  <option value="A-">A-</option>
+                  <option value="B+">B+</option>
+                  <option value="B-">B-</option>
+                  <option value="O+">O+</option>
+                  <option value="O-">O-</option>
+                  <option value="AB+">AB+</option>
+                  <option value="AB-">AB-</option>
+                </select>
               </div>
 
               <div className="flex gap-2 pt-2">
@@ -841,6 +890,8 @@ export default function ProfilePage() {
                   Save
                 </button>
               </div>
+              {/* Add spacing at the bottom so native select dropdowns don't get cut off by overflow-hidden */}
+              <div className="h-40"></div>
             </form>
           </div>
         </div>
@@ -882,25 +933,6 @@ export default function ProfilePage() {
                     className="w-full px-3 py-2 bg-surface border border-outline-variant rounded-xl text-xs font-semibold focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
                   />
                 </div>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-on-surface-variant">Blood Group</label>
-                <select
-                  value={tempHealth.bloodGroup}
-                  onChange={(e) => setTempHealth({ ...tempHealth, bloodGroup: e.target.value })}
-                  className="w-full px-3 py-2 bg-surface border border-outline-variant rounded-xl text-xs font-semibold focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-                >
-                  <option value="">Select Blood Group</option>
-                  <option value="A+">A+</option>
-                  <option value="A-">A-</option>
-                  <option value="B+">B+</option>
-                  <option value="B-">B-</option>
-                  <option value="O+">O+</option>
-                  <option value="O-">O-</option>
-                  <option value="AB+">AB+</option>
-                  <option value="AB-">AB-</option>
-                </select>
               </div>
 
               <div className="space-y-1">
@@ -989,6 +1021,7 @@ export default function ProfilePage() {
         </div>
       )}
 
+      {!(isEditing || isHealthEditing || isDeleteModalOpen) && <BottomNavBar />}
     </div>
   );
 }

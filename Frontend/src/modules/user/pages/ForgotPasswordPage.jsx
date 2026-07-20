@@ -1,12 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../../../services/api';
 import { ENDPOINTS } from '../../../services/types';
 
 export default function ForgotPasswordPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [step, setStep] = useState('mobile'); // mobile | otp | newpass | success
-  const [mobile, setMobile] = useState('');
+  const [mobile, setMobile] = useState(location.state?.mobile || '');
   const [otp, setOtp] = useState(new Array(6).fill(''));
   const [timer, setTimer] = useState(30);
   const [password, setPassword] = useState('');
@@ -96,7 +97,7 @@ export default function ForgotPasswordPage() {
   return (
     <div className="flex-grow flex flex-col bg-white min-h-screen">
       <header className="flex items-center gap-3 px-4 h-16 sticky top-0 z-40 bg-white border-b border-outline-variant/30 shadow-sm">
-        <button onClick={() => step === 'mobile' ? navigate('/login') : setStep(s => s === 'newpass' ? 'otp' : 'mobile')}
+        <button onClick={() => step === 'mobile' ? navigate('/login', { state: { mobile } }) : setStep(s => s === 'newpass' ? 'otp' : 'mobile')}
           className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-surface-container-low cursor-pointer transition-colors">
           <span className="material-symbols-outlined text-primary">arrow_back</span>
         </button>
@@ -112,7 +113,7 @@ export default function ForgotPasswordPage() {
             <h2 className="text-2xl font-black text-on-surface">Password Updated!</h2>
             <p className="text-sm text-on-surface-variant">Your password has been successfully reset. You can now log in with your new password.</p>
             <button
-              onClick={() => navigate('/login')}
+              onClick={() => navigate('/login', { state: { mobile } })}
               className="mt-4 w-full py-4 bg-primary text-white font-black rounded-2xl shadow-lg hover:opacity-90 cursor-pointer transition-all active:scale-[0.98]"
             >
               Back to Login

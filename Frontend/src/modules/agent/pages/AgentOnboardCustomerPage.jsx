@@ -210,8 +210,11 @@ export default function AgentOnboardCustomerPage() {
                   id="mobile" 
                   placeholder=" " 
                   type="tel"
+                  maxLength="10"
+                  pattern="[0-9]{10}"
+                  title="10-digit mobile number"
                   value={mobileNumber}
-                  onChange={(e) => setMobileNumber(e.target.value)}
+                  onChange={(e) => setMobileNumber(e.target.value.replace(/[^0-9]/g, ''))}
                   required
                 />
                 <label className="absolute left-4 top-3 text-[#434654] text-sm" htmlFor="mobile">Mobile Number</label>
@@ -329,6 +332,7 @@ export default function AgentOnboardCustomerPage() {
                     id="aadhaar-number" 
                     placeholder=" " 
                     maxLength="12"
+                    pattern="[0-9]{12}"
                     value={aadhaarNumber}
                     disabled={isAadhaarVerified}
                     onChange={(e) => setAadhaarNumber(e.target.value.replace(/[^0-9]/g, ''))}
@@ -354,6 +358,7 @@ export default function AgentOnboardCustomerPage() {
                         id="otp-code" 
                         placeholder=" " 
                         maxLength="6"
+                        pattern="[0-9]{6}"
                         value={otpCode}
                         onChange={(e) => setOtpCode(e.target.value.replace(/[^0-9]/g, ''))}
                       />
@@ -415,6 +420,7 @@ export default function AgentOnboardCustomerPage() {
                     className="hidden" 
                     type="file" 
                     accept="image/*"
+                    capture="environment"
                     onChange={(e) => handleImageChange(e, setProfilePreview, setProfileFile)}
                     required
                   />
@@ -437,6 +443,7 @@ export default function AgentOnboardCustomerPage() {
                     className="hidden" 
                     type="file" 
                     accept="image/*"
+                    capture="environment"
                     onChange={(e) => handleImageChange(e, setFrontPreview, setFrontFile)}
                     required
                   />
@@ -459,6 +466,7 @@ export default function AgentOnboardCustomerPage() {
                     className="hidden" 
                     type="file" 
                     accept="image/*"
+                    capture="environment"
                     onChange={(e) => handleImageChange(e, setBackPreview, setBackFile)}
                     required
                   />

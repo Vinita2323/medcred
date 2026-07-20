@@ -19,6 +19,9 @@ export default function AgentTeamPage() {
   const [currentUser, setCurrentUser] = useState(null);
   const [agents, setAgents] = useState([]);
   const [fieldAgents, setFieldAgents] = useState([]);
+  const [networkSalesAmt, setNetworkSalesAmt] = useState(0);
+  const [networkOverride, setNetworkOverride] = useState(0);
+  const [networkSalesCount, setNetworkSalesCount] = useState(0);
   const [selectedLeaderId, setSelectedLeaderId] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('All');
@@ -43,6 +46,9 @@ export default function AgentTeamPage() {
       if (res.data?.success) {
         setAgents(res.data.data.agents || []);
         setFieldAgents(res.data.data.fieldAgents || []);
+        setNetworkSalesAmt(res.data.data.networkSalesAmt || 0);
+        setNetworkOverride(res.data.data.networkOverride || 0);
+        setNetworkSalesCount(res.data.data.networkSalesCount || 0);
       } else {
         setAgents([]);
         setFieldAgents([]);
@@ -98,6 +104,12 @@ export default function AgentTeamPage() {
   };
 
   const filteredList = getFilteredAgents();
+
+  const teamStats = {
+    activeSubs: networkSalesCount,
+    networkSales: networkSalesAmt,
+    overrideCommission: networkOverride
+  };
 
   // Helper to render rank badge styling
   const getRankBadge = (rank) => {
@@ -331,21 +343,19 @@ export default function AgentTeamPage() {
         <div className="bg-white p-4 rounded-xl border border-[#c3c6d6]/20 shadow-sm">
           <p className="text-xs text-[#516161] font-semibold">Active Subscriptions</p>
           <p className="text-2xl font-extrabold text-[#003d9b] mt-1">
-            {currentUser.role === 'Super Agent' 
-              ? (agents.length * 15) + (fieldAgents.length * 6) 
-              : fieldAgents.length * 8}
+            {teamStats.activeSubs}
           </p>
         </div>
         <div className="bg-white p-4 rounded-xl border border-[#c3c6d6]/20 shadow-sm">
           <p className="text-xs text-[#516161] font-semibold">Total Network Sales</p>
           <p className="text-2xl font-extrabold text-[#003d9b] mt-1">
-            ₹{currentUser.role === 'Super Agent' ? '8.4L' : '2.1L'}
+            ₹{teamStats.networkSales.toLocaleString('en-IN')}
           </p>
         </div>
         <div className="bg-white p-4 rounded-xl border border-[#c3c6d6]/20 shadow-sm">
           <p className="text-xs text-[#516161] font-semibold">Overriding Commission</p>
           <p className="text-2xl font-extrabold text-green-700 mt-1">
-            ₹{currentUser.role === 'Super Agent' ? '25,800' : '8,400'}
+            ₹{teamStats.overrideCommission.toLocaleString('en-IN')}
           </p>
         </div>
       </section>

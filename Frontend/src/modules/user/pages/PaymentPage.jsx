@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import Lottie from 'lottie-react';
 import membershipActivAnim from '../../../assets/Lotties/membershipActiv.json';
 import { saveMembership, getMembership, updateUser } from '../utils/storage';
+import html2pdf from 'html2pdf.js';
 import api from '../../../services/api';
 import { ENDPOINTS } from '../../../services/types';
 
@@ -187,82 +188,71 @@ export default function PaymentPage() {
   };
 
   const handleDownloadInvoice = () => {
-    const invoiceHtml = `
-      <html>
-        <head>
-          <meta charset="UTF-8">
-          <title>Invoice - ${plan.name}</title>
-          <style>
-            body { font-family: system-ui, -apple-system, sans-serif; padding: 40px; color: #333; max-width: 800px; margin: 0 auto; }
-            .header { border-bottom: 2px solid #0052CC; padding-bottom: 20px; margin-bottom: 30px; }
-            .logo { font-size: 24px; font-weight: bold; color: #0052CC; }
-            .row { display: flex; justify-content: space-between; margin-bottom: 10px; }
-            table { border-collapse: collapse; margin-top: 20px; width: 100%; }
-            th, td { text-align: left; padding: 12px; border-bottom: 1px solid #ddd; }
-            th { color: #666; font-weight: 600; font-size: 14px; }
-            .total { font-size: 20px; font-weight: bold; color: #0052CC; text-align: right; margin-top: 20px; }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <div class="logo" style="margin-bottom: 10px;">
-              <img src="${window.location.origin}/FinalLogo.png" alt="MedCred Logo" style="height: 45px; object-fit: contain; display: block;" />
-            </div>
-            <div style="color: #666; margin-top: 5px;">Invoice #MC-${Math.floor(100000 + Math.random() * 900000)}</div>
-            <div style="color: #666;">Date: ${new Date().toLocaleDateString()}</div>
+    const element = document.createElement('div');
+    element.innerHTML = `
+      <div id="invoice-content" style="font-family: system-ui, -apple-system, sans-serif; padding: 40px; color: #333; max-width: 800px; margin: 0 auto; background: white;">
+        <div style="border-bottom: 2px solid #0052CC; padding-bottom: 20px; margin-bottom: 30px;">
+          <div style="margin-bottom: 10px;">
+            <img src="${window.location.origin}/FinalLogo.png" alt="MedCred Logo" style="height: 45px; object-fit: contain; display: block;" />
           </div>
-          
-          <div class="row">
-            <div>
-              <strong>Billed To:</strong><br/>
-              Customer<br/>
-              MedCred User
-            </div>
-            <div style="text-align: right;">
-              <strong>Agent Details:</strong><br/>
-              ${(agentDetail || referralCode) ? `Name/No: ${agentDetail || 'N/A'}<br/>Code: ${referralCode || 'N/A'}` : 'Channel: Direct / Self'}
-            </div>
+          <div style="color: #666; margin-top: 5px;">Invoice #MC-${Math.floor(100000 + Math.random() * 900000)}</div>
+          <div style="color: #666;">Date: ${new Date().toLocaleDateString()}</div>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+          <div>
+            <strong>Billed To:</strong><br/>
+            Customer<br/>
+            MedCred User
           </div>
+          <div style="text-align: right;">
+            <strong>Agent Details:</strong><br/>
+            ${(agentDetail || referralCode) ? `Name/No: ${agentDetail || 'N/A'}<br/>Code: ${referralCode || 'N/A'}` : 'Channel: Direct / Self'}
+          </div>
+        </div>
 
-          <table>
-            <thead>
-              <tr>
-                <th>Description</th>
-                <th>Included Benefits</th>
-                <th style="text-align: right;">Amount</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>
-                  <strong>${plan.name}</strong><br/>
-                  <span style="color: #666; font-size: 13px;">${plan.validity}</span>
-                </td>
-                <td style="color: #666; font-size: 13px;">
-                  - Up to ${plan.members} members<br/>
-                  - ${plan.coverage} Coverage<br/>
-                </td>
-                <td style="text-align: right;">₹${finalPrice.toLocaleString()}</td>
-              </tr>
-            </tbody>
-          </table>
+        <table style="border-collapse: collapse; margin-top: 20px; width: 100%;">
+          <thead>
+            <tr>
+              <th style="text-align: left; padding: 12px; border-bottom: 1px solid #ddd; color: #666; font-weight: 600; font-size: 14px;">Description</th>
+              <th style="text-align: left; padding: 12px; border-bottom: 1px solid #ddd; color: #666; font-weight: 600; font-size: 14px;">Included Benefits</th>
+              <th style="text-align: right; padding: 12px; border-bottom: 1px solid #ddd; color: #666; font-weight: 600; font-size: 14px;">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="text-align: left; padding: 12px; border-bottom: 1px solid #ddd;">
+                <strong>${plan.name}</strong><br/>
+                <span style="color: #666; font-size: 13px;">${plan.validity}</span>
+              </td>
+              <td style="text-align: left; padding: 12px; border-bottom: 1px solid #ddd; color: #666; font-size: 13px;">
+                - Up to ${plan.members} members<br/>
+                - ${plan.coverage} Coverage<br/>
+              </td>
+              <td style="text-align: right; padding: 12px; border-bottom: 1px solid #ddd;">₹${finalPrice.toLocaleString()}</td>
+            </tr>
+          </tbody>
+        </table>
 
-          <div class="total">
-            Total Paid: ₹${finalPrice.toLocaleString()}
-          </div>
-          
-          <div style="margin-top: 60px; font-size: 12px; color: #888; text-align: center;">
-            This is a computer generated invoice and does not require a physical signature.
-          </div>
-          <script>
-            window.onload = function() { window.print(); }
-          </script>
-        </body>
-      </html>
+        <div style="font-size: 20px; font-weight: bold; color: #0052CC; text-align: right; margin-top: 20px;">
+          Total Paid: ₹${finalPrice.toLocaleString()}
+        </div>
+        
+        <div style="margin-top: 60px; font-size: 12px; color: #888; text-align: center;">
+          This is a computer generated invoice and does not require a physical signature.
+        </div>
+      </div>
     `;
-    const blob = new Blob([invoiceHtml], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    window.open(url, '_blank');
+
+    const opt = {
+      margin:       10,
+      filename:     `MedCred_Invoice_${membership.transactionId}.pdf`,
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2, useCORS: true },
+      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    html2pdf().from(element).set(opt).save();
   };
 
   // ── Success Screen ────────────────────────────────────────────────
@@ -493,14 +483,17 @@ export default function PaymentPage() {
         </div>
 
         {/* Security badges */}
-        <div className="flex items-center justify-center gap-4 opacity-50 py-1">
-          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Visa_Inc._logo.svg/200px-Visa_Inc._logo.svg.png" alt="Visa" className="h-4 object-contain" />
-          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Mastercard-logo.svg/200px-Mastercard-logo.svg.png" alt="Mastercard" className="h-5 object-contain" />
-          <span className="text-[10px] font-bold text-on-surface-variant">RuPay · UPI</span>
+        <div className="flex items-center justify-center gap-4 opacity-70 py-2">
+          <span className="text-[12px] font-black text-blue-900 italic tracking-tighter">VISA</span>
+          <div className="flex -space-x-1 items-center">
+            <div className="w-4 h-4 rounded-full bg-red-500 opacity-90"></div>
+            <div className="w-4 h-4 rounded-full bg-yellow-400 opacity-90"></div>
+          </div>
+          <span className="text-[11px] font-bold text-on-surface-variant">RuPay · UPI</span>
         </div>
 
         {/* Pay button */}
-        <div className="sticky bottom-0 bg-[#F8FAFF] pt-2 pb-4">
+        <div className="sticky bottom-0 bg-[#F8FAFF] pt-2 pb-[calc(env(safe-area-inset-bottom)+24px)]">
           <button
             onClick={handlePay}
             className="w-full py-4 bg-primary text-white font-black rounded-2xl shadow-xl hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-3 text-base"

@@ -82,7 +82,12 @@ export default function WalletPage() {
           </button>
           <h1 className="text-sm font-bold text-primary">MedCred Wallet</h1>
         </div>
-        <button className="material-symbols-outlined text-primary p-2 hover:bg-surface-variant rounded-full cursor-pointer">notifications</button>
+        <button 
+          onClick={() => navigate('/notifications')}
+          className="material-symbols-outlined text-primary p-2 hover:bg-surface-variant rounded-full cursor-pointer"
+        >
+          notifications
+        </button>
       </header>
 
       {/* Main Content */}

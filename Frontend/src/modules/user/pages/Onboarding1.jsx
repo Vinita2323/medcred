@@ -1,10 +1,17 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Lottie from 'lottie-react';
 import onboardingAnimation from '../../../assets/Lotties/onbording.json';
+import { isLoggedIn } from '../utils/storage';
 
 export default function Onboarding1() {
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (isLoggedIn()) {
+      navigate('/dashboard');
+    }
+  }, [navigate]);
 
   return (
     <div className="flex-grow flex flex-col bg-white min-h-screen overflow-hidden">

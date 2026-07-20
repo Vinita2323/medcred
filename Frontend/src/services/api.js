@@ -112,6 +112,12 @@ api.interceptors.response.use(
         processQueue(null, newAccessToken);
         return api(originalRequest);
       } catch (refreshError) {
+        if (!refreshError.response || refreshError.response.status >= 500) {
+          // Network error or server error during refresh (e.g. nodemon restart)
+          processQueue(refreshError, null);
+          return Promise.reject(refreshError);
+        }
+
         console.error('Token refresh failed. Clearing auth and redirecting. Refresh error:', refreshError.response?.status, 'Original request:', originalRequest.url);
         // Refresh token expired or invalid
         processQueue(refreshError, null);

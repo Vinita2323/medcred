@@ -23,8 +23,8 @@ export const VALIDATION_RULES = {
   // PAN Number: 5 chars + 4 numbers + 1 char
   PAN: /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/,
   
-  // Aadhaar Number: Exactly 12 digits
-  AADHAAR: /^\d{12}$/,
+  // Aadhaar Number: Exactly 12 digits (allows formatting spaces)
+  AADHAAR: /^(\d\s*){12}$/,
   
   // PIN Code: Exactly 6 digits
   PIN_CODE: /^\d{6}$/,

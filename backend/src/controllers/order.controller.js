@@ -246,6 +246,7 @@ export const confirmPayment = async (req, res) => {
         await Agent.findByIdAndUpdate(agentId, {
           $inc: {
             salesCount: 1, // We increment sales count for everyone in the chain
+            totalSalesRevenue: order.finalAmount, // Dynamically increment total sales revenue
             earnings: commissionAmount
           }
         });

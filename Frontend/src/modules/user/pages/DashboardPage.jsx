@@ -29,14 +29,14 @@ export default function DashboardPage() {
   const [products, setProducts] = useState([]);
   const [dynamicPlans, setDynamicPlans] = useState([]);
 
-  // Use user.cardId to instantly know if they have a plan to avoid flashing
-  const active = user && user.cardId;
+  // Use user.cardId to instantly know if they have a plan to avoid flashing, fallback to card state
+  const active = (user && user.cardId) || card;
 
   useEffect(() => {
     const loggedIn = isLoggedIn();
 
-    // If user has a card ID, fetch it from backend
-    if (loggedIn && user && user.cardId) {
+    // Fetch user's card if logged in
+    if (loggedIn) {
       const fetchCard = async () => {
         try {
           const res = await api.get(ENDPOINTS.MY_CARD);
@@ -55,7 +55,10 @@ export default function DashboardPage() {
         try {
           const res = await api.get(ENDPOINTS.USER_DASHBOARD_STATS);
           if (res.data.success) {
-            setStats(res.data.data);
+            setStats({
+              ...res.data.data,
+              familyCount: res.data.data.familyCount + 1 // Add 1 for the 'Self' member
+            });
           }
         } catch (err) {
           console.error('Failed to fetch dashboard stats:', err);
@@ -217,7 +220,13 @@ export default function DashboardPage() {
                     View Card
                   </button>
                   <button
-                    onClick={() => alert("MedCred Passport PDF downloaded successfully.")}
+                    onClick={() => {
+                      if (!card) {
+                        alert("No active health passport to download.");
+                      } else {
+                        alert("MedCred Passport PDF downloaded successfully.");
+                      }
+                    }}
                     className="flex-1 glass-effect text-white text-[11px] py-2 rounded-lg flex items-center justify-center gap-1 font-bold active:scale-95 transition-all cursor-pointer"
                   >
                     <span className="material-symbols-outlined text-sm">download</span>
@@ -228,7 +237,10 @@ export default function DashboardPage() {
             </section>
 
             {/* Chat Support Section */}
-            <section className="bg-[#F5F8FF] border border-blue-100 rounded-2xl p-3 shadow-sm relative overflow-visible mt-2">
+            <section 
+              onClick={() => navigate('/support')}
+              className="bg-[#F5F8FF] border border-blue-100 rounded-2xl p-3 shadow-sm relative overflow-visible mt-2 cursor-pointer hover:shadow-md transition-all active:scale-[0.98]"
+            >
               {/* Chat Illustration */}
               <div className="absolute left-0 bottom-0 w-[100px] h-[110px] pointer-events-none">
                 <img src={imgChatSupport} alt="Chat Support" className="w-full h-full object-contain object-bottom drop-shadow-md origin-bottom" />
@@ -344,18 +356,7 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              <div
-                onClick={() => navigate('/wallet')}
-                className="bg-surface-container-low p-2.5 rounded-xl border border-outline-variant hover:shadow-md transition-all cursor-pointer flex items-center gap-2.5"
-              >
-                <div className="w-8 h-8 bg-tertiary-fixed/10 rounded-full flex items-center justify-center shrink-0">
-                  <span className="material-symbols-outlined text-tertiary text-base">account_balance_wallet</span>
-                </div>
-                <div>
-                  <p className="text-[9px] text-on-surface-variant font-bold uppercase tracking-wider">Wallet</p>
-                  <p className="text-sm font-black text-primary leading-none mt-0.5">₹{stats.walletBalance.toLocaleString('en-IN')}</p>
-                </div>
-              </div>
+
 
               <div
                 onClick={() => navigate('/loan')}

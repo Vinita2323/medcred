@@ -1,11 +1,13 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { isLoggedIn } from '../../utils/storage';
+import { isLoggedIn, getUser } from '../../utils/storage';
 
 export default function BottomNavBar() {
   const navigate = useNavigate();
   const location = useLocation();
   const path = location.pathname;
+  const user = getUser();
+  const hasCard = user && user.cardId;
 
   const getTabClass = (isActive) => {
     const baseClass = "flex flex-col items-center justify-center rounded-xl py-1 px-0.5 active:scale-90 transition-all duration-200 cursor-pointer flex-1 min-w-0 text-[10px]";
@@ -26,11 +28,13 @@ export default function BottomNavBar() {
       </div>
 
       <div 
-        onClick={() => navigate('/membership-plans')} 
-        className={getTabClass(path === '/membership-plans')}
+        onClick={() => navigate(hasCard ? '/card' : '/membership-plans')} 
+        className={getTabClass(path === '/membership-plans' || path === '/card')}
       >
-        <span className="material-symbols-outlined text-lg" style={{ fontVariationSettings: path === '/membership-plans' ? "'FILL' 1" : "'FILL' 0" }}>add_card</span>
-        <span>Buy Card</span>
+        <span className="material-symbols-outlined text-lg" style={{ fontVariationSettings: (path === '/membership-plans' || path === '/card') ? "'FILL' 1" : "'FILL' 0" }}>
+          {hasCard ? 'badge' : 'add_card'}
+        </span>
+        <span>{hasCard ? 'My Card' : 'Buy Card'}</span>
       </div>
 
       <div 
@@ -49,13 +53,7 @@ export default function BottomNavBar() {
         <span>Loan</span>
       </div>
 
-      <div 
-        onClick={() => navigate('/wallet')} 
-        className={getTabClass(path === '/wallet')}
-      >
-        <span className="material-symbols-outlined text-lg" style={{ fontVariationSettings: path === '/wallet' ? "'FILL' 1" : "'FILL' 0" }}>account_balance_wallet</span>
-        <span>Wallet</span>
-      </div>
+
 
       <div 
         onClick={() => {

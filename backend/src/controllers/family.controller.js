@@ -11,7 +11,7 @@ export const addMember = async (req, res) => {
     const { name, relationship, dob, aadhaarNumber, consent } = req.body;
     
     // Check if user has an active card
-    const card = await Card.findOne({ userId: req.user.id }).populate('planId');
+    const card = await Card.findOne({ userId: req.user._id }).populate('planId');
     if (!card) {
       return res.status(404).json({ success: false, message: 'No active card found for this user. Purchase a plan first.' });
     }
@@ -69,17 +69,19 @@ export const addMember = async (req, res) => {
 
     const newMember = await FamilyMember.create({
       memberId,
-      primaryUserId: req.user.id,
-      primaryUserName: req.user.name || req.user.fullName,
+      primaryUserId: req.user._id,
+      primaryUserName: req.user.fullName || req.user.name,
       cardId: card._id,
       name,
       relationship,
       dob,
       age,
       aadhaarNumber,
-      aadhaarFront,
-      aadhaarBack,
-      profilePhoto,
+      aadhaarFront: aadhaarFront,
+      aadhaarBack: aadhaarBack,
+      profilePhoto: profilePhoto,
+      consentGiven: consent === 'true' || consent === true,
+      consentGivenAt: new Date(),
       isVerified: false,
       verificationStatus: 'pending',
       status: 'pending',

@@ -38,8 +38,16 @@ export const refreshTokenHandler = async (req, res) => {
     // Verify token structure and expiration
     const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
 
-    // Find the user/agent/admin in DB that has this exact refresh token
-    const { user, role } = await findUserByRefreshToken(refreshToken);
+    let user;
+    const role = decoded.role || 'user';
+
+    if (role === 'admin') {
+      user = await Admin.findById(decoded.id);
+    } else if (role === 'agent') {
+      user = await Agent.findById(decoded.id);
+    } else {
+      user = await User.findById(decoded.id);
+    }
 
     if (!user) {
       return res.status(403).json({ success: false, message: 'Invalid refresh token' });

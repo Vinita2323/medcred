@@ -21,11 +21,13 @@ export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || import.meta.env
 const PLACEHOLDER_IMG = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'%3E%3Crect width='400' height='300' fill='%23f0f2f5'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='14' fill='%23aaa'%3ENo Image%3C/text%3E%3C/svg%3E`;
 
 export const getImageUrl = (path) => {
-  if (!path || path.trim() === '') return PLACEHOLDER_IMG;
+  if (!path || typeof path !== 'string' || path.trim() === '') return PLACEHOLDER_IMG;
   if (path.startsWith('data:')) return path;            // base64 data URL
   if (path.startsWith('http')) return path;             // external URL
-  if (path.startsWith('/uploads')) return PLACEHOLDER_IMG; // old broken local path
-  return path;
+  
+  const normalizedPath = path.replace(/\\/g, '/');
+  const cleanPath = normalizedPath.startsWith('/') ? normalizedPath : `/${normalizedPath}`;
+  return `${SERVER_URL}${cleanPath}`;
 };
 
 // API Endpoints Mapping

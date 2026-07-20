@@ -73,7 +73,7 @@ export const adminDashboardStats = async (req, res) => {
       Card.countDocuments({ status: 'active' }),
 
       // 3. Claims pending action
-      Claim.countDocuments({ status: { $in: ['submitted', 'under_review', 'verification_pending'] } }),
+      Claim.countDocuments({ status: 'pending' }),
 
       // 4. Approved agents
       Agent.countDocuments({ status: 'Approved' }),
@@ -113,12 +113,9 @@ export const adminDashboardStats = async (req, res) => {
 
     // Format claims breakdown
     const statusMap = {
-      submitted: 'Submitted',
-      under_review: 'Under Review',
-      verification_pending: 'Verification Pending',
+      pending: 'Pending Review',
       approved: 'Approved',
       rejected: 'Rejected',
-      completed: 'Completed',
     };
     const claimBreakdown = Object.entries(statusMap).map(([key, label]) => ({
       label,
@@ -275,11 +272,23 @@ export const adminGetUserDetails = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const [familyMembers, claims, kycDoc] = await Promise.all([
+    const [user, familyMembers, claims, kycDoc] = await Promise.all([
+      User.findById(id),
       FamilyMember.find({ userId: id }).sort({ createdAt: -1 }),
       Claim.find({ userId: id }).sort({ createdAt: -1 }),
       KYC.findOne({ userId: id }),
     ]);
+
+    // Fallback to User object for KYC images if KYC document is missing or incomplete
+    const kycImages = kycDoc ? {
+      selfie: kycDoc.selfieUrl || user?.profilePhoto,
+      aadhaarFront: kycDoc.aadhaarFrontUrl || user?.aadhaarFrontUrl,
+      aadhaarBack: kycDoc.aadhaarBackUrl || user?.aadhaarBackUrl,
+    } : {
+      selfie: user?.profilePhoto,
+      aadhaarFront: user?.aadhaarFrontUrl,
+      aadhaarBack: user?.aadhaarBackUrl,
+    };
 
     // Format for UI
     const formattedFamily = familyMembers.map(m => ({
@@ -301,11 +310,7 @@ export const adminGetUserDetails = async (req, res) => {
       data: {
         familyMembers: formattedFamily,
         claims: formattedClaims,
-        kycImages: kycDoc ? {
-          selfie: kycDoc.selfieUrl,
-          aadhaarFront: kycDoc.aadhaarFrontUrl,
-          aadhaarBack: kycDoc.aadhaarBackUrl,
-        } : null,
+        kycImages,
       },
     });
   } catch (error) {

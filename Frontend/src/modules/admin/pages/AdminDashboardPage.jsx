@@ -139,18 +139,21 @@ export default function AdminDashboardPage() {
             </button>
           </div>
           <div className="space-y-3">
-            {claimBreakdown.map((item, i) => (
-              <div key={i} className="flex items-center gap-3">
-                <p className="text-xs font-semibold text-[#516161] w-40 shrink-0">{item.label}</p>
-                <div className="flex-1 bg-[#f5f8ff] rounded-full h-2 overflow-hidden">
-                  <div
-                    className={`h-2 rounded-full ${item.color} transition-all duration-700`}
-                    style={{ width: `${Math.round((item.count / totalClaims) * 100)}%` }}
-                  />
+            {(() => {
+              const totalClaims = claimBreakdown.reduce((sum, item) => sum + item.count, 0) || 1;
+              return claimBreakdown.map((item, i) => (
+                <div key={i} className="flex items-center gap-3">
+                  <p className="text-xs font-semibold text-[#516161] w-40 shrink-0">{item.label}</p>
+                  <div className="flex-1 bg-[#f5f8ff] rounded-full h-2 overflow-hidden">
+                    <div
+                      className={`h-2 rounded-full ${item.color} transition-all duration-700`}
+                      style={{ width: `${Math.round((item.count / totalClaims) * 100)}%` }}
+                    />
+                  </div>
+                  <span className="text-xs font-extrabold text-[#191b23] w-5 text-right">{item.count}</span>
                 </div>
-                <span className="text-xs font-extrabold text-[#191b23] w-5 text-right">{item.count}</span>
-              </div>
-            ))}
+              ));
+            })()}
           </div>
         </section>
       </div>

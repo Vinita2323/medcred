@@ -71,7 +71,11 @@ export const agentApplyLoanForCustomer = async (req, res) => {
 
     const amount = Number(loanAmount);
     const months = Number(tenure || 12);
-    const emi = Math.round(amount / months);
+    
+    // Calculate Flat 12% EMI
+    const interest = amount * 0.12 * (months / 12);
+    const totalRepay = amount + interest;
+    const emi = Math.round(totalRepay / months);
 
     const patientsData = [{
       patientName,
@@ -90,8 +94,8 @@ export const agentApplyLoanForCustomer = async (req, res) => {
       loanAmount: amount,
       tenure: months,
       emiAmount: emi,
-      interestRate: 0,
-      totalRepayable: amount,
+      interestRate: 12,
+      totalRepayable: totalRepay,
       loanType: card.cardType,
       patients: patientsData,
       cardPurchaseDate: card.purchasedAt,

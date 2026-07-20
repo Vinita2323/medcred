@@ -31,14 +31,14 @@ export const checkEligibility = async (req, res) => {
 
     const today = new Date();
     // Dynamically calculate eligible date based on LIVE plan settings
-    const requiredWaitDays = card.planId?.loanEligibilityAfterDays || 30;
+    const requiredWaitDays = card.planId?.loanEligibilityAfterDays !== undefined ? card.planId.loanEligibilityAfterDays : 30;
     const loanEligibleFrom = new Date(card.purchasedAt);
     loanEligibleFrom.setDate(loanEligibleFrom.getDate() + requiredWaitDays);
     
     let isEligible = hasBypass || (today >= loanEligibleFrom);
     let daysActive = getDaysDiff(new Date(card.purchasedAt), today);
     let daysRemaining = isEligible ? 0 : getDaysDiff(today, loanEligibleFrom);
-    let progressPct = isEligible ? 100 : Math.min(100, Math.round((daysActive / requiredWaitDays) * 100));
+    let progressPct = isEligible ? 100 : (requiredWaitDays === 0 ? 100 : Math.min(100, Math.round((daysActive / requiredWaitDays) * 100)));
 
     // Optional: Check if already applied and not closed
     const activeLoan = await Loan.findOne({ userId: req.user._id, isActive: true });
@@ -51,6 +51,7 @@ export const checkEligibility = async (req, res) => {
         daysActive,
         daysRemaining,
         progressPct,
+        requiredWaitDays,
         cardType: card.cardType,
         maxLoanAmount: card.cardType === 'individual' ? 100000 : 200000,
         activeLoan: activeLoan ? {
@@ -151,7 +152,10 @@ export const applyLoan = async (req, res) => {
 
     const amount = Number(loanAmount);
     const months = Number(tenure);
-    const emi = Math.round(amount / months);
+    // Calculate Flat 12% EMI
+    const interest = amount * 0.12 * (months / 12);
+    const totalRepayment = amount + interest;
+    const emi = Math.round(totalRepayment / months);
 
     const newLoan = await Loan.create({
       userId: req.user._id,

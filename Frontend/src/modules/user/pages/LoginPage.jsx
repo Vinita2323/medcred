@@ -1,12 +1,21 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../../../services/api';
 import { ENDPOINTS, STORAGE_KEYS } from '../../../services/types';
+import { isLoggedIn } from '../utils/storage';
 
 import { useFormValidation } from '../../../hooks/useFormValidation';
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (isLoggedIn()) {
+      navigate('/dashboard');
+    }
+  }, [navigate]);
+
   const [showPassword, setShowPassword] = useState(false);
   const [loginMethod, setLoginMethod] = useState('password'); // 'password' or 'otp'
   const [loading, setLoading] = useState(false);
@@ -14,7 +23,7 @@ export default function LoginPage() {
   const [successMsg, setSuccessMsg] = useState('');
 
   const { values, errors, touched, handleChange, handleBlur, validateForm, setValues } = useFormValidation(
-    { mobile: '', password: '' },
+    { mobile: location.state?.mobile || '', password: '' },
     {
       mobile: { required: true, pattern: /^[6-9]\d{9}$/, message: 'Invalid mobile number. Must be exactly 10 digits starting with 6-9.' },
       password: { required: true }
@@ -97,6 +106,7 @@ export default function LoginPage() {
           localStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(user));
 
           navigate('/dashboard');
+          return;
         }
       } catch (error) {
         setErrorMsg(error.response?.data?.message || 'Login failed. Please try again.');
@@ -365,7 +375,7 @@ export default function LoginPage() {
                     <div className="space-y-1.5">
                       <div className="flex justify-between items-center">
                         <label className="text-[10px] font-bold text-[#1A2338]" htmlFor="password">Password</label>
-                        <button type="button" onClick={() => navigate('/forgot-password')} className="text-[10px] text-[#3267E3] hover:underline cursor-pointer font-bold">Forgot Password?</button>
+                        <button type="button" onClick={() => navigate('/forgot-password', { state: { mobile: values.mobile } })} className="text-[10px] text-[#3267E3] hover:underline cursor-pointer font-bold">Forgot Password?</button>
                       </div>
                       <div className="relative">
                         <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
@@ -446,6 +456,14 @@ export default function LoginPage() {
                       Register here
                     </button>
                   </p>
+
+                  <div className="pt-4 flex items-center justify-center gap-4 text-[10px] text-gray-400 font-medium">
+                    <button type="button" onClick={() => navigate('/terms')} className="hover:text-[#3267E3] hover:underline cursor-pointer">Terms</button>
+                    <span>•</span>
+                    <button type="button" onClick={() => navigate('/privacy')} className="hover:text-[#3267E3] hover:underline cursor-pointer">Privacy</button>
+                    <span>•</span>
+                    <button type="button" onClick={() => navigate('/support')} className="hover:text-[#3267E3] hover:underline cursor-pointer">Support</button>
+                  </div>
                 </div>
               </form>
             </div>

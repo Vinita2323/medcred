@@ -40,7 +40,7 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#001a4d] via-[#003d9b] to-[#0052cc] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-[#001a4d] via-[#003d9b] to-[#0052cc] flex items-center justify-center p-4 relative overflow-hidden">
 
       {/* Background decorative orbs */}
       <div className="absolute top-0 left-0 w-96 h-96 bg-white/5 rounded-full -ml-48 -mt-48 blur-3xl pointer-events-none" />

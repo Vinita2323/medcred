@@ -10,9 +10,24 @@ import bcrypt from 'bcryptjs';
  */
 export const getAgentCustomers = async (req, res) => {
   try {
-    const customers = await User.find({ agentId: req.user._id })
+    const users = await User.find({ agentId: req.user._id })
       .select('fullName mobile email userId status kycStatus createdAt planId profilePhoto')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
+
+    // Fetch cards for these users to get creditLimit
+    const userIds = users.map(u => u._id);
+    const cards = await Card.find({ userId: { $in: userIds } }).select('userId creditLimit');
+    
+    const cardsByUserId = cards.reduce((acc, card) => {
+      acc[card.userId.toString()] = card.creditLimit;
+      return acc;
+    }, {});
+
+    const customers = users.map(u => ({
+      ...u,
+      creditLimit: cardsByUserId[u._id.toString()] || null,
+    }));
 
     res.status(200).json({
       success: true,

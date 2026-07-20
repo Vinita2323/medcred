@@ -1,5 +1,7 @@
 import User from '../models/User.model.js';
 import OtpStore from '../models/OtpStore.model.js';
+import Notification from '../models/Notification.model.js';
+import FamilyMember from '../models/FamilyMember.model.js';
 import { saveOtp, verifyOtp } from '../services/otp.service.js';
 import { generateAccessToken, generateRefreshToken } from '../utils/generateToken.js';
 
@@ -62,6 +64,16 @@ const register = async (req, res) => {
       }
     }
 
+    // Parse familyMembers if provided
+    let parsedFamilyMembers = [];
+    if (req.body.familyMembers) {
+      try {
+        parsedFamilyMembers = JSON.parse(req.body.familyMembers);
+      } catch (e) {
+        console.error('Failed to parse familyMembers');
+      }
+    }
+
     // Check if the mobile number was pre-verified
     const preVerified = await OtpStore.findOne({ mobile: cleanedMobile, purpose: 'register', isUsed: true });
 
@@ -86,8 +98,41 @@ const register = async (req, res) => {
         lastLoginAt: new Date()
       });
 
+      // Insert Family Members
+      if (parsedFamilyMembers.length > 0) {
+        try {
+          const familyDocs = parsedFamilyMembers.map(m => ({
+            memberId: 'FM' + Date.now() + Math.floor(Math.random() * 1000),
+            primaryUserId: user._id,
+            primaryUserName: user.fullName,
+            name: m.name,
+            relationship: m.relationship,
+            dob: new Date(m.dob),
+            age: m.age || 0,
+            gender: m.gender || null,
+            aadhaarStatus: 'not_submitted',
+            status: 'pending',
+          }));
+          await FamilyMember.insertMany(familyDocs);
+        } catch (err) {
+          console.error('Error inserting family members:', err);
+        }
+      }
+
       // Delete the pre-verification proof record
       await OtpStore.deleteOne({ _id: preVerified._id });
+
+      // Create Admin Notification
+      try {
+        await Notification.create({
+          title: 'New User Registration',
+          message: `User ${user.fullName} (${user.mobile}) has registered successfully.`,
+          type: 'success',
+          forAdmin: true
+        });
+      } catch (err) {
+        console.error('Failed to create admin notification:', err);
+      }
 
       // Generate login tokens immediately
       const payload = { id: user._id, role: 'user' };
@@ -132,6 +177,27 @@ const register = async (req, res) => {
       consentGivenAt: new Date(),
       isMobileVerified: false,
     });
+
+    // Insert Family Members
+    if (parsedFamilyMembers.length > 0) {
+      try {
+        const familyDocs = parsedFamilyMembers.map(m => ({
+          memberId: 'FM' + Date.now() + Math.floor(Math.random() * 1000),
+          primaryUserId: user._id,
+          primaryUserName: user.fullName,
+          name: m.name,
+          relationship: m.relationship,
+          dob: new Date(m.dob),
+          age: m.age || 0,
+          gender: m.gender || null,
+          aadhaarStatus: 'not_submitted',
+          status: 'pending',
+        }));
+        await FamilyMember.insertMany(familyDocs);
+      } catch (err) {
+        console.error('Error inserting family members:', err);
+      }
+    }
 
     // Send OTP
     await saveOtp(cleanedMobile, 'register');
@@ -183,6 +249,18 @@ const verifyOtpHandler = async (req, res) => {
 
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    // Create Admin Notification
+    try {
+      await Notification.create({
+        title: 'New User Registration',
+        message: `User ${user.fullName} (${user.mobile}) has registered successfully.`,
+        type: 'success',
+        forAdmin: true
+      });
+    } catch (err) {
+      console.error('Failed to create admin notification:', err);
     }
 
     // Generate Tokens

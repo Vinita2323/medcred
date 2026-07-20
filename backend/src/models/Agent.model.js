@@ -118,6 +118,7 @@ const agentSchema = new mongoose.Schema(
 
     // ── Performance ───────────────────────────────────────────
     salesCount: { type: Number, default: 0 },
+    totalSalesRevenue: { type: Number, default: 0 }, // Tracks exact total transaction amount for all direct and network sales
     totalRegistrations: { type: Number, default: 0 },
     commissionRate: { type: Number, default: 0 },
     rank: {

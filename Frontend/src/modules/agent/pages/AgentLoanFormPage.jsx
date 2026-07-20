@@ -164,15 +164,20 @@ export default function AgentLoanFormPage() {
               <label className="w-full border-2 border-dashed border-[#c3c6d6] rounded-xl p-4 flex flex-col items-center justify-center gap-2 bg-[#faf8ff] hover:bg-[#f3f3fd] transition-colors cursor-pointer relative overflow-hidden">
                 <input 
                   type="file" 
+                  accept="image/*, application/pdf"
+                  capture="environment"
                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                   onChange={handleFileChange}
                   required
                 />
-                <div className="w-10 h-10 rounded-full bg-[#dae2ff] flex items-center justify-center">
+                {prescriptionFile && prescriptionFile.type.startsWith('image/') ? (
+                  <img src={URL.createObjectURL(prescriptionFile)} alt="Preview" className="absolute inset-0 w-full h-full object-cover opacity-60" />
+                ) : null}
+                <div className="relative z-10 w-10 h-10 rounded-full bg-[#dae2ff] flex items-center justify-center">
                   <span className="material-symbols-outlined text-[#003d9b]">{prescriptionFile ? 'check_circle' : 'upload_file'}</span>
                 </div>
-                <div className="text-center">
-                  <p className="text-xs font-bold text-[#003d9b]">
+                <div className="relative z-10 text-center">
+                  <p className="text-xs font-bold text-[#003d9b] drop-shadow-md">
                     {prescriptionFile ? prescriptionFile.name : 'Upload admission advice'}
                   </p>
                   <p className="text-[10px] text-[#737685] mt-0.5">JPG, PNG or PDF (Max 5MB)</p>
@@ -189,6 +194,8 @@ export default function AgentLoanFormPage() {
               <input 
                 type="number" 
                 value={loanAmount} 
+                min="1000"
+                max="500000"
                 onChange={(e) => setLoanAmount(e.target.value)} 
                 className="w-full bg-[#f3f3fd] border border-[#c3c6d6]/40 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#003d9b] transition-all font-bold"
                 required

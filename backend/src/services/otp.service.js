@@ -73,8 +73,8 @@ export const saveOtp = async (mobile, purpose) => {
   }
 
   // Send SMS using SMS India Hub API
-  const appName = process.env.APP_NAME || 'Appzeto';
-  const message = `Welcome to the ${appName} powered by Appzeto.Your OTP for registration is ${otp}.BGADEC`;
+  const appName = process.env.APP_NAME || 'MedCred';
+  const message = `Welcome to ${appName}. Your OTP for registration is ${otp}.BGADEC`;
   
   const smsResult = await sendSmsViaIndiaHub(mobile, message);
   if (!smsResult.success) {

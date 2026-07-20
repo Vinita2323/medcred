@@ -54,7 +54,8 @@ function SearchableSelect({ label, value, onChange, options, disabled, placehold
               filteredOptions.map((opt) => (
                 <div
                   key={opt}
-                  onClick={(e) => {
+                  onMouseDown={(e) => {
+                    e.preventDefault();
                     e.stopPropagation();
                     onChange(opt);
                     setIsOpen(false);
@@ -133,16 +134,20 @@ function SearchableMultiSelect({ label, selected, onChange, options, disabled, p
                 return (
                   <label
                     key={opt}
-                    onClick={(e) => e.stopPropagation()}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      toggleOption(opt);
+                    }}
                     className="flex items-center gap-2 px-3 py-2 rounded cursor-pointer hover:bg-gray-50 select-none text-xs text-[#434654]"
                   >
                     <input
                       type="checkbox"
                       checked={isChecked}
-                      onChange={() => toggleOption(opt)}
-                      className="rounded border-gray-300 text-[#003d9b] focus:ring-[#003d9b]/20"
+                      readOnly
+                      className="rounded border-gray-300 text-[#003d9b] focus:ring-[#003d9b]"
                     />
-                    <span className={isChecked ? 'font-bold text-[#003d9b]' : ''}>{opt}</span>
+                    <span>{opt}</span>
                   </label>
                 );
               })
@@ -160,6 +165,7 @@ export default function AgentRegisterPage() {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   // STEP 1: Basic Info (Validated)
   const { values, errors, touched, handleChange, handleBlur, validateForm, setValues } = useFormValidation(
@@ -229,6 +235,63 @@ export default function AgentRegisterPage() {
   const [ifscCode, setIfscCode] = useState('');
   const [chequePreview, setChequePreview] = useState(null);
   const [chequeFile, setChequeFile] = useState(null);
+
+  const [step2Errors, setStep2Errors] = useState({});
+  const [step3Errors, setStep3Errors] = useState({});
+
+  // Initialize from localStorage if available
+  useEffect(() => {
+    const savedData = localStorage.getItem('medcred_agent_reg');
+    if (savedData) {
+      try {
+        const parsed = JSON.parse(savedData);
+        if (parsed.values) setValues(parsed.values);
+        if (parsed.step) setStep(parsed.step);
+        if (parsed.managerJoinCode) setManagerJoinCode(parsed.managerJoinCode);
+        if (parsed.role) setRole(parsed.role);
+        if (parsed.workingState) setWorkingState(parsed.workingState);
+        if (parsed.workingDistricts) setWorkingDistricts(parsed.workingDistricts);
+        if (parsed.workingDistrict) setWorkingDistrict(parsed.workingDistrict);
+        if (parsed.workingCity) setWorkingCity(parsed.workingCity);
+        if (parsed.permHouseNo) setPermHouseNo(parsed.permHouseNo);
+        if (parsed.permStreet) setPermStreet(parsed.permStreet);
+        if (parsed.permArea) setPermArea(parsed.permArea);
+        if (parsed.permLandmark) setPermLandmark(parsed.permLandmark);
+        if (parsed.permState) setPermState(parsed.permState);
+        if (parsed.permDistrict) setPermDistrict(parsed.permDistrict);
+        if (parsed.permCity) setPermCity(parsed.permCity);
+        if (parsed.permPincode) setPermPincode(parsed.permPincode);
+        if (parsed.sameAddress !== undefined) setSameAddress(parsed.sameAddress);
+        if (parsed.currHouseNo) setCurrHouseNo(parsed.currHouseNo);
+        if (parsed.currStreet) setCurrStreet(parsed.currStreet);
+        if (parsed.currArea) setCurrArea(parsed.currArea);
+        if (parsed.currLandmark) setCurrLandmark(parsed.currLandmark);
+        if (parsed.currState) setCurrState(parsed.currState);
+        if (parsed.currDistrict) setCurrDistrict(parsed.currDistrict);
+        if (parsed.currCity) setCurrCity(parsed.currCity);
+        if (parsed.currPincode) setCurrPincode(parsed.currPincode);
+        if (parsed.aadhaarNumber) setAadhaarNumber(parsed.aadhaarNumber);
+        if (parsed.panNumber) setPanNumber(parsed.panNumber);
+        if (parsed.bankName) setBankName(parsed.bankName);
+        if (parsed.accountHolderName) setAccountHolderName(parsed.accountHolderName);
+        if (parsed.accountNumber) setAccountNumber(parsed.accountNumber);
+        if (parsed.ifscCode) setIfscCode(parsed.ifscCode);
+      } catch (e) {
+        console.error('Error parsing saved agent registration data', e);
+      }
+    }
+  }, [setValues]);
+
+  // Save to sessionStorage when changed
+  useEffect(() => {
+    const dataToSave = {
+      values, step, managerJoinCode, role, workingState, workingDistricts, workingDistrict, workingCity,
+      permHouseNo, permStreet, permArea, permLandmark, permState, permDistrict, permCity, permPincode,
+      sameAddress, currHouseNo, currStreet, currArea, currLandmark, currState, currDistrict, currCity, currPincode,
+      aadhaarNumber, panNumber, bankName, accountHolderName, accountNumber, ifscCode
+    };
+    localStorage.setItem('medcred_agent_reg', JSON.stringify(dataToSave));
+  }, [values, step, managerJoinCode, role, workingState, workingDistricts, workingDistrict, workingCity, permHouseNo, permStreet, permArea, permLandmark, permState, permDistrict, permCity, permPincode, sameAddress, currHouseNo, currStreet, currArea, currLandmark, currState, currDistrict, currCity, currPincode, aadhaarNumber, panNumber, bankName, accountHolderName, accountNumber, ifscCode]);
 
   // Auto-verify code with debounce when code changes
   useEffect(() => {
@@ -300,7 +363,9 @@ export default function AgentRegisterPage() {
     
     // Lock logic: If Field Agent, restrict districts to the Agent's assigned districts
     if (role === 'Field Agent' && managerInfo?.type === 'agent') {
-      return allDists.filter(d => managerInfo.districts.includes(d));
+      return allDists.filter(d => 
+        managerInfo.districts.some(md => md.toLowerCase() === d.toLowerCase())
+      );
     }
     return allDists;
   };
@@ -365,30 +430,59 @@ export default function AgentRegisterPage() {
         }
       }
       if (step === 2) {
-        if (role === 'Super Agent' && !workingState) {
-          alert('Please select your Working State.');
+        let errs = {};
+        if (role === 'Super Agent' && !workingState) errs.workingState = 'Please select your Working State.';
+        if (role === 'Agent') {
+          if (!workingState) errs.workingState = 'Please select your Working State.';
+          if (workingDistricts.length === 0) errs.workingDistricts = 'Please select your Working Districts.';
+        }
+        if (role === 'Field Agent') {
+          if (!workingState) errs.workingState = 'Please select your Working State.';
+          if (!workingDistrict) errs.workingDistrict = 'Please select your Working District.';
+          if (!workingCity) errs.workingCity = 'Please select your Working City.';
+        }
+        
+        if (Object.keys(errs).length > 0) {
+          setStep2Errors(errs);
           return;
         }
-        if (role === 'Agent' && (!workingState || workingDistricts.length === 0)) {
-          alert('Please select your Working State and Working Districts.');
-          return;
-        }
-        if (role === 'Field Agent' && (!workingState || !workingDistrict || !workingCity)) {
-          alert('Please complete all Working Jurisdiction fields.');
-          return;
-        }
+        setStep2Errors({});
       }
       if (step === 3) {
-        if (!permHouseNo || !permStreet || !permArea || !permState || !permDistrict || !permCity || !permPincode) {
-          alert('Please fill in all Permanent Address required fields.');
+        let errs = {};
+        if (!permHouseNo) errs.permHouseNo = 'Required';
+        if (!permStreet) errs.permStreet = 'Required';
+        if (!permArea) errs.permArea = 'Required';
+        if (!permState) errs.permState = 'Required';
+        if (!permDistrict) errs.permDistrict = 'Required';
+        if (!permCity) errs.permCity = 'Required';
+        if (!permPincode) errs.permPincode = 'Required';
+
+        if (!sameAddress) {
+          if (!currHouseNo) errs.currHouseNo = 'Required';
+          if (!currStreet) errs.currStreet = 'Required';
+          if (!currArea) errs.currArea = 'Required';
+          if (!currState) errs.currState = 'Required';
+          if (!currDistrict) errs.currDistrict = 'Required';
+          if (!currCity) errs.currCity = 'Required';
+          if (!currPincode) errs.currPincode = 'Required';
+        }
+
+        if (Object.keys(errs).length > 0) {
+          setStep3Errors(errs);
           return;
         }
-        if (!sameAddress && (!currHouseNo || !currStreet || !currArea || !currState || !currDistrict || !currCity || !currPincode)) {
-          alert('Please fill in all Current Address fields or check "Same as Permanent Address".');
-          return;
-        }
+        setStep3Errors({});
       }
     }
+    
+    // Pre-fill state logic
+    if (targetStep === 3 && step === 2) {
+      if (!permState && workingState) {
+        setPermState(workingState);
+      }
+    }
+    
     setStep(targetStep);
   };
 
@@ -397,6 +491,23 @@ export default function AgentRegisterPage() {
     if (!profileFile || !frontFile || !backFile || !panFile) {
       alert('Please upload all required identity documents (Profile Photo, Aadhaar Front, Aadhaar Back, and PAN Card).');
       return;
+    }
+    
+    // Bank details validation if provided
+    if (accountNumber || ifscCode || bankName || accountHolderName) {
+      if (!accountNumber || !ifscCode || !bankName || !accountHolderName) {
+        alert('Please complete all Bank Details fields, or leave them all empty.');
+        return;
+      }
+      if (accountNumber.length < 9) {
+        alert('Account Number must be at least 9 digits.');
+        return;
+      }
+      const ifscRegex = /^[A-Z]{4}0[A-Z0-9]{6}$/;
+      if (!ifscRegex.test(ifscCode)) {
+        alert('Invalid IFSC Code format. It should be 11 characters (e.g. HDFC0001234).');
+        return;
+      }
     }
 
     try {
@@ -461,6 +572,7 @@ export default function AgentRegisterPage() {
       });
 
       if (res.data.success) {
+        localStorage.removeItem('medcred_agent_reg');
         alert('Registration submitted successfully! Your status is currently "Pending Approval". The administrator will review and assign your Designation.');
         navigate('/agent/login');
       }
@@ -472,7 +584,7 @@ export default function AgentRegisterPage() {
   };
 
   return (
-    <div className="bg-[#faf8ff] min-h-screen flex flex-col font-body-md relative overflow-x-hidden">
+    <div className="bg-[#faf8ff] h-screen flex flex-col font-body-md relative overflow-hidden">
       <style dangerouslySetInnerHTML={{ __html: `
         .input-group label {
           transition: all 0.2s ease-in-out;
@@ -498,15 +610,23 @@ export default function AgentRegisterPage() {
         <div className="absolute bottom-1/4 right-1/10 w-96 h-96 bg-[#d4e6e5]/20 rounded-full blur-3xl"></div>
       </div>
 
-      <header className="relative z-10 flex items-center justify-between px-6 py-4 border-b border-[#c3c6d6]/20 bg-white/50">
-        <div className="flex items-center gap-2 cursor-pointer h-20 md:h-28" onClick={() => navigate('/agent')}>
-          <img src="/Logo (5).png" alt="MedCred Logo" className="h-full w-auto object-contain" />
+      <header className="bg-white/80 backdrop-blur-md border-b border-[#c3c6d6]/50 sticky top-0 z-50">
+        <div className="max-w-6xl mx-auto px-4 py-2 flex justify-between items-center">
+          <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/agent')}>
+            <div className="w-14 h-14 rounded-xl flex items-center justify-center bg-white border border-[#c3c6d6]/30 shadow-sm p-1">
+              <img src="/Logo (5).png" alt="MedCred India" className="w-full h-full object-contain" />
+            </div>
+            <div>
+              <h1 className="text-xl md:text-2xl font-bold text-[#003d9b] leading-none">MedCred India</h1>
+              <p className="text-[10px] md:text-xs font-semibold text-[#516161] uppercase tracking-widest mt-0.5">Agent Portal</p>
+            </div>
+          </div>
+          <Link to="/agent/login" className="text-xs font-bold text-[#003d9b] hover:underline">Sign In Portal</Link>
         </div>
-        <Link to="/agent/login" className="text-xs font-bold text-[#003d9b] hover:underline">Sign In Portal</Link>
       </header>
 
-      <main className="relative z-10 flex-grow flex items-center justify-center p-4">
-        <div className="w-full max-w-2xl space-y-6">
+      <main className="relative z-10 flex-grow p-4 overflow-y-auto flex flex-col">
+        <div className="w-full max-w-2xl mx-auto space-y-6 flex-grow flex flex-col justify-center py-4">
           <div className="text-center space-y-1">
             <h2 className="text-2xl font-bold text-[#003d9b]">Apply for MedCred Partnership</h2>
             <p className="text-xs text-[#516161]">Join our nationwide healthcare financing agent network.</p>
@@ -594,16 +714,23 @@ export default function AgentRegisterPage() {
                   <div>
                     <div className="relative input-group">
                       <input 
-                        className={`input-field block w-full px-4 py-3 bg-transparent border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003d9b] focus:border-transparent text-sm ${touched.password && errors.password ? 'border-red-500' : 'border-[#c3c6d6]'}`} 
+                        className={`input-field block w-full px-4 pr-10 py-3 bg-transparent border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003d9b] focus:border-transparent text-sm ${touched.password && errors.password ? 'border-red-500' : 'border-[#c3c6d6]'}`} 
                         id="password" 
                         name="password"
                         placeholder=" " 
-                        type="password"
+                        type={showPassword ? "text" : "password"}
                         value={password}
                         onChange={handleChange}
                         onBlur={handleBlur}
                       />
-                      <label className="absolute left-4 top-3 text-[#434654] text-xs" htmlFor="password">Login Password</label>
+                      <label className="absolute left-4 top-3 text-[#434654] text-xs" htmlFor="password">Create Password</label>
+                      <button 
+                        type="button" 
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#516161] hover:text-[#003d9b] transition-colors cursor-pointer flex items-center justify-center"
+                      >
+                        <span className="material-symbols-outlined text-[20px]">{showPassword ? 'visibility_off' : 'visibility'}</span>
+                      </button>
                     </div>
                     {touched.password && errors.password && <p className="text-red-500 text-[10px] mt-1 ml-1">{errors.password}</p>}
                   </div>
@@ -672,35 +799,32 @@ export default function AgentRegisterPage() {
                 <div className="space-y-4">
                   {role === 'Super Agent' && (
                     <div className="relative input-group">
-                      <label className="block text-xs font-semibold text-[#516161] mb-1">Working State</label>
-                      <input
-                        type="text"
-                        className="w-full px-4 py-3 bg-white border border-[#c3c6d6] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003d9b] focus:border-transparent text-sm font-semibold text-[#191b23]"
+                      <SearchableSelect
+                        label="Working State"
                         value={workingState}
-                        onChange={(e) => setWorkingState(e.target.value)}
-                        placeholder="Enter working state"
-                        required
+                        onChange={(val) => setWorkingState(val)}
+                        options={availableStates}
+                        placeholder="Search and select state"
                       />
                     </div>
                   )}
 
                   {role === 'Agent' && (
                     <>
-                      <div className="relative input-group">
-                        <label className="block text-xs font-semibold text-[#516161] mb-1">Working State</label>
-                        <input
-                          type="text"
-                          className="w-full px-4 py-3 bg-white border border-[#c3c6d6] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003d9b] focus:border-transparent text-sm font-semibold text-[#191b23] disabled:bg-[#f3f3fd] disabled:text-[#516161] disabled:cursor-not-allowed"
-                          value={workingState}
-                          onChange={(e) => {
-                            setWorkingState(e.target.value);
+                      <SearchableSelect
+                        label="Working State"
+                        value={workingState}
+                        onChange={(val) => {
+                          if (val !== workingState) {
+                            setWorkingState(val);
                             setWorkingDistricts([]);
-                          }}
-                          disabled={codeVerified && managerInfo?.type === 'super_agent'}
-                          placeholder="Enter working state"
-                          required
-                        />
-                      </div>
+                          }
+                        }}
+                        options={availableStates}
+                        disabled={codeVerified && managerInfo?.type === 'super_agent'}
+                        placeholder="Search and select state"
+                      />
+                      {step2Errors.workingState && <p className="text-red-500 text-[10px] mt-1">{step2Errors.workingState}</p>}
 
                       <SearchableMultiSelect
                         label="Working Districts"
@@ -709,38 +833,41 @@ export default function AgentRegisterPage() {
                         options={getJurisdictionDistricts()}
                         placeholder="Search and select multiple districts"
                       />
+                      {step2Errors.workingDistricts && <p className="text-red-500 text-[10px] mt-1">{step2Errors.workingDistricts}</p>}
                     </>
                   )}
 
                   {role === 'Field Agent' && (
                     <>
-                      <div className="relative input-group">
-                        <label className="block text-xs font-semibold text-[#516161] mb-1">Working State</label>
-                        <input
-                          type="text"
-                          className="w-full px-4 py-3 bg-white border border-[#c3c6d6] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003d9b] focus:border-transparent text-sm font-semibold text-[#191b23] disabled:bg-[#f3f3fd] disabled:text-[#516161] disabled:cursor-not-allowed"
-                          value={workingState}
-                          onChange={(e) => {
-                            setWorkingState(e.target.value);
+                      <SearchableSelect
+                        label="Working State"
+                        value={workingState}
+                        onChange={(val) => {
+                          if (val !== workingState) {
+                            setWorkingState(val);
                             setWorkingDistrict('');
                             setWorkingCity('');
-                          }}
-                          disabled={codeVerified && (managerInfo?.type === 'agent' || managerInfo?.type === 'super_agent')}
-                          placeholder="Enter working state"
-                          required
-                        />
-                      </div>
+                          }
+                        }}
+                        options={availableStates}
+                        disabled={codeVerified && (managerInfo?.type === 'agent' || managerInfo?.type === 'super_agent')}
+                        placeholder="Search and select state"
+                      />
+                      {step2Errors.workingState && <p className="text-red-500 text-[10px] mt-1">{step2Errors.workingState}</p>}
 
                       <SearchableSelect
                         label="Working District"
                         value={workingDistrict}
                         onChange={(val) => {
-                          setWorkingDistrict(val);
-                          setWorkingCity('');
+                          if (val !== workingDistrict) {
+                            setWorkingDistrict(val);
+                            setWorkingCity('');
+                          }
                         }}
                         options={getJurisdictionDistricts()}
                         placeholder="Search and select district"
                       />
+                      {step2Errors.workingDistrict && <p className="text-red-500 text-[10px] mt-1">{step2Errors.workingDistrict}</p>}
 
                       <SearchableSelect
                         label="Working City"
@@ -749,6 +876,7 @@ export default function AgentRegisterPage() {
                         options={getJurisdictionCities()}
                         placeholder="Search and select city"
                       />
+                      {step2Errors.workingCity && <p className="text-red-500 text-[10px] mt-1">{step2Errors.workingCity}</p>}
                     </>
                   )}
                 </div>
@@ -781,85 +909,106 @@ export default function AgentRegisterPage() {
                     <h4 className="text-xs font-extrabold text-[#003d9b] uppercase tracking-wider">Permanent Address</h4>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="relative input-group">
-                        <input 
-                          className="input-field block w-full px-4 py-3 bg-transparent border border-[#c3c6d6] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003d9b] focus:border-transparent text-sm" 
-                          placeholder=" " 
-                          type="text"
-                          value={permHouseNo}
-                          onChange={(e) => setPermHouseNo(e.target.value)}
-                        />
-                        <label className="absolute left-4 top-3 text-[#434654] text-xs">House Number</label>
+                      <div>
+                        <div className="relative input-group">
+                          <input 
+                            className="input-field block w-full px-4 py-3 bg-transparent border border-[#c3c6d6] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003d9b] focus:border-transparent text-sm" 
+                            placeholder=" " 
+                            type="text"
+                            value={permHouseNo}
+                            onChange={(e) => setPermHouseNo(e.target.value)}
+                          />
+                          <label className="absolute left-4 top-3 text-[#434654] text-xs">House Number</label>
+                        </div>
+                        {step3Errors.permHouseNo && <p className="text-red-500 text-[10px] mt-1">{step3Errors.permHouseNo}</p>}
                       </div>
 
-                      <div className="relative input-group">
-                        <input 
-                          className="input-field block w-full px-4 py-3 bg-transparent border border-[#c3c6d6] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003d9b] focus:border-transparent text-sm" 
-                          placeholder=" " 
-                          type="text"
-                          value={permStreet}
-                          onChange={(e) => setPermStreet(e.target.value)}
-                        />
-                        <label className="absolute left-4 top-3 text-[#434654] text-xs">Street / Road</label>
+                      <div>
+                        <div className="relative input-group">
+                          <input 
+                            className="input-field block w-full px-4 py-3 bg-transparent border border-[#c3c6d6] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003d9b] focus:border-transparent text-sm" 
+                            placeholder=" " 
+                            type="text"
+                            value={permStreet}
+                            onChange={(e) => setPermStreet(e.target.value)}
+                          />
+                          <label className="absolute left-4 top-3 text-[#434654] text-xs">Street / Road</label>
+                        </div>
+                        {step3Errors.permStreet && <p className="text-red-500 text-[10px] mt-1">{step3Errors.permStreet}</p>}
                       </div>
                     </div>
 
-                    <div className="relative input-group">
-                      <input 
-                        className="input-field block w-full px-4 py-3 bg-transparent border border-[#c3c6d6] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003d9b] focus:border-transparent text-sm" 
-                        placeholder=" " 
-                        type="text"
-                        value={permArea}
-                        onChange={(e) => setPermArea(e.target.value)}
-                      />
-                      <label className="absolute left-4 top-3 text-[#434654] text-xs">Village / Locality</label>
+                    <div>
+                      <div className="relative input-group">
+                        <input 
+                          className="input-field block w-full px-4 py-3 bg-transparent border border-[#c3c6d6] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003d9b] focus:border-transparent text-sm" 
+                          placeholder=" " 
+                          type="text"
+                          value={permArea}
+                          onChange={(e) => setPermArea(e.target.value)}
+                        />
+                        <label className="absolute left-4 top-3 text-[#434654] text-xs">Village / Locality</label>
+                      </div>
+                      {step3Errors.permArea && <p className="text-red-500 text-[10px] mt-1">{step3Errors.permArea}</p>}
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="relative input-group">
-                        <input 
-                          className="input-field block w-full px-4 py-3 bg-transparent border border-[#c3c6d6] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003d9b] focus:border-transparent text-sm" 
-                          placeholder=" " 
-                          type="text"
-                          value={permState}
-                          onChange={(e) => setPermState(e.target.value)}
-                        />
-                        <label className="absolute left-4 top-3 text-[#434654] text-xs">State</label>
+                      <div>
+                        <div className="relative input-group">
+                          <input 
+                            className="input-field block w-full px-4 py-3 bg-transparent border border-[#c3c6d6] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003d9b] focus:border-transparent text-sm" 
+                            placeholder=" " 
+                            type="text"
+                            value={permState}
+                            onChange={(e) => setPermState(e.target.value)}
+                          />
+                          <label className="absolute left-4 top-3 text-[#434654] text-xs">State</label>
+                        </div>
+                        {step3Errors.permState && <p className="text-red-500 text-[10px] mt-1">{step3Errors.permState}</p>}
                       </div>
 
-                      <div className="relative input-group">
-                        <input 
-                          className="input-field block w-full px-4 py-3 bg-transparent border border-[#c3c6d6] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003d9b] focus:border-transparent text-sm" 
-                          placeholder=" " 
-                          type="text"
-                          value={permDistrict}
-                          onChange={(e) => setPermDistrict(e.target.value)}
-                        />
-                        <label className="absolute left-4 top-3 text-[#434654] text-xs">District</label>
+                      <div>
+                        <div className="relative input-group">
+                          <input 
+                            className="input-field block w-full px-4 py-3 bg-transparent border border-[#c3c6d6] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003d9b] focus:border-transparent text-sm" 
+                            placeholder=" " 
+                            type="text"
+                            value={permDistrict}
+                            onChange={(e) => setPermDistrict(e.target.value)}
+                          />
+                          <label className="absolute left-4 top-3 text-[#434654] text-xs">District</label>
+                        </div>
+                        {step3Errors.permDistrict && <p className="text-red-500 text-[10px] mt-1">{step3Errors.permDistrict}</p>}
                       </div>
 
-                      <div className="relative input-group">
-                        <input 
-                          className="input-field block w-full px-4 py-3 bg-transparent border border-[#c3c6d6] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003d9b] focus:border-transparent text-sm" 
-                          placeholder=" " 
-                          type="text"
-                          value={permCity}
-                          onChange={(e) => setPermCity(e.target.value)}
-                        />
-                        <label className="absolute left-4 top-3 text-[#434654] text-xs">City</label>
+                      <div>
+                        <div className="relative input-group">
+                          <input 
+                            className="input-field block w-full px-4 py-3 bg-transparent border border-[#c3c6d6] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003d9b] focus:border-transparent text-sm" 
+                            placeholder=" " 
+                            type="text"
+                            value={permCity}
+                            onChange={(e) => setPermCity(e.target.value)}
+                          />
+                          <label className="absolute left-4 top-3 text-[#434654] text-xs">City</label>
+                        </div>
+                        {step3Errors.permCity && <p className="text-red-500 text-[10px] mt-1">{step3Errors.permCity}</p>}
                       </div>
                     </div>
 
-                    <div className="relative input-group w-full md:w-1/3">
-                      <input 
-                        className="input-field block w-full px-4 py-3 bg-transparent border border-[#c3c6d6] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003d9b] focus:border-transparent text-sm" 
-                        placeholder=" " 
-                        type="text"
-                        maxLength={6}
-                        value={permPincode}
-                        onChange={(e) => setPermPincode(e.target.value)}
-                      />
-                      <label className="absolute left-4 top-3 text-[#434654] text-xs">Pincode</label>
+                    <div>
+                      <div className="relative input-group w-full md:w-1/3">
+                        <input 
+                          className="input-field block w-full px-4 py-3 bg-transparent border border-[#c3c6d6] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003d9b] focus:border-transparent text-sm" 
+                          placeholder=" " 
+                          type="text"
+                          maxLength={6}
+                          value={permPincode}
+                          onChange={(e) => setPermPincode(e.target.value.replace(/\D/g, ''))}
+                        />
+                        <label className="absolute left-4 top-3 text-[#434654] text-xs">Pincode</label>
+                      </div>
+                      {step3Errors.permPincode && <p className="text-red-500 text-[10px] mt-1">{step3Errors.permPincode}</p>}
                     </div>
                   </div>
 
@@ -880,85 +1029,106 @@ export default function AgentRegisterPage() {
                       <h4 className="text-xs font-extrabold text-[#003d9b] uppercase tracking-wider">Current Address</h4>
                       
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="relative input-group">
-                          <input 
-                            className="input-field block w-full px-4 py-3 bg-transparent border border-[#c3c6d6] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003d9b] focus:border-transparent text-sm" 
-                            placeholder=" " 
-                            type="text"
-                            value={currHouseNo}
-                            onChange={(e) => setCurrHouseNo(e.target.value)}
-                          />
-                          <label className="absolute left-4 top-3 text-[#434654] text-xs">House Number</label>
+                        <div>
+                          <div className="relative input-group">
+                            <input 
+                              className="input-field block w-full px-4 py-3 bg-transparent border border-[#c3c6d6] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003d9b] focus:border-transparent text-sm" 
+                              placeholder=" " 
+                              type="text"
+                              value={currHouseNo}
+                              onChange={(e) => setCurrHouseNo(e.target.value)}
+                            />
+                            <label className="absolute left-4 top-3 text-[#434654] text-xs">House Number</label>
+                          </div>
+                          {step3Errors.currHouseNo && <p className="text-red-500 text-[10px] mt-1">{step3Errors.currHouseNo}</p>}
                         </div>
 
-                        <div className="relative input-group">
-                          <input 
-                            className="input-field block w-full px-4 py-3 bg-transparent border border-[#c3c6d6] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003d9b] focus:border-transparent text-sm" 
-                            placeholder=" " 
-                            type="text"
-                            value={currStreet}
-                            onChange={(e) => setCurrStreet(e.target.value)}
-                          />
-                          <label className="absolute left-4 top-3 text-[#434654] text-xs">Street / Road</label>
+                        <div>
+                          <div className="relative input-group">
+                            <input 
+                              className="input-field block w-full px-4 py-3 bg-transparent border border-[#c3c6d6] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003d9b] focus:border-transparent text-sm" 
+                              placeholder=" " 
+                              type="text"
+                              value={currStreet}
+                              onChange={(e) => setCurrStreet(e.target.value)}
+                            />
+                            <label className="absolute left-4 top-3 text-[#434654] text-xs">Street / Road</label>
+                          </div>
+                          {step3Errors.currStreet && <p className="text-red-500 text-[10px] mt-1">{step3Errors.currStreet}</p>}
                         </div>
                       </div>
 
-                      <div className="relative input-group">
-                        <input 
-                          className="input-field block w-full px-4 py-3 bg-transparent border border-[#c3c6d6] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003d9b] focus:border-transparent text-sm" 
-                          placeholder=" " 
-                          type="text"
-                          value={currArea}
-                          onChange={(e) => setCurrArea(e.target.value)}
-                        />
-                        <label className="absolute left-4 top-3 text-[#434654] text-xs">Village / Locality</label>
+                      <div>
+                        <div className="relative input-group">
+                          <input 
+                            className="input-field block w-full px-4 py-3 bg-transparent border border-[#c3c6d6] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003d9b] focus:border-transparent text-sm" 
+                            placeholder=" " 
+                            type="text"
+                            value={currArea}
+                            onChange={(e) => setCurrArea(e.target.value)}
+                          />
+                          <label className="absolute left-4 top-3 text-[#434654] text-xs">Village / Locality</label>
+                        </div>
+                        {step3Errors.currArea && <p className="text-red-500 text-[10px] mt-1">{step3Errors.currArea}</p>}
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="relative input-group">
-                          <input 
-                            className="input-field block w-full px-4 py-3 bg-transparent border border-[#c3c6d6] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003d9b] focus:border-transparent text-sm" 
-                            placeholder=" " 
-                            type="text"
-                            value={currState}
-                            onChange={(e) => setCurrState(e.target.value)}
-                          />
-                          <label className="absolute left-4 top-3 text-[#434654] text-xs">State</label>
+                        <div>
+                          <div className="relative input-group">
+                            <input 
+                              className="input-field block w-full px-4 py-3 bg-transparent border border-[#c3c6d6] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003d9b] focus:border-transparent text-sm" 
+                              placeholder=" " 
+                              type="text"
+                              value={currState}
+                              onChange={(e) => setCurrState(e.target.value)}
+                            />
+                            <label className="absolute left-4 top-3 text-[#434654] text-xs">State</label>
+                          </div>
+                          {step3Errors.currState && <p className="text-red-500 text-[10px] mt-1">{step3Errors.currState}</p>}
                         </div>
 
-                        <div className="relative input-group">
-                          <input 
-                            className="input-field block w-full px-4 py-3 bg-transparent border border-[#c3c6d6] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003d9b] focus:border-transparent text-sm" 
-                            placeholder=" " 
-                            type="text"
-                            value={currDistrict}
-                            onChange={(e) => setCurrDistrict(e.target.value)}
-                          />
-                          <label className="absolute left-4 top-3 text-[#434654] text-xs">District</label>
+                        <div>
+                          <div className="relative input-group">
+                            <input 
+                              className="input-field block w-full px-4 py-3 bg-transparent border border-[#c3c6d6] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003d9b] focus:border-transparent text-sm" 
+                              placeholder=" " 
+                              type="text"
+                              value={currDistrict}
+                              onChange={(e) => setCurrDistrict(e.target.value)}
+                            />
+                            <label className="absolute left-4 top-3 text-[#434654] text-xs">District</label>
+                          </div>
+                          {step3Errors.currDistrict && <p className="text-red-500 text-[10px] mt-1">{step3Errors.currDistrict}</p>}
                         </div>
 
-                        <div className="relative input-group">
-                          <input 
-                            className="input-field block w-full px-4 py-3 bg-transparent border border-[#c3c6d6] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003d9b] focus:border-transparent text-sm" 
-                            placeholder=" " 
-                            type="text"
-                            value={currCity}
-                            onChange={(e) => setCurrCity(e.target.value)}
-                          />
-                          <label className="absolute left-4 top-3 text-[#434654] text-xs">City</label>
+                        <div>
+                          <div className="relative input-group">
+                            <input 
+                              className="input-field block w-full px-4 py-3 bg-transparent border border-[#c3c6d6] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003d9b] focus:border-transparent text-sm" 
+                              placeholder=" " 
+                              type="text"
+                              value={currCity}
+                              onChange={(e) => setCurrCity(e.target.value)}
+                            />
+                            <label className="absolute left-4 top-3 text-[#434654] text-xs">City</label>
+                          </div>
+                          {step3Errors.currCity && <p className="text-red-500 text-[10px] mt-1">{step3Errors.currCity}</p>}
                         </div>
                       </div>
 
-                      <div className="relative input-group w-full md:w-1/3">
-                        <input 
-                          className="input-field block w-full px-4 py-3 bg-transparent border border-[#c3c6d6] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003d9b] focus:border-transparent text-sm" 
-                          placeholder=" " 
-                          type="text"
-                          maxLength={6}
-                          value={currPincode}
-                          onChange={(e) => setCurrPincode(e.target.value)}
-                        />
-                        <label className="absolute left-4 top-3 text-[#434654] text-xs">Pincode</label>
+                      <div>
+                        <div className="relative input-group w-full md:w-1/3">
+                          <input 
+                            className="input-field block w-full px-4 py-3 bg-transparent border border-[#c3c6d6] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003d9b] focus:border-transparent text-sm" 
+                            placeholder=" " 
+                            type="text"
+                            maxLength={6}
+                            value={currPincode}
+                            onChange={(e) => setCurrPincode(e.target.value.replace(/\D/g, ''))}
+                          />
+                          <label className="absolute left-4 top-3 text-[#434654] text-xs">Pincode</label>
+                        </div>
+                        {step3Errors.currPincode && <p className="text-red-500 text-[10px] mt-1">{step3Errors.currPincode}</p>}
                       </div>
                     </div>
                   )}
@@ -995,11 +1165,11 @@ export default function AgentRegisterPage() {
                     <div className="flex flex-col items-center gap-1">
                       <span className="text-[10px] font-bold text-[#516161]">Profile Photo</span>
                       <label className="w-full aspect-square border-2 border-dashed border-[#c3c6d6] rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-[#003d9b] hover:bg-[#003d9b]/5 transition-all overflow-hidden relative group">
-                        <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageChange(e, setProfilePreview, setProfileFile)} required />
+                        <input type="file" className="hidden" accept="image/*" capture="environment" onChange={(e) => handleImageChange(e, setProfilePreview, setProfileFile)} required />
                         {!profilePreview ? (
                           <span className="material-symbols-outlined text-[#737685] text-xl">account_circle</span>
                         ) : (
-                          <img src={profilePreview} className="w-full h-full object-cover" alt="Profile" />
+                          <img src={profilePreview} className="w-full h-full object-contain bg-[#f3f3fd]" alt="Profile" />
                         )}
                       </label>
                     </div>
@@ -1008,11 +1178,11 @@ export default function AgentRegisterPage() {
                     <div className="flex flex-col items-center gap-1">
                       <span className="text-[10px] font-bold text-[#516161]">Aadhaar Front</span>
                       <label className="w-full aspect-square border-2 border-dashed border-[#c3c6d6] rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-[#003d9b] hover:bg-[#003d9b]/5 transition-all overflow-hidden relative group">
-                        <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageChange(e, setFrontPreview, setFrontFile)} required />
+                        <input type="file" className="hidden" accept="image/*" capture="environment" onChange={(e) => handleImageChange(e, setFrontPreview, setFrontFile)} required />
                         {!frontPreview ? (
                           <span className="material-symbols-outlined text-[#737685] text-xl">badge</span>
                         ) : (
-                          <img src={frontPreview} className="w-full h-full object-cover" alt="Front" />
+                          <img src={frontPreview} className="w-full h-full object-contain bg-[#f3f3fd]" alt="Front" />
                         )}
                       </label>
                     </div>
@@ -1021,11 +1191,11 @@ export default function AgentRegisterPage() {
                     <div className="flex flex-col items-center gap-1">
                       <span className="text-[10px] font-bold text-[#516161]">Aadhaar Back</span>
                       <label className="w-full aspect-square border-2 border-dashed border-[#c3c6d6] rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-[#003d9b] hover:bg-[#003d9b]/5 transition-all overflow-hidden relative group">
-                        <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageChange(e, setBackPreview, setBackFile)} required />
+                        <input type="file" className="hidden" accept="image/*" capture="environment" onChange={(e) => handleImageChange(e, setBackPreview, setBackFile)} required />
                         {!backPreview ? (
                           <span className="material-symbols-outlined text-[#737685] text-xl">credit_card</span>
                         ) : (
-                          <img src={backPreview} className="w-full h-full object-cover" alt="Back" />
+                          <img src={backPreview} className="w-full h-full object-contain bg-[#f3f3fd]" alt="Back" />
                         )}
                       </label>
                     </div>
@@ -1034,11 +1204,11 @@ export default function AgentRegisterPage() {
                     <div className="flex flex-col items-center gap-1">
                       <span className="text-[10px] font-bold text-[#516161]">PAN Card</span>
                       <label className="w-full aspect-square border-2 border-dashed border-[#c3c6d6] rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-[#003d9b] hover:bg-[#003d9b]/5 transition-all overflow-hidden relative group">
-                        <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageChange(e, setPanPreview, setPanFile)} required />
+                        <input type="file" className="hidden" accept="image/*" capture="environment" onChange={(e) => handleImageChange(e, setPanPreview, setPanFile)} required />
                         {!panPreview ? (
                           <span className="material-symbols-outlined text-[#737685] text-xl">receipt_long</span>
                         ) : (
-                          <img src={panPreview} className="w-full h-full object-cover" alt="PAN Card" />
+                          <img src={panPreview} className="w-full h-full object-contain bg-[#f3f3fd]" alt="PAN Card" />
                         )}
                       </label>
                     </div>
@@ -1078,8 +1248,9 @@ export default function AgentRegisterPage() {
                           className="input-field block w-full px-4 py-3 bg-transparent border border-[#c3c6d6] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003d9b] focus:border-transparent text-sm" 
                           placeholder=" " 
                           type="text"
+                          maxLength={18}
                           value={accountNumber}
-                          onChange={(e) => setAccountNumber(e.target.value)}
+                          onChange={(e) => setAccountNumber(e.target.value.replace(/\D/g, ''))}
                         />
                         <label className="absolute left-4 top-3 text-[#434654] text-xs">Account Number</label>
                       </div>
@@ -1089,8 +1260,9 @@ export default function AgentRegisterPage() {
                           className="input-field block w-full px-4 py-3 bg-transparent border border-[#c3c6d6] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003d9b] focus:border-transparent text-sm" 
                           placeholder=" " 
                           type="text"
+                          maxLength={11}
                           value={ifscCode}
-                          onChange={(e) => setIfscCode(e.target.value)}
+                          onChange={(e) => setIfscCode(e.target.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase())}
                         />
                         <label className="absolute left-4 top-3 text-[#434654] text-xs">IFSC Code</label>
                       </div>

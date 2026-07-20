@@ -556,8 +556,10 @@ export default function AdminSupportPage() {
                     <label className="text-xs font-bold text-[#191b23]">Display Order (Lower values show first)</label>
                     <input
                       type="number"
+                      min="0"
+                      onKeyDown={(e) => { if (e.key === '-' || e.key === 'e' || e.key === 'E') e.preventDefault(); }}
                       value={faqOrder}
-                      onChange={(e) => setFaqOrder(Number(e.target.value))}
+                      onChange={(e) => setFaqOrder(Math.max(0, Number(e.target.value)))}
                       className="w-32 bg-white border border-[#c3c6d6]/40 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-[#003d9b] font-mono"
                     />
                   </div>
@@ -614,8 +616,10 @@ export default function AdminSupportPage() {
                     <label className="text-xs font-bold text-[#191b23]">Display Order (Lower values show first)</label>
                     <input
                       type="number"
+                      min="0"
+                      onKeyDown={(e) => { if (e.key === '-' || e.key === 'e' || e.key === 'E') e.preventDefault(); }}
                       value={faqOrder}
-                      onChange={(e) => setFaqOrder(Number(e.target.value))}
+                      onChange={(e) => setFaqOrder(Math.max(0, Number(e.target.value)))}
                       className="w-32 bg-white border border-[#c3c6d6]/40 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-[#003d9b] font-mono"
                     />
                   </div>

@@ -25,10 +25,12 @@ export default function AgentCustomersPage() {
           relation: 'Self', // Backend currently doesn't store relation for primary
           age: user.mobile, // Fallback since age requires calculation
           status: user.kycStatus === 'verified' ? 'Approved' : 'Pending',
-          limit: user.planId ? 'Allocated' : '—',
+          limit: user.creditLimit != null ? `₹${user.creditLimit.toLocaleString('en-IN')}` : (user.planId ? 'Allocated' : '—'),
           commission: user.planId ? 'Earned' : 'Pending',
           photo: user.profilePhoto
-            ? `${SERVER_URL}/uploads/${user.profilePhoto}`
+            ? (user.profilePhoto.startsWith('http') || user.profilePhoto.startsWith('data:') 
+                ? user.profilePhoto 
+                : `${SERVER_URL}${user.profilePhoto.includes('/uploads') ? (user.profilePhoto.startsWith('/') ? user.profilePhoto : `/${user.profilePhoto}`) : `/uploads/${user.profilePhoto}`}`)
             : 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png' // Default user placeholder
         })));
       }
@@ -99,7 +101,12 @@ export default function AgentCustomersPage() {
             <div key={idx} className="bg-white border border-[#c3c6d6]/30 p-4 rounded-xl flex flex-col justify-between gap-4 shadow-sm hover:shadow-md transition-shadow relative">
               <div className="flex items-center gap-4">
                 <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-[#dae2ff] p-0.5 flex-shrink-0">
-                  <img alt={customer.name} className="w-full h-full object-cover rounded-full" src={customer.photo} />
+                  <img 
+                    alt={customer.name} 
+                    className="w-full h-full object-cover rounded-full" 
+                    src={customer.photo} 
+                    onError={(e) => { e.target.onerror = null; e.target.src = 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png'; }}
+                  />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">

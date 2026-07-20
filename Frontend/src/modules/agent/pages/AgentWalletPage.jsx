@@ -14,6 +14,14 @@ export default function AgentWalletPage() {
     paidEarnings: 0,
     balance: 0,
   });
+  const [bankDetails, setBankDetails] = useState({
+    bankName: '',
+    accountHolderName: '',
+    accountNumber: '',
+    ifscCode: ''
+  });
+  const [isBankModalOpen, setIsBankModalOpen] = useState(false);
+  const [isSavingBank, setIsSavingBank] = useState(false);
 
   const [transactions, setTransactions] = useState([]);
 
@@ -24,6 +32,17 @@ export default function AgentWalletPage() {
     }
     fetchWalletData();
   }, []);
+
+  useEffect(() => {
+    if (isBankModalOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isBankModalOpen]);
 
   const fetchWalletData = async () => {
     try {
@@ -37,6 +56,17 @@ export default function AgentWalletPage() {
           pendingEarnings: w.pendingCommissions,
           paidEarnings: w.paidEarnings,
           balance: w.withdrawableBalance,
+        });
+      }
+      
+      // Fetch profile for bank details
+      const profileRes = await api.get(ENDPOINTS.AGENT_PROFILE);
+      if (profileRes.data?.success && profileRes.data.data.bankDetails) {
+        setBankDetails({
+          bankName: profileRes.data.data.bankDetails.bankName || '',
+          accountHolderName: profileRes.data.data.bankDetails.accountHolderName || '',
+          accountNumber: profileRes.data.data.bankDetails.accountNumber || '',
+          ifscCode: profileRes.data.data.bankDetails.ifscCode || ''
         });
       }
 
@@ -55,6 +85,12 @@ export default function AgentWalletPage() {
   const handleRequestPayout = async () => {
     if (walletStats.balance <= 0) {
       alert('You have no withdrawable balance left.');
+      return;
+    }
+    
+    if (!bankDetails.accountNumber || !bankDetails.ifscCode || !bankDetails.bankName) {
+      alert('Please fill your Bank Account Details first before requesting a payout.');
+      setIsBankModalOpen(true);
       return;
     }
     
@@ -78,6 +114,23 @@ export default function AgentWalletPage() {
     }
   };
 
+  const saveBankDetails = async (e) => {
+    e.preventDefault();
+    setIsSavingBank(true);
+    try {
+      const res = await api.patch(ENDPOINTS.AGENT_PROFILE, { bankDetails });
+      if (res.data?.success) {
+        alert('Bank details saved successfully!');
+        setIsBankModalOpen(false);
+      }
+    } catch (error) {
+      console.error('Error saving bank details:', error);
+      alert(error.response?.data?.message || 'Failed to save bank details.');
+    } finally {
+      setIsSavingBank(false);
+    }
+  };
+
   if (isLoading) {
     return <div className="flex justify-center items-center h-64 text-[#516161]">Loading wallet...</div>;
   }
@@ -91,7 +144,8 @@ export default function AgentWalletPage() {
   }
 
   return (
-    <div className="space-y-6 md:space-y-8 animate-fade-in">
+    <>
+      <div className="space-y-6 md:space-y-8 animate-fade-in">
       {/* Wallet Balance Header Banner */}
       <section className="bg-gradient-to-r from-[#003d9b] to-[#0052cc] text-white rounded-2xl p-6 md:p-8 shadow-md relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-10 -mt-10 blur-xl"></div>
@@ -157,6 +211,48 @@ export default function AgentWalletPage() {
         </div>
       </section>
 
+      {/* Bank Details Section */}
+      <section className="bg-white border border-[#c3c6d6]/30 rounded-2xl shadow-sm p-6 relative overflow-hidden">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="font-bold text-[#191b23] text-base md:text-lg flex items-center gap-2">
+            <span className="material-symbols-outlined text-[#003d9b]">account_balance</span>
+            Payout Bank Details
+          </h3>
+          <button
+            onClick={() => setIsBankModalOpen(true)}
+            className="text-sm font-bold text-[#003d9b] bg-[#dae2ff] px-4 py-1.5 rounded-lg hover:bg-[#003d9b] hover:text-white transition-colors"
+          >
+            {bankDetails.accountNumber ? 'Edit Details' : 'Add Bank Info'}
+          </button>
+        </div>
+        
+        {bankDetails.accountNumber ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-[#faf8ff] p-4 rounded-xl border border-[#c3c6d6]/20">
+            <div>
+              <p className="text-xs text-[#516161]">Bank Name</p>
+              <p className="font-bold text-[#191b23]">{bankDetails.bankName}</p>
+            </div>
+            <div>
+              <p className="text-xs text-[#516161]">Account Holder Name</p>
+              <p className="font-bold text-[#191b23]">{bankDetails.accountHolderName}</p>
+            </div>
+            <div>
+              <p className="text-xs text-[#516161]">Account Number</p>
+              <p className="font-mono font-bold text-[#191b23]">{bankDetails.accountNumber}</p>
+            </div>
+            <div>
+              <p className="text-xs text-[#516161]">IFSC Code</p>
+              <p className="font-mono font-bold text-[#191b23]">{bankDetails.ifscCode}</p>
+            </div>
+          </div>
+        ) : (
+          <div className="bg-[#ffdbcf]/50 border border-[#ffdbcf] text-[#7b2600] p-4 rounded-xl text-sm font-semibold flex items-center gap-3">
+            <span className="material-symbols-outlined">warning</span>
+            Please add your bank account details to enable withdrawals.
+          </div>
+        )}
+      </section>
+
       {/* Transaction History Table */}
       <section className="bg-white border border-[#c3c6d6]/30 rounded-2xl shadow-sm overflow-hidden">
         <div className="px-6 py-5 border-b border-[#c3c6d6]/20">
@@ -205,6 +301,79 @@ export default function AgentWalletPage() {
           </table>
         </div>
       </section>
-    </div>
+      </div>
+
+      {/* Bank Details Modal */}
+      {isBankModalOpen && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-xl relative animate-fade-in">
+            <h3 className="text-xl font-bold text-[#191b23] mb-4">Update Bank Details</h3>
+            <form onSubmit={saveBankDetails} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-[#516161] mb-1">Bank Name</label>
+                <input 
+                  type="text" 
+                  required
+                  value={bankDetails.bankName}
+                  onChange={(e) => setBankDetails({...bankDetails, bankName: e.target.value})}
+                  className="w-full bg-[#faf8ff] border border-[#c3c6d6]/40 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#003d9b] transition-colors"
+                  placeholder="e.g. State Bank of India"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-[#516161] mb-1">Account Holder Name</label>
+                <input 
+                  type="text" 
+                  required
+                  value={bankDetails.accountHolderName}
+                  onChange={(e) => setBankDetails({...bankDetails, accountHolderName: e.target.value})}
+                  className="w-full bg-[#faf8ff] border border-[#c3c6d6]/40 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#003d9b] transition-colors"
+                  placeholder="As per bank records"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-[#516161] mb-1">Account Number</label>
+                <input 
+                  type="text" 
+                  required
+                  value={bankDetails.accountNumber}
+                  onChange={(e) => setBankDetails({...bankDetails, accountNumber: e.target.value})}
+                  className="w-full bg-[#faf8ff] border border-[#c3c6d6]/40 rounded-xl px-4 py-2.5 text-sm font-mono focus:outline-none focus:border-[#003d9b] transition-colors"
+                  placeholder="Enter Account Number"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-[#516161] mb-1">IFSC Code</label>
+                <input 
+                  type="text" 
+                  required
+                  value={bankDetails.ifscCode}
+                  onChange={(e) => setBankDetails({...bankDetails, ifscCode: e.target.value.toUpperCase()})}
+                  className="w-full bg-[#faf8ff] border border-[#c3c6d6]/40 rounded-xl px-4 py-2.5 text-sm font-mono uppercase focus:outline-none focus:border-[#003d9b] transition-colors"
+                  placeholder="e.g. SBIN0001234"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button 
+                  type="button" 
+                  onClick={() => setIsBankModalOpen(false)}
+                  className="flex-1 px-4 py-2.5 rounded-xl border border-[#c3c6d6] text-[#516161] font-bold hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={isSavingBank}
+                  className="flex-1 px-4 py-2.5 rounded-xl bg-[#003d9b] text-white font-bold hover:bg-[#003d9b]/90 disabled:opacity-50 transition-colors"
+                >
+                  {isSavingBank ? 'Saving...' : 'Save Details'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

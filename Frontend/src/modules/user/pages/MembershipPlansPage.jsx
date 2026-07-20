@@ -4,6 +4,7 @@ import api from '../../../services/api';
 import { ENDPOINTS } from '../../../services/types';
 
 import { DEFAULT_PLANS } from '../utils/storage';
+import BottomNavBar from '../components/Navigation/BottomNavBar';
 
 const planIcons = { individual: 'person', family: 'group', premium: 'workspace_premium' };
 const planGradients = {
@@ -365,6 +366,8 @@ export default function MembershipPlansPage() {
           </div>
         </div>
       )}
+      
+      <BottomNavBar />
     </div>
   );
 }

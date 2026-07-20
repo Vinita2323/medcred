@@ -50,12 +50,15 @@ export default function CheckoutPage() {
   const deliveryAddress = `${addressData.fullName}, Phone: ${addressData.phone}, Addr: ${addressData.street}, ${addressData.city}, ${addressData.state} - ${addressData.pincode}`;
 
   const validateForm = () => {
+    const phoneRegex = /^[0-9]{10}$/;
+    const pinRegex = /^[0-9]{6}$/;
+    
     if (!addressData.fullName.trim()) { alert('Please enter Full Name'); return false; }
-    if (!addressData.phone.trim() || addressData.phone.length < 10) { alert('Please enter a valid 10-digit Phone Number'); return false; }
+    if (!phoneRegex.test(addressData.phone)) { alert('Please enter a valid 10-digit Phone Number'); return false; }
     if (!addressData.street.trim()) { alert('Please enter Street Address'); return false; }
     if (!addressData.city.trim()) { alert('Please enter City'); return false; }
     if (!addressData.state.trim()) { alert('Please enter State'); return false; }
-    if (!addressData.pincode.trim() || addressData.pincode.length < 6) { alert('Please enter a valid 6-digit Pincode'); return false; }
+    if (!pinRegex.test(addressData.pincode)) { alert('Please enter a valid 6-digit Pincode'); return false; }
     return true;
   };
 
@@ -386,14 +389,17 @@ export default function CheckoutPage() {
         </div>
 
         {/* Security badges */}
-        <div className="flex items-center justify-center gap-4 opacity-50 py-1">
-          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Visa_Inc._logo.svg/200px-Visa_Inc._logo.svg.png" alt="Visa" className="h-4 object-contain" />
-          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Mastercard-logo.svg/200px-Mastercard-logo.svg.png" alt="Mastercard" className="h-5 object-contain" />
-          <span className="text-[10px] font-bold text-on-surface-variant">RuPay · UPI</span>
+        <div className="flex items-center justify-center gap-4 opacity-70 py-2">
+          <span className="text-[12px] font-black text-blue-900 italic tracking-tighter">VISA</span>
+          <div className="flex -space-x-1 items-center">
+            <div className="w-4 h-4 rounded-full bg-red-500 opacity-90"></div>
+            <div className="w-4 h-4 rounded-full bg-yellow-400 opacity-90"></div>
+          </div>
+          <span className="text-[11px] font-bold text-on-surface-variant">RuPay · UPI</span>
         </div>
 
         {/* Pay button */}
-        <div className="sticky bottom-0 bg-[#F8FAFF] pt-2 pb-4">
+        <div className="sticky bottom-0 bg-[#F8FAFF] pt-2 pb-[calc(env(safe-area-inset-bottom)+24px)]">
           <button
             onClick={handlePay}
             className="w-full py-4 bg-primary text-white font-black rounded-2xl shadow-xl hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-3 text-base"

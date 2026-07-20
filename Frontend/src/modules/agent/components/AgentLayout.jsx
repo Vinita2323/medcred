@@ -1,14 +1,34 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { STORAGE_KEYS, ENDPOINTS } from '../../../services/types';
+import { STORAGE_KEYS, ENDPOINTS, getImageUrl } from '../../../services/types';
 import api from '../../../services/api';
 
 export default function AgentLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
+  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
 
   const [currentUser, setCurrentUser] = useState(null);
+
+  useEffect(() => {
+    const handleFocusIn = (e) => {
+      if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) {
+        setIsKeyboardOpen(true);
+      }
+    };
+    const handleFocusOut = () => {
+      setIsKeyboardOpen(false);
+    };
+
+    window.addEventListener('focusin', handleFocusIn);
+    window.addEventListener('focusout', handleFocusOut);
+
+    return () => {
+      window.removeEventListener('focusin', handleFocusIn);
+      window.removeEventListener('focusout', handleFocusOut);
+    };
+  }, []);
 
   useEffect(() => {
     const userJson = localStorage.getItem(STORAGE_KEYS.USER_DATA);
@@ -25,6 +45,17 @@ export default function AgentLayout() {
       setCurrentUser({ fullName: 'Mock Super Agent', role: 'Super Agent', rank: 'Platinum' });
     }
   }, []);
+
+  useEffect(() => {
+    if (isMobileDrawerOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isMobileDrawerOpen]);
 
   const getMenuItems = () => {
     if (!currentUser) return [];
@@ -139,7 +170,11 @@ export default function AgentLayout() {
             className="flex items-center gap-3 mb-4 cursor-pointer hover:bg-[#f3f3fd] p-1.5 rounded-lg transition-all"
           >
             <div className="w-10 h-10 rounded-full overflow-hidden border border-[#003d9b]/20 flex-shrink-0 bg-[#003d9b]/10 flex items-center justify-center font-bold text-[#003d9b] text-sm">
-              {currentUser ? currentUser.fullName.charAt(0) : 'A'}
+              {currentUser?.profilePhotoUrl ? (
+                <img src={getImageUrl(currentUser.profilePhotoUrl)} alt="Profile" className="w-full h-full object-cover" />
+              ) : (
+                currentUser ? currentUser.fullName.charAt(0) : 'A'
+              )}
             </div>
             <div className="min-w-0 flex-grow">
               <p className="text-xs font-bold text-[#191b23] truncate">{currentUser ? currentUser.fullName : 'Loading...'}</p>
@@ -206,7 +241,11 @@ export default function AgentLayout() {
                 className="flex items-center gap-3 mb-3 cursor-pointer hover:bg-[#f3f3fd] p-1.5 rounded-lg transition-all"
               >
                 <div className="w-10 h-10 rounded-full overflow-hidden border border-[#003d9b]/20 flex-shrink-0 bg-[#003d9b]/10 flex items-center justify-center font-bold text-[#003d9b] text-sm">
-                  {currentUser ? currentUser.fullName.charAt(0) : 'A'}
+                  {currentUser?.profilePhotoUrl ? (
+                    <img src={getImageUrl(currentUser.profilePhotoUrl)} alt="Profile" className="w-full h-full object-cover" />
+                  ) : (
+                    currentUser ? currentUser.fullName.charAt(0) : 'A'
+                  )}
                 </div>
                 <div className="min-w-0 flex-grow">
                   <p className="text-xs font-bold text-[#191b23] truncate">{currentUser ? currentUser.fullName : 'Loading...'}</p>
@@ -244,9 +283,13 @@ export default function AgentLayout() {
           <div className="flex items-center gap-4">
             <div
               onClick={() => navigate('/agent/profile')}
-              className="w-9 h-9 rounded-full bg-[#0052cc] flex items-center justify-center text-white font-bold cursor-pointer hover:opacity-90 transition-opacity text-sm shadow-sm"
+              className="w-9 h-9 overflow-hidden rounded-full bg-[#0052cc] flex items-center justify-center text-white font-bold cursor-pointer hover:opacity-90 transition-opacity text-sm shadow-sm"
             >
-              {currentUser ? currentUser.fullName.charAt(0) : 'A'}
+              {currentUser?.profilePhotoUrl ? (
+                <img src={getImageUrl(currentUser.profilePhotoUrl)} alt="Profile" className="w-full h-full object-cover" />
+              ) : (
+                currentUser ? currentUser.fullName.charAt(0) : 'A'
+              )}
             </div>
           </div>
         </header>
@@ -257,24 +300,26 @@ export default function AgentLayout() {
         </main>
 
         {/* Sticky Mobile Bottom Navigation (hidden on desktop) */}
-        <nav className="md:hidden fixed bottom-0 left-0 w-full z-40 flex justify-around items-center px-2 py-3 bg-white shadow-[0_-4px_15px_rgba(0,0,0,0.06)] border-t border-[#c3c6d6]/20">
-          {menuItems.slice(0, 4).map((item, idx) => {
-            const isActive = location.pathname === item.route;
-            return (
-              <div
-                key={idx}
-                onClick={() => navigate(item.route)}
-                className={`flex flex-col items-center justify-center px-4 py-1 cursor-pointer transition-colors ${isActive ? 'text-[#003d9b]' : 'text-[#434654]'
-                  }`}
-              >
-                <span className="material-symbols-outlined" style={{ fontVariationSettings: isActive ? "'FILL' 1" : "'FILL' 0" }}>
-                  {item.icon}
-                </span>
-                <span className="text-[10px] font-semibold">{item.label.split(' ')[0]}</span>
-              </div>
-            );
-          })}
-        </nav>
+        {!isKeyboardOpen && (
+          <nav className="md:hidden fixed bottom-0 left-0 w-full z-40 flex justify-around items-center px-2 py-3 bg-white shadow-[0_-4px_15px_rgba(0,0,0,0.06)] border-t border-[#c3c6d6]/20">
+            {menuItems.slice(0, 4).map((item, idx) => {
+              const isActive = location.pathname === item.route;
+              return (
+                <div
+                  key={idx}
+                  onClick={() => navigate(item.route)}
+                  className={`flex flex-col items-center justify-center px-4 py-1 cursor-pointer transition-colors ${isActive ? 'text-[#003d9b]' : 'text-[#434654]'
+                    }`}
+                >
+                  <span className="material-symbols-outlined" style={{ fontVariationSettings: isActive ? "'FILL' 1" : "'FILL' 0" }}>
+                    {item.icon}
+                  </span>
+                  <span className="text-[10px] font-semibold">{item.label.split(' ')[0]}</span>
+                </div>
+              );
+            })}
+          </nav>
+        )}
       </div>
     </div>
   );

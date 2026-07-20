@@ -64,6 +64,7 @@ export default function AdminLayout() {
   const location   = useLocation();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
+  const [notificationCount, setNotificationCount] = useState(0);
   const [adminUser, setAdminUser]   = useState(null);
 
   useEffect(() => {
@@ -74,9 +75,13 @@ export default function AdminLayout() {
   useEffect(() => {
     // Initial fetch
     fetchPendingCount();
+    fetchNotificationCount();
 
-    // Poll every 10 seconds for new orders
-    const interval = setInterval(fetchPendingCount, 10000);
+    // Poll every 10 seconds for new orders and notifications
+    const interval = setInterval(() => {
+      fetchPendingCount();
+      fetchNotificationCount();
+    }, 10000);
     return () => clearInterval(interval);
   }, []);
 
@@ -88,6 +93,17 @@ export default function AdminLayout() {
       }
     } catch (err) {
       console.error('Error fetching pending count:', err);
+    }
+  };
+
+  const fetchNotificationCount = async () => {
+    try {
+      const res = await api.get('/admin/notifications/unread-count');
+      if (res.data?.success) {
+        setNotificationCount(res.data.count);
+      }
+    } catch (err) {
+      console.error('Error fetching notification count:', err);
     }
   };
 
@@ -227,13 +243,13 @@ export default function AdminLayout() {
             <button
               onClick={() => navigate('/admin/notifications')}
               className="p-2 rounded-full hover:bg-[#f3f3fd] transition-colors relative cursor-pointer"
-              title={pendingCount > 0 ? `${pendingCount} pending orders` : "No new orders"}
+              title={notificationCount > 0 ? `${notificationCount} unread notifications` : "No new notifications"}
             >
               <span className="material-symbols-outlined text-[#434654]">notifications</span>
-              {pendingCount > 0 && (
+              {notificationCount > 0 && (
                 <span className="absolute top-1 right-1 flex h-3 w-3">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500 text-[8px] font-bold text-white items-center justify-center">{pendingCount}</span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500 text-[8px] font-bold text-white items-center justify-center">{notificationCount > 9 ? '9+' : notificationCount}</span>
                 </span>
               )}
             </button>

@@ -17,7 +17,12 @@ export default function AgentSplashPage() {
 
     // Transition timer
     const redirectTimer = setTimeout(() => {
-      navigate('/agent/login');
+      const userJson = localStorage.getItem('medcred_user_data');
+      if (userJson) {
+        navigate('/agent/dashboard');
+      } else {
+        navigate('/agent/login');
+      }
     }, 4500);
 
     return () => {
@@ -28,7 +33,7 @@ export default function AgentSplashPage() {
   }, [navigate]);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen w-full relative bg-[#E0F2F1] overflow-hidden select-none">
+    <div className="flex flex-col items-center justify-center min-h-screen w-full relative bg-white overflow-hidden select-none">
       {/* Dynamic Keyframe Animations */}
       <style dangerouslySetInnerHTML={{__html: `
         .bg-pattern {
@@ -86,7 +91,7 @@ export default function AgentSplashPage() {
 
       {/* Background Layers */}
       <div className="absolute inset-0 bg-pattern opacity-40"></div>
-      <div className="absolute inset-0 bg-gradient-to-tr from-[#E0F2F1] via-[#faf8ff] to-[#E0F2F1] opacity-60"></div>
+      <div className="absolute inset-0 bg-gradient-to-tr from-white via-[#faf8ff] to-[#f5f8ff] opacity-60"></div>
       
       {/* Main Content Container */}
       <div className="z-10 flex flex-col items-center justify-center space-y-12 fade-in">

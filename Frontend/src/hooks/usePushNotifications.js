@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { getToken, onMessage } from 'firebase/messaging';
 import { messaging, vapidKey } from '../configs/firebase.config';
 import api from '../services/api';
+import { STORAGE_KEYS } from '../services/types';
 
 const usePushNotifications = () => {
   useEffect(() => {
@@ -14,9 +15,9 @@ const usePushNotifications = () => {
             console.log('FCM Token:', token);
             // Check if user is authenticated (e.g., token exists in localStorage)
             // api.js handles adding the bearer token automatically
-            const hasAuthToken = localStorage.getItem('access_token');
+            const hasAuthToken = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
             if (hasAuthToken) {
-              await api.post('/api/v1/notifications/fcm-token', { token: token, platform: 'web' });
+              await api.post('/notifications/fcm-token', { token: token, platform: 'web' });
             }
           } else {
             console.log('No registration token available. Request permission to generate one.');

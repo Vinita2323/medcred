@@ -11,6 +11,12 @@ export default function SupportPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newTicket, setNewTicket] = useState({ subject: '', description: '', priority: 'medium' });
 
+  // Filtered tickets
+  const filteredTickets = tickets.filter(t => 
+    t.subject.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    t.description.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   // Support Chat States
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatMessages, setChatMessages] = useState([]);
@@ -241,14 +247,14 @@ export default function SupportPage() {
         </section>
 
         {/* My Tickets */}
-        {tickets.length > 0 && (
+        {filteredTickets.length > 0 && (
           <section className="space-y-3 mt-4">
             <h3 className="text-xs font-bold text-on-surface-variant uppercase tracking-wider flex items-center gap-1.5">
               <span className="material-symbols-outlined text-primary text-base">receipt_long</span>
               My Recent Tickets
             </h3>
             <div className="space-y-2">
-              {tickets.map((ticket) => (
+              {filteredTickets.map((ticket) => (
                 <div key={ticket._id} className="p-3 bg-surface-container-lowest rounded-xl border border-outline-variant/50 flex flex-col gap-2">
                   <div className="flex justify-between items-start">
                     <h4 className="font-bold text-xs text-on-surface">{ticket.subject}</h4>
@@ -264,6 +270,15 @@ export default function SupportPage() {
                     <span className="text-[9px] font-mono opacity-60">{ticket.ticketId}</span>
                     <span className="text-[9px] opacity-60">{new Date(ticket.createdAt).toLocaleDateString()}</span>
                   </div>
+                  {ticket.adminNotes && (
+                    <div className="mt-2 p-2 bg-primary/5 rounded-lg border border-primary/10">
+                      <p className="text-[10px] font-bold text-primary mb-0.5 flex items-center gap-1">
+                        <span className="material-symbols-outlined text-[12px]">support_agent</span>
+                        Admin Reply
+                      </p>
+                      <p className="text-[10px] text-on-surface-variant leading-relaxed">{ticket.adminNotes}</p>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -398,7 +413,7 @@ export default function SupportPage() {
             </div>
 
             {/* Input Form */}
-            <form onSubmit={handleSendChatMessage} className="p-3 bg-surface border-t border-outline-variant flex gap-2 items-center flex-shrink-0">
+            <form onSubmit={handleSendChatMessage} className="p-3 pb-8 sm:pb-3 bg-surface border-t border-outline-variant flex gap-2 items-center flex-shrink-0">
               <input
                 type="text"
                 value={chatInput}
