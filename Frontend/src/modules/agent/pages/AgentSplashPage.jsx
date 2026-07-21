@@ -23,7 +23,8 @@ export default function AgentSplashPage() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen w-full relative bg-white overflow-hidden select-none">
       {/* Dynamic Keyframe Animations */}
-      <style dangerouslySetInnerHTML={{__html: `
+      <style dangerouslySetInnerHTML={{
+        __html: `
         .bg-pattern {
           background-image: radial-gradient(#003d9b11 1.5px, transparent 1.5px);
           background-size: 24px 24px;
@@ -80,14 +81,14 @@ export default function AgentSplashPage() {
       {/* Background Layers */}
       <div className="absolute inset-0 bg-pattern opacity-40"></div>
       <div className="absolute inset-0 bg-gradient-to-tr from-white via-[#faf8ff] to-[#f5f8ff] opacity-60"></div>
-      
+
       {/* Main Content Container */}
       <div className="z-10 flex flex-col items-center justify-center space-y-12 fade-in">
         {/* Animated Logo Symbol Area */}
         <div className="relative flex items-center justify-center">
           <div className="pulse-effect" style={{ animationDelay: '0s' }}></div>
           <div className="pulse-effect" style={{ animationDelay: '1.5s' }}></div>
-          
+
           <div className="relative w-32 h-32 md:w-40 md:h-40 bg-white rounded-full shadow-lg flex items-center justify-center border border-primary/10 transition-transform duration-300 hover:scale-105 overflow-hidden">
             <img src="/Logo (5).png" alt="MedCred India" className="w-[85%] h-[85%] object-contain" />
           </div>
@@ -111,7 +112,7 @@ export default function AgentSplashPage() {
           <div className="loading-bar">
             <div className="loading-progress"></div>
           </div>
-          <p className="text-xs text-[#516161]/60 font-semibold h-4">{loadingText}</p>
+          <p className="text-xs text-[#516161]/60 font-semibold h-4">Initializing Secure Session...</p>
         </div>
 
         {/* Trust Badges */}
