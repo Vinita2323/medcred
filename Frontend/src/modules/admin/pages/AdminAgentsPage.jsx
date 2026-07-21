@@ -31,6 +31,7 @@ export default function AdminAgentsPage() {
   const [promoteManager, setPromoteManager] = useState('');
 
   const [detailsAgent, setDetailsAgent] = useState(null);
+  const [lightboxUrl, setLightboxUrl] = useState(null);
 
   // Search & Filters
   const [search, setSearch] = useState('');
@@ -854,13 +855,13 @@ export default function AdminAgentsPage() {
                     { label: 'Bank Passbook', url: detailsAgent.chequePassbookUrl }
                   ].map((doc, idx) => (
                     doc.url ? (
-                      <a key={idx} href={`http://localhost:5000${doc.url}`} target="_blank" rel="noreferrer" className="flex-shrink-0 w-24 aspect-square bg-[#f5f8ff] rounded-xl overflow-hidden border border-[#c3c6d6]/40 hover:border-[#003d9b] transition-colors group relative">
+                      <button key={idx} type="button" onClick={() => setLightboxUrl(`http://localhost:5000${doc.url}`)} className="flex-shrink-0 w-24 aspect-square bg-[#f5f8ff] rounded-xl overflow-hidden border border-[#c3c6d6]/40 hover:border-[#003d9b] transition-colors group relative cursor-pointer">
                         <img src={`http://localhost:5000${doc.url}`} alt={doc.label} className="w-full h-full object-cover" />
                         <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                          <span className="material-symbols-outlined text-white text-sm">open_in_new</span>
+                          <span className="material-symbols-outlined text-white text-sm">zoom_in</span>
                         </div>
                         <span className="absolute bottom-0 inset-x-0 bg-black/70 text-white text-[8px] font-bold text-center py-1 uppercase">{doc.label}</span>
-                      </a>
+                      </button>
                     ) : (
                       <div key={idx} className="flex-shrink-0 w-24 aspect-square bg-[#f5f8ff] rounded-xl border border-dashed border-[#c3c6d6] flex flex-col items-center justify-center text-[#737685]">
                         <span className="material-symbols-outlined text-xl mb-1 opacity-50">image_not_supported</span>
@@ -924,6 +925,30 @@ export default function AdminAgentsPage() {
                 </div>
               )}
             </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* ── Image Lightbox ──────────────────────────────────────── */}
+      {lightboxUrl && createPortal(
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/85 backdrop-blur-sm animate-fade-in"
+          onClick={() => setLightboxUrl(null)}
+        >
+          <div className="relative max-w-3xl max-h-[90vh] w-full mx-4" onClick={e => e.stopPropagation()}>
+            <button
+              onClick={() => setLightboxUrl(null)}
+              className="absolute -top-10 right-0 text-white/80 hover:text-white flex items-center gap-1 text-sm font-bold cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-xl">close</span>
+              Close
+            </button>
+            <img
+              src={lightboxUrl}
+              alt="Document"
+              className="w-full h-full object-contain rounded-xl shadow-2xl max-h-[85vh]"
+            />
           </div>
         </div>,
         document.body
