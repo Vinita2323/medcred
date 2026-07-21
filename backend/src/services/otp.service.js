@@ -28,48 +28,72 @@ export const saveOtp = async (mobile, purpose) => {
   // Delete any expired OTPs for this mobile number first
   await OtpStore.deleteMany({ mobile, expiresAt: { $lt: new Date() } });
 
-  // Check if an OTP record already exists for this mobile and purpose
-  const existingRecord = await OtpStore.findOne({ mobile, purpose });
   const now = new Date();
+  const resendSeconds = parseInt(process.env.OTP_RESEND_SECONDS || '30', 10);
+  const cutoffTime = new Date(Date.now() - resendSeconds * 1000);
 
   let otp = generateOtp();
   const expiryMinutes = parseInt(process.env.OTP_EXPIRY_MINUTES || '5', 10);
   const expiresAt = new Date(Date.now() + expiryMinutes * 60 * 1000);
 
-  if (existingRecord) {
-    // Check 30 seconds resend delay
-    const resendSeconds = parseInt(process.env.OTP_RESEND_SECONDS || '30', 10);
-    const secondsSinceLastSent = (now - new Date(existingRecord.lastSentAt)) / 1000;
-    
-    if (secondsSinceLastSent < resendSeconds) {
-      throw new Error(`Please wait ${Math.ceil(resendSeconds - secondsSinceLastSent)} seconds before requesting a new OTP.`);
-    }
-
-    // Check maximum resend attempts (5)
-    if (existingRecord.sendCount >= 5) {
-      throw new Error('Maximum OTP resend attempts reached (5). Please try again later.');
-    }
-
-    // Update existing record
-    existingRecord.otp = otp;
-    existingRecord.expiresAt = expiresAt;
-    existingRecord.attempts = 0;
-    existingRecord.isUsed = false;
-    existingRecord.sendCount += 1;
-    existingRecord.lastSentAt = now;
-    await existingRecord.save();
-  } else {
-    // Create new record
-    await OtpStore.create({
-      mobile,
-      otp,
+  // Try to atomically update the record ONLY if it hasn't been updated in the last 30 seconds
+  const updatedRecord = await OtpStore.findOneAndUpdate(
+    { 
+      mobile, 
       purpose,
-      expiresAt,
-      attempts: 0,
-      isUsed: false,
-      sendCount: 1,
-      lastSentAt: now
-    });
+      lastSentAt: { $lte: cutoffTime },
+      sendCount: { $lt: 5 }
+    },
+    {
+      $set: {
+        otp: otp,
+        expiresAt: expiresAt,
+        attempts: 0,
+        isUsed: false,
+        lastSentAt: now
+      },
+      $inc: { sendCount: 1 }
+    },
+    { new: true }
+  );
+
+  if (!updatedRecord) {
+    // If update failed, check why (it either doesn't exist, is on cooldown, or hit max attempts)
+    const existingRecord = await OtpStore.findOne({ mobile, purpose });
+    
+    if (existingRecord) {
+      if (existingRecord.sendCount >= 5) {
+        throw new Error('Maximum OTP resend attempts reached (5). Please try again later.');
+      }
+      
+      const secondsSinceLastSent = (now - new Date(existingRecord.lastSentAt)) / 1000;
+      if (secondsSinceLastSent < resendSeconds) {
+        throw new Error(`Please wait ${Math.ceil(resendSeconds - secondsSinceLastSent)} seconds before requesting a new OTP.`);
+      }
+
+      // Edge case fallback
+      throw new Error(`Please wait ${resendSeconds} seconds before requesting a new OTP.`);
+    } else {
+      // Record doesn't exist, create safely
+      try {
+        await OtpStore.create({
+          mobile,
+          otp,
+          purpose,
+          expiresAt,
+          attempts: 0,
+          isUsed: false,
+          sendCount: 1,
+          lastSentAt: now
+        });
+      } catch (err) {
+        // If two requests try to create simultaneously and unique index catches it
+        if (err.code === 11000) {
+          throw new Error(`Please wait ${resendSeconds} seconds before requesting a new OTP.`);
+        }
+        throw err;
+      }
+    }
   }
 
   // Send SMS using SMS India Hub API

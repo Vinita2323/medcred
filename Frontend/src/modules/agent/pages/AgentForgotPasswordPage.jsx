@@ -16,6 +16,7 @@ export default function AgentForgotPasswordPage() {
 
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const isSubmitting = useRef(false);
 
   useEffect(() => {
     if (step === 'otp' && timer > 0) {
@@ -37,9 +38,11 @@ export default function AgentForgotPasswordPage() {
   };
 
   const handleSendOtp = async () => {
+    if (isSubmitting.current) return;
     if (mobile.length < 10) { setErrorMsg('Enter a valid 10-digit mobile number.'); return; }
     setErrorMsg('');
     try {
+      isSubmitting.current = true;
       setLoading(true);
       await api.post(ENDPOINTS.AGENT_FORGOT_PASSWORD, { mobileNumber: mobile });
       setStep('otp');
@@ -48,16 +51,17 @@ export default function AgentForgotPasswordPage() {
       setErrorMsg(error.response?.data?.message || 'Failed to send OTP.');
     } finally {
       setLoading(false);
+      isSubmitting.current = false;
     }
   };
 
   const handleResetPassword = async () => {
     if (password.length < 6) { setErrorMsg('Password must be at least 6 characters.'); return; }
     if (password !== confirmPassword) { setErrorMsg('Passwords do not match.'); return; }
-    
+
     setErrorMsg('');
     const otpCode = otp.join('');
-    
+
     try {
       setLoading(true);
       const payload = {
@@ -77,7 +81,8 @@ export default function AgentForgotPasswordPage() {
 
   return (
     <div className="bg-[#faf8ff] text-[#191b23] min-h-screen flex flex-col font-body-md overflow-x-hidden relative">
-      <style dangerouslySetInnerHTML={{__html: `
+      <style dangerouslySetInnerHTML={{
+        __html: `
         .glass-card {
           background: rgba(255, 255, 255, 0.85);
           backdrop-filter: blur(12px);
@@ -95,9 +100,9 @@ export default function AgentForgotPasswordPage() {
 
       {/* Background Layer */}
       <div className="fixed inset-0 z-0">
-        <img 
-          alt="Hospital Backdrop" 
-          className="w-full h-full object-cover opacity-10 grayscale" 
+        <img
+          alt="Hospital Backdrop"
+          className="w-full h-full object-cover opacity-10 grayscale"
           src="/FinalLogo.png"
         />
         <div className="absolute inset-0 bg-gradient-to-tr from-[#faf8ff] via-[#faf8ff]/80 to-[#dae2ff]/20"></div>
@@ -117,10 +122,10 @@ export default function AgentForgotPasswordPage() {
 
           {/* Card */}
           <div className="glass-card border border-[#c3c6d6]/30 rounded-xl p-6 md:p-8 shadow-sm">
-            
+
             {/* Header Area */}
             <div className="flex items-center gap-3 mb-6">
-              <button 
+              <button
                 onClick={() => step === 'mobile' ? navigate('/agent/login') : setStep(s => s === 'newpass' ? 'otp' : 'mobile')}
                 className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[#dae2ff]/50 text-[#003d9b] transition-colors cursor-pointer"
               >
@@ -148,7 +153,7 @@ export default function AgentForgotPasswordPage() {
                 </div>
                 <h3 className="font-bold text-lg mb-2 text-[#003d9b]">Password Updated Successfully!</h3>
                 <p className="text-sm text-[#434654] mb-6">Your agent portal password has been reset. You can now login with your new credentials.</p>
-                <button 
+                <button
                   onClick={() => navigate('/agent/login')}
                   className="w-full bg-[#003d9b] text-white py-3 rounded-lg font-bold shadow-md hover:bg-[#0052cc] transition-all"
                 >
@@ -157,7 +162,7 @@ export default function AgentForgotPasswordPage() {
               </div>
             ) : (
               <div className="space-y-6">
-                
+
                 {/* Step: Mobile */}
                 {step === 'mobile' && (
                   <>
@@ -165,15 +170,15 @@ export default function AgentForgotPasswordPage() {
                     <div className="relative floating-label-input">
                       <div className="flex items-center border border-[#737685] rounded-lg px-4 py-3 bg-white/50 focus-within:border-[#003d9b] focus-within:ring-1 focus-within:ring-[#003d9b] transition-all">
                         <span className="material-symbols-outlined text-[#737685] mr-3">smartphone</span>
-                        <input 
-                          className="block w-full bg-transparent border-none p-0 text-[#191b23] font-body-md focus:ring-0 outline-none focus:outline-none placeholder-transparent" 
+                        <input
+                          className="block w-full bg-transparent border-none p-0 text-[#191b23] font-body-md focus:ring-0 outline-none focus:outline-none placeholder-transparent"
                           id="mobile" placeholder=" " required type="tel" maxLength={10}
                           value={mobile} onChange={(e) => { setMobile(e.target.value.replace(/\D/g, '')); setErrorMsg(''); }}
                         />
                         <label className="absolute left-12 top-3 text-[#737685] pointer-events-none transition-all duration-200" htmlFor="mobile">Mobile Number</label>
                       </div>
                     </div>
-                    <button 
+                    <button
                       onClick={handleSendOtp} disabled={loading}
                       className="w-full bg-[#003d9b] text-white py-3 rounded-lg font-bold shadow-md hover:bg-[#0052cc] transition-all disabled:opacity-70 flex justify-center items-center gap-2"
                     >
@@ -186,13 +191,13 @@ export default function AgentForgotPasswordPage() {
                 {step === 'otp' && (
                   <>
                     <p className="text-sm text-[#434654] -mt-4 mb-4 ml-11">Enter the 6-digit code sent to +91 {mobile}</p>
-                    <div className="flex justify-between gap-2">
+                    <div className="flex justify-center gap-2 sm:gap-3">
                       {otp.map((digit, idx) => (
                         <input
                           key={idx} ref={el => inputRefs.current[idx] = el}
                           type="text" inputMode="numeric" maxLength={1} value={digit}
                           onChange={e => handleOtpChange(e, idx)} onKeyDown={e => handleOtpKey(e, idx)}
-                          className="flex-1 h-14 text-center text-lg font-bold border border-[#737685] rounded-lg focus:outline-none focus:border-[#003d9b] focus:ring-1 focus:ring-[#003d9b] bg-white/50 transition-all"
+                          className="w-10 h-12 sm:w-12 sm:h-14 min-w-0 flex-shrink-0 text-center text-lg font-bold border border-[#737685] rounded-lg focus:outline-none focus:border-[#003d9b] focus:ring-1 focus:ring-[#003d9b] bg-white/50 transition-all"
                         />
                       ))}
                     </div>
@@ -203,11 +208,11 @@ export default function AgentForgotPasswordPage() {
                         <button onClick={handleSendOtp} disabled={loading} className="text-[#0052cc] font-bold hover:underline">Resend OTP</button>
                       )}
                     </div>
-                    <button 
+                    <button
                       onClick={() => { if (otp.join('').length < 6) { setErrorMsg('Enter complete 6-digit OTP'); return; } setErrorMsg(''); setStep('newpass'); }}
                       className="w-full mt-4 bg-[#003d9b] text-white py-3 rounded-lg font-bold shadow-md hover:bg-[#0052cc] transition-all"
                     >
-                      Verify Code
+                      Next
                     </button>
                   </>
                 )}
@@ -216,12 +221,12 @@ export default function AgentForgotPasswordPage() {
                 {step === 'newpass' && (
                   <>
                     <p className="text-sm text-[#434654] -mt-4 mb-4 ml-11">Create a new password for your agent portal.</p>
-                    
+
                     <div className="relative floating-label-input">
                       <div className="flex items-center border border-[#737685] rounded-lg px-4 py-3 bg-white/50 focus-within:border-[#003d9b] focus-within:ring-1 focus-within:ring-[#003d9b] transition-all">
                         <span className="material-symbols-outlined text-[#737685] mr-3">lock</span>
-                        <input 
-                          className="block w-full bg-transparent border-none p-0 text-[#191b23] font-body-md focus:ring-0 outline-none focus:outline-none placeholder-transparent" 
+                        <input
+                          className="block w-full bg-transparent border-none p-0 text-[#191b23] font-body-md focus:ring-0 outline-none focus:outline-none placeholder-transparent"
                           id="newpassword" placeholder=" " required type={showPass ? 'text' : 'password'}
                           value={password} onChange={(e) => setPassword(e.target.value)}
                         />
@@ -235,8 +240,8 @@ export default function AgentForgotPasswordPage() {
                     <div className="relative floating-label-input mt-4">
                       <div className="flex items-center border border-[#737685] rounded-lg px-4 py-3 bg-white/50 focus-within:border-[#003d9b] focus-within:ring-1 focus-within:ring-[#003d9b] transition-all">
                         <span className="material-symbols-outlined text-[#737685] mr-3">lock</span>
-                        <input 
-                          className="block w-full bg-transparent border-none p-0 text-[#191b23] font-body-md focus:ring-0 outline-none focus:outline-none placeholder-transparent" 
+                        <input
+                          className="block w-full bg-transparent border-none p-0 text-[#191b23] font-body-md focus:ring-0 outline-none focus:outline-none placeholder-transparent"
                           id="confirmpassword" placeholder=" " required type={showPass ? 'text' : 'password'}
                           value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
                         />
@@ -244,7 +249,7 @@ export default function AgentForgotPasswordPage() {
                       </div>
                     </div>
 
-                    <button 
+                    <button
                       onClick={handleResetPassword} disabled={loading}
                       className="w-full mt-6 bg-[#003d9b] text-white py-3 rounded-lg font-bold shadow-md hover:bg-[#0052cc] transition-all disabled:opacity-70 flex justify-center items-center gap-2"
                     >
@@ -256,7 +261,7 @@ export default function AgentForgotPasswordPage() {
               </div>
             )}
           </div>
-          
+
           <div className="mt-8 text-center text-sm text-[#737685] font-semibold">
             <Link className="hover:text-[#003d9b] transition-colors" to="/agent/login">Return to Login</Link>
           </div>

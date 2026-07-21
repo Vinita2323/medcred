@@ -87,7 +87,7 @@ export default function AgentLoginPage() {
   };
 
   return (
-    <div className="bg-[#faf8ff] text-[#191b23] h-screen flex flex-col font-body-md overflow-hidden relative">
+    <div className="bg-[#faf8ff] text-[#191b23] min-h-screen flex flex-col font-body-md overflow-y-auto relative">
       <style dangerouslySetInnerHTML={{__html: `
         .glass-card {
           background: rgba(255, 255, 255, 0.85);

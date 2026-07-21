@@ -49,6 +49,7 @@ export default function RegisterPage() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const isSubmitting = useRef(false);
 
   // Mobile Verification states
   const [showOtpModal, setShowOtpModal] = useState(false);
@@ -87,7 +88,9 @@ export default function RegisterPage() {
   };
 
   const handleResendOtp = async () => {
+    if (isSubmitting.current) return;
     try {
+      isSubmitting.current = true;
       setLoading(true);
       setErrorMsg('');
       setSuccessMsg('');
@@ -99,6 +102,7 @@ export default function RegisterPage() {
       setErrorMsg(error.response?.data?.message || 'Failed to resend OTP.');
     } finally {
       setLoading(false);
+      isSubmitting.current = false;
     }
   };
 
@@ -180,6 +184,7 @@ export default function RegisterPage() {
   // ── Submit ───────────────────────────────────────────────────────
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting.current) return;
     setErrorMsg('');
     setSuccessMsg('');
 
@@ -195,6 +200,7 @@ export default function RegisterPage() {
     }
 
     try {
+      isSubmitting.current = true;
       setLoading(true);
       // Trigger Send OTP
       const res = await api.post('/auth/send-otp', { mobile: formData.mobile, purpose: 'register' });
@@ -208,6 +214,7 @@ export default function RegisterPage() {
       setErrorMsg(error.response?.data?.message || 'Failed to send OTP. Please try again.');
     } finally {
       setLoading(false);
+      isSubmitting.current = false;
     }
   };
 
