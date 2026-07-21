@@ -129,7 +129,7 @@ export default function LoginPage() {
     if (step === 'request') {
       try {
         setLoading(true);
-        const res = await api.post('/auth/send-otp', { mobile, purpose: 'login' });
+        const res = await api.post(ENDPOINTS.USER_SEND_LOGIN_OTP, { mobile });
 
         if (res.data.success) {
           setStep('verify');
@@ -137,7 +137,12 @@ export default function LoginPage() {
           setSuccessMsg('OTP sent successfully.');
         }
       } catch (error) {
-        setErrorMsg(error.response?.data?.message || 'Failed to send OTP. Please try again.');
+        if (error.response?.status === 404) {
+          // If user doesn't exist, redirect to register
+          navigate('/register', { state: { mobile } });
+        } else {
+          setErrorMsg(error.response?.data?.message || 'Failed to send OTP. Please try again.');
+        }
       } finally {
         setLoading(false);
       }
@@ -150,19 +155,14 @@ export default function LoginPage() {
 
       try {
         setLoading(true);
-        const res = await api.post('/auth/verify-otp', { mobile, otp: otpCode, purpose: 'login' });
+        const res = await api.post(ENDPOINTS.USER_VERIFY_LOGIN_OTP, { mobile, otp: otpCode });
 
         if (res.data.success) {
-          if (res.data.isRegistered) {
-            const { accessToken, refreshToken, user } = res.data.data;
-            localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, accessToken);
-            localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
-            localStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(user));
-            navigate('/dashboard');
-          } else {
-            // User is not registered yet! Go to registration page with verified mobile
-            navigate('/register', { state: { mobile, verified: true } });
-          }
+          const { accessToken, refreshToken, user } = res.data.data;
+          localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, accessToken);
+          localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
+          localStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(user));
+          navigate('/dashboard');
         }
       } catch (error) {
         setErrorMsg(error.response?.data?.message || 'Invalid OTP. Please try again.');

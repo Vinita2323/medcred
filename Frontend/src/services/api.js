@@ -58,12 +58,26 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
+    if (error.response?.status === 403) {
+      clearAuth();
+      const currentPath = window.location.pathname;
+      if (currentPath.startsWith('/admin')) {
+        window.location.href = '/admin/login';
+      } else if (currentPath.startsWith('/agent')) {
+        window.location.href = '/agent/login';
+      } else {
+        window.location.href = '/login';
+      }
+      return Promise.reject(error);
+    }
+
     // If error is 401 and it's not the refresh token route itself
     if (error.response?.status === 401 && !originalRequest._retry && originalRequest.url !== ENDPOINTS.AUTH_REFRESH) {
       // Don't intercept login or other public auth endpoints
       if (originalRequest.url && originalRequest.url.includes('/auth/')) {
         return Promise.reject(error);
       }
+
       if (isRefreshing) {
         // If already refreshing, queue the request until refresh is done
         return new Promise(function (resolve, reject) {
