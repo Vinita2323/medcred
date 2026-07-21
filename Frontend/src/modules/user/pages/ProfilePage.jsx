@@ -227,10 +227,9 @@ export default function ProfilePage() {
       const formData = new FormData();
       formData.append('profilePhoto', compressed);
 
-      // Let the browser automatically set the correct multipart/form-data header with the boundary
       const response = await api.patch(ENDPOINTS.USER_PROFILE, formData, {
         headers: {
-          'Content-Type': undefined
+          'Content-Type': 'multipart/form-data'
         }
       });
 
