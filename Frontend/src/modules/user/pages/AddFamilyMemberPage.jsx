@@ -135,7 +135,7 @@ export default function AddFamilyMemberPage() {
                   ) : (
                     <span className="material-symbols-outlined text-outline text-4xl">person_add</span>
                   )}
-                  <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileChange} />
+                  <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
                 </div>
                 <div className="absolute bottom-0 right-0 bg-primary text-white w-8 h-8 rounded-full flex items-center justify-center shadow-md pointer-events-none">
                   <span className="material-symbols-outlined text-sm">photo_camera</span>
@@ -223,7 +223,6 @@ export default function AddFamilyMemberPage() {
                   <input 
                     type="file" 
                     accept="image/*" 
-                    capture="environment"
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                     onChange={handleAadhaarFrontChange}
                     required
@@ -241,7 +240,6 @@ export default function AddFamilyMemberPage() {
                   <input 
                     type="file" 
                     accept="image/*" 
-                    capture="environment"
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                     onChange={handleAadhaarBackChange}
                     required

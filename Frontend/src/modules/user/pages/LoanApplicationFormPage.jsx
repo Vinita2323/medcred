@@ -101,7 +101,7 @@ const GuarantorSection = ({ title, data, files, onDataChange, onFileChange }) =>
           { label: '9. CIBIL Report', field: 'cibilScoreFile' },
         ].map(({ label, field }) => (
           <label key={field} className="border border-dashed border-outline-variant rounded-xl p-2 flex flex-col items-center justify-center gap-1 bg-surface-container-lowest hover:bg-surface-container-low transition-colors cursor-pointer relative overflow-hidden text-center h-20">
-            <input type="file" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept="image/*, application/pdf" capture="environment" onChange={(e) => onFileChange(e, field)} required={!files[field]} />
+            <input type="file" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept="image/*, application/pdf" onChange={(e) => onFileChange(e, field)} required={!files[field]} />
             {files[field] && files[field].type.startsWith('image/') ? (
               <img src={URL.createObjectURL(files[field])} alt={label} className="absolute inset-0 w-full h-full object-cover opacity-40" />
             ) : null}

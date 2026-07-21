@@ -444,7 +444,7 @@ export default function RegisterPage() {
                   {/* User Photo */}
                   <div className="flex flex-col items-center gap-1.5">
                     <label className="w-full aspect-square border-2 border-dashed border-outline-variant rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-all overflow-hidden relative group">
-                      <input type="file" className="hidden" accept="image/*" capture="user" onChange={(e) => handleImageChange(e, setProfilePic, setProfileFile)} />
+                      <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageChange(e, setProfilePic, setProfileFile)} />
                       {!profilePic ? (
                         <span className="material-symbols-outlined text-on-surface-variant text-2xl group-hover:scale-110 transition-transform">account_circle</span>
                       ) : (
@@ -457,7 +457,7 @@ export default function RegisterPage() {
                   {/* Aadhaar Front */}
                   <div className="flex flex-col items-center gap-1.5">
                     <label className="w-full aspect-square border-2 border-dashed border-outline-variant rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-all overflow-hidden relative group">
-                      <input type="file" className="hidden" accept="image/*" capture="environment" onChange={(e) => handleImageChange(e, setAadhaarFrontPic, setAadhaarFrontFile)} />
+                      <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageChange(e, setAadhaarFrontPic, setAadhaarFrontFile)} />
                       {!aadhaarFrontPic ? (
                         <span className="material-symbols-outlined text-on-surface-variant text-2xl group-hover:scale-110 transition-transform">badge</span>
                       ) : (
@@ -470,7 +470,7 @@ export default function RegisterPage() {
                   {/* Aadhaar Back */}
                   <div className="flex flex-col items-center gap-1.5">
                     <label className="w-full aspect-square border-2 border-dashed border-outline-variant rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-all overflow-hidden relative group">
-                      <input type="file" className="hidden" accept="image/*" capture="environment" onChange={(e) => handleImageChange(e, setAadhaarBackPic, setAadhaarBackFile)} />
+                      <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageChange(e, setAadhaarBackPic, setAadhaarBackFile)} />
                       {!aadhaarBackPic ? (
                         <span className="material-symbols-outlined text-on-surface-variant text-2xl group-hover:scale-110 transition-transform">credit_card</span>
                       ) : (

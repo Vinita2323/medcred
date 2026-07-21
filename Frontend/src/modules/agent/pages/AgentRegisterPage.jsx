@@ -1165,7 +1165,7 @@ export default function AgentRegisterPage() {
                     <div className="flex flex-col items-center gap-1">
                       <span className="text-[10px] font-bold text-[#516161]">Profile Photo</span>
                       <label className="w-full aspect-square border-2 border-dashed border-[#c3c6d6] rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-[#003d9b] hover:bg-[#003d9b]/5 transition-all overflow-hidden relative group">
-                        <input type="file" className="hidden" accept="image/*" capture="environment" onChange={(e) => handleImageChange(e, setProfilePreview, setProfileFile)} required />
+                        <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageChange(e, setProfilePreview, setProfileFile)} required />
                         {!profilePreview ? (
                           <span className="material-symbols-outlined text-[#737685] text-xl">account_circle</span>
                         ) : (
@@ -1178,7 +1178,7 @@ export default function AgentRegisterPage() {
                     <div className="flex flex-col items-center gap-1">
                       <span className="text-[10px] font-bold text-[#516161]">Aadhaar Front</span>
                       <label className="w-full aspect-square border-2 border-dashed border-[#c3c6d6] rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-[#003d9b] hover:bg-[#003d9b]/5 transition-all overflow-hidden relative group">
-                        <input type="file" className="hidden" accept="image/*" capture="environment" onChange={(e) => handleImageChange(e, setFrontPreview, setFrontFile)} required />
+                        <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageChange(e, setFrontPreview, setFrontFile)} required />
                         {!frontPreview ? (
                           <span className="material-symbols-outlined text-[#737685] text-xl">badge</span>
                         ) : (
@@ -1191,7 +1191,7 @@ export default function AgentRegisterPage() {
                     <div className="flex flex-col items-center gap-1">
                       <span className="text-[10px] font-bold text-[#516161]">Aadhaar Back</span>
                       <label className="w-full aspect-square border-2 border-dashed border-[#c3c6d6] rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-[#003d9b] hover:bg-[#003d9b]/5 transition-all overflow-hidden relative group">
-                        <input type="file" className="hidden" accept="image/*" capture="environment" onChange={(e) => handleImageChange(e, setBackPreview, setBackFile)} required />
+                        <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageChange(e, setBackPreview, setBackFile)} required />
                         {!backPreview ? (
                           <span className="material-symbols-outlined text-[#737685] text-xl">credit_card</span>
                         ) : (
@@ -1204,7 +1204,7 @@ export default function AgentRegisterPage() {
                     <div className="flex flex-col items-center gap-1">
                       <span className="text-[10px] font-bold text-[#516161]">PAN Card</span>
                       <label className="w-full aspect-square border-2 border-dashed border-[#c3c6d6] rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-[#003d9b] hover:bg-[#003d9b]/5 transition-all overflow-hidden relative group">
-                        <input type="file" className="hidden" accept="image/*" capture="environment" onChange={(e) => handleImageChange(e, setPanPreview, setPanFile)} required />
+                        <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageChange(e, setPanPreview, setPanFile)} required />
                         {!panPreview ? (
                           <span className="material-symbols-outlined text-[#737685] text-xl">receipt_long</span>
                         ) : (

@@ -420,7 +420,6 @@ export default function AgentOnboardCustomerPage() {
                     className="hidden" 
                     type="file" 
                     accept="image/*"
-                    capture="environment"
                     onChange={(e) => handleImageChange(e, setProfilePreview, setProfileFile)}
                     required
                   />
@@ -443,7 +442,6 @@ export default function AgentOnboardCustomerPage() {
                     className="hidden" 
                     type="file" 
                     accept="image/*"
-                    capture="environment"
                     onChange={(e) => handleImageChange(e, setFrontPreview, setFrontFile)}
                     required
                   />
@@ -466,7 +464,6 @@ export default function AgentOnboardCustomerPage() {
                     className="hidden" 
                     type="file" 
                     accept="image/*"
-                    capture="environment"
                     onChange={(e) => handleImageChange(e, setBackPreview, setBackFile)}
                     required
                   />

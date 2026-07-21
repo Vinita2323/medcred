@@ -443,7 +443,6 @@ export default function ClaimsPage() {
                               <input 
                                 type="file" 
                                 accept="image/*, application/pdf" 
-                                capture="environment"
                                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                 onChange={(e) => handleSpecificFileSelect(e, docKey)}
                               />
