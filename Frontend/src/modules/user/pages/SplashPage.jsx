@@ -12,7 +12,7 @@ export default function SplashPage() {
       } else {
         navigate('/onboarding/1');
       }
-    }, 3500);
+    }, 0);
 
     return () => clearTimeout(timer);
   }, [navigate]);

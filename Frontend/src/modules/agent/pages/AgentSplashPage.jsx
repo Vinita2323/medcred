@@ -1,21 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 export default function AgentSplashPage() {
   const navigate = useNavigate();
-  const [loadingText, setLoadingText] = useState("Securing session...");
 
   useEffect(() => {
-    // Dynamic text sequence
-    const t1 = setTimeout(() => {
-      setLoadingText("Authenticating Agent Credentials");
-    }, 1800);
-    
-    const t2 = setTimeout(() => {
-      setLoadingText("Welcome back, Agent MC-9921");
-    }, 3200);
-
-    // Transition timer
+    // Redirect immediately — no forced loading wait
     const redirectTimer = setTimeout(() => {
       const userJson = localStorage.getItem('medcred_user_data');
       if (userJson) {
@@ -23,11 +13,9 @@ export default function AgentSplashPage() {
       } else {
         navigate('/agent/login');
       }
-    }, 4500);
+    }, 0);
 
     return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
       clearTimeout(redirectTimer);
     };
   }, [navigate]);
