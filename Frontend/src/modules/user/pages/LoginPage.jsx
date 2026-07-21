@@ -112,60 +112,62 @@ export default function LoginPage() {
         setErrorMsg(error.response?.data?.message || 'Login failed. Please try again.');
         setLoading(false);
       }
-      // OTP Logic
-      if (!values.mobile) {
-        setErrorMsg('Please enter your mobile number.');
+      return;
+    }
+
+    // OTP Logic
+    if (!values.mobile) {
+      setErrorMsg('Please enter your mobile number.');
+      return;
+    }
+
+    if (errors.mobile) {
+      setErrorMsg(errors.mobile);
+      return;
+    }
+
+    if (step === 'request') {
+      try {
+        setLoading(true);
+        const res = await api.post('/auth/send-otp', { mobile, purpose: 'login' });
+
+        if (res.data.success) {
+          setStep('verify');
+          setResendTimer(30);
+          setSuccessMsg('OTP sent successfully.');
+        }
+      } catch (error) {
+        setErrorMsg(error.response?.data?.message || 'Failed to send OTP. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      const otpCode = otp.join('');
+      if (otpCode.length < 6) {
+        setErrorMsg('Please enter the complete 6-digit OTP.');
         return;
       }
 
-      if (errors.mobile) {
-        setErrorMsg(errors.mobile);
-        return;
-      }
+      try {
+        setLoading(true);
+        const res = await api.post('/auth/verify-otp', { mobile, otp: otpCode, purpose: 'login' });
 
-      if (step === 'request') {
-        try {
-          setLoading(true);
-          const res = await api.post('/auth/send-otp', { mobile, purpose: 'login' });
-
-          if (res.data.success) {
-            setStep('verify');
-            setResendTimer(30);
-            setSuccessMsg('OTP sent successfully.');
+        if (res.data.success) {
+          if (res.data.isRegistered) {
+            const { accessToken, refreshToken, user } = res.data.data;
+            localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, accessToken);
+            localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
+            localStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(user));
+            navigate('/dashboard');
+          } else {
+            // User is not registered yet! Go to registration page with verified mobile
+            navigate('/register', { state: { mobile, verified: true } });
           }
-        } catch (error) {
-          setErrorMsg(error.response?.data?.message || 'Failed to send OTP. Please try again.');
-        } finally {
-          setLoading(false);
         }
-      } else {
-        const otpCode = otp.join('');
-        if (otpCode.length < 6) {
-          setErrorMsg('Please enter the complete 6-digit OTP.');
-          return;
-        }
-
-        try {
-          setLoading(true);
-          const res = await api.post('/auth/verify-otp', { mobile, otp: otpCode, purpose: 'login' });
-
-          if (res.data.success) {
-            if (res.data.isRegistered) {
-              const { accessToken, refreshToken, user } = res.data.data;
-              localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, accessToken);
-              localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
-              localStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(user));
-              navigate('/dashboard');
-            } else {
-              // User is not registered yet! Go to registration page with verified mobile
-              navigate('/register', { state: { mobile, verified: true } });
-            }
-          }
-        } catch (error) {
-          setErrorMsg(error.response?.data?.message || 'Invalid OTP. Please try again.');
-        } finally {
-          setLoading(false);
-        }
+      } catch (error) {
+        setErrorMsg(error.response?.data?.message || 'Invalid OTP. Please try again.');
+      } finally {
+        setLoading(false);
       }
     }
   };
