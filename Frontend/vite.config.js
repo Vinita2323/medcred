@@ -11,5 +11,9 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  server: {
+    host: true, // Exposes the app on local network IP (0.0.0.0)
+    port: 5173,
+  },
 });
 

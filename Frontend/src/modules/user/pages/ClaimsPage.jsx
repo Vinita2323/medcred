@@ -154,9 +154,8 @@ export default function ClaimsPage() {
         }
       });
 
-      const res = await api.post(ENDPOINTS.CLAIMS_SUBMIT, payload, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      // Do NOT send manual Content-Type header so Axios attaches boundary automatically
+      const res = await api.post(ENDPOINTS.CLAIMS_SUBMIT, payload);
       if (res.data?.success) {
         setClaims([res.data.data, ...claims]);
         setSelectedClaimId(res.data.data._id);

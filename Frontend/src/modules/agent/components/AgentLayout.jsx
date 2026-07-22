@@ -171,7 +171,12 @@ export default function AgentLayout() {
           >
             <div className="w-10 h-10 rounded-full overflow-hidden border border-[#003d9b]/20 flex-shrink-0 bg-[#003d9b]/10 flex items-center justify-center font-bold text-[#003d9b] text-sm">
               {currentUser?.profilePhotoUrl ? (
-                <img src={getImageUrl(currentUser.profilePhotoUrl)} alt="Profile" className="w-full h-full object-cover" />
+                <img 
+                  src={getImageUrl(currentUser.profilePhotoUrl)} 
+                  alt="Profile" 
+                  className="w-full h-full object-cover" 
+                  onError={(e) => { e.target.onerror = null; e.target.src = getImageUrl(''); }}
+                />
               ) : (
                 currentUser ? currentUser.fullName.charAt(0) : 'A'
               )}
@@ -242,7 +247,12 @@ export default function AgentLayout() {
               >
                 <div className="w-10 h-10 rounded-full overflow-hidden border border-[#003d9b]/20 flex-shrink-0 bg-[#003d9b]/10 flex items-center justify-center font-bold text-[#003d9b] text-sm">
                   {currentUser?.profilePhotoUrl ? (
-                    <img src={getImageUrl(currentUser.profilePhotoUrl)} alt="Profile" className="w-full h-full object-cover" />
+                    <img 
+                      src={getImageUrl(currentUser.profilePhotoUrl)} 
+                      alt="Profile" 
+                      className="w-full h-full object-cover" 
+                      onError={(e) => { e.target.onerror = null; e.target.src = getImageUrl(''); }}
+                    />
                   ) : (
                     currentUser ? currentUser.fullName.charAt(0) : 'A'
                   )}
@@ -286,7 +296,12 @@ export default function AgentLayout() {
               className="w-9 h-9 overflow-hidden rounded-full bg-[#0052cc] flex items-center justify-center text-white font-bold cursor-pointer hover:opacity-90 transition-opacity text-sm shadow-sm"
             >
               {currentUser?.profilePhotoUrl ? (
-                <img src={getImageUrl(currentUser.profilePhotoUrl)} alt="Profile" className="w-full h-full object-cover" />
+                <img 
+                  src={getImageUrl(currentUser.profilePhotoUrl)} 
+                  alt="Profile" 
+                  className="w-full h-full object-cover" 
+                  onError={(e) => { e.target.onerror = null; e.target.src = getImageUrl(''); }}
+                />
               ) : (
                 currentUser ? currentUser.fullName.charAt(0) : 'A'
               )}

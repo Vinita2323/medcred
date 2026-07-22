@@ -105,13 +105,21 @@ export default function AgentOnboardCustomerPage() {
       formData.append('address', address);
       formData.append('aadhaarNumber', aadhaarNumber);
       
-      formData.append('profilePhoto', profileFile);
-      formData.append('aadhaarFront', frontFile);
-      formData.append('aadhaarBack', backFile);
+      if (profileFile) {
+        const compressed = await compressImage(profileFile);
+        formData.append('profilePhoto', compressed);
+      }
+      if (frontFile) {
+        const compressed = await compressImage(frontFile);
+        formData.append('aadhaarFront', compressed);
+      }
+      if (backFile) {
+        const compressed = await compressImage(backFile);
+        formData.append('aadhaarBack', compressed);
+      }
 
-      const res = await api.post(ENDPOINTS.AGENT_ONBOARD_CUSTOMER, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      // Do NOT send manual Content-Type header so Axios attaches boundary automatically
+      const res = await api.post(ENDPOINTS.AGENT_ONBOARD_CUSTOMER, formData);
 
       if (res.data?.success) {
         alert('Customer profile created and sent for approval successfully!');

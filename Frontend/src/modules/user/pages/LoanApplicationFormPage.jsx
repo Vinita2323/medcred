@@ -576,9 +576,8 @@ export default function LoanApplicationFormPage() {
         });
       });
 
-      const res = await api.post(ENDPOINTS.LOAN_APPLY, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      // Do NOT send manual Content-Type header so Axios attaches boundary automatically
+      const res = await api.post(ENDPOINTS.LOAN_APPLY, formData);
 
       if (res.data.success) {
         setApplied(true);

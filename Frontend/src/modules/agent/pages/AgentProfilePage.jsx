@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { STORAGE_KEYS, ENDPOINTS, getImageUrl } from '../../../services/types';
 import api from '../../../services/api';
+import { compressImage } from '../../../utils/compressImage';
 
 export default function AgentProfilePage() {
   const navigate = useNavigate();
@@ -18,6 +19,7 @@ export default function AgentProfilePage() {
   const [editProfilePicFile, setEditProfilePicFile] = useState(null);
   const [editProfilePicPreview, setEditProfilePicPreview] = useState(null);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [showFullPhoto, setShowFullPhoto] = useState(false);
 
   useEffect(() => {
     fetchAgentProfile();
@@ -78,12 +80,12 @@ export default function AgentProfilePage() {
     try {
       const formData = new FormData();
       if (editProfilePicFile) {
-        formData.append('profilePic', editProfilePicFile);
+        const compressed = await compressImage(editProfilePicFile);
+        formData.append('profilePic', compressed);
       }
       
-      const res = await api.patch(ENDPOINTS.AGENT_PROFILE, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      // Do NOT send manual Content-Type header so Axios attaches boundary
+      const res = await api.patch(ENDPOINTS.AGENT_PROFILE, formData);
       
       if (res.data?.success) {
         setCurrentUser(res.data.data);
@@ -92,12 +94,13 @@ export default function AgentProfilePage() {
       }
     } catch (err) {
       console.error('Update profile error:', err);
+      alert('Failed to update agent profile photo.');
     } finally {
       setIsUpdating(false);
     }
   };
 
-  const handleImageChange = (e) => {
+  const handleImageChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
       setEditProfilePicFile(file);
@@ -135,12 +138,24 @@ export default function AgentProfilePage() {
     <div className="space-y-6 max-w-3xl mx-auto animate-fade-in">
       {/* Profile summary card */}
       <section className="bg-white border border-[#c3c6d6]/30 rounded-2xl p-6 shadow-sm flex flex-col sm:flex-row items-center gap-6">
-        <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-[#dae2ff] p-0.5 shadow-md flex-shrink-0 bg-[#003d9b]/10 flex items-center justify-center text-3xl font-bold text-[#003d9b]">
+        <div 
+          className="w-24 h-24 rounded-full overflow-hidden border-4 border-[#dae2ff] p-0.5 shadow-md flex-shrink-0 bg-[#003d9b]/10 flex items-center justify-center text-3xl font-bold text-[#003d9b] cursor-pointer relative group"
+          onClick={() => setShowFullPhoto(true)}
+          title="Click to view profile picture"
+        >
           {currentUser.profilePhotoUrl ? (
-            <img src={getImageUrl(currentUser.profilePhotoUrl)} alt="Profile" className="w-full h-full object-cover rounded-full" />
+            <img 
+              src={getImageUrl(currentUser.profilePhotoUrl)} 
+              alt="Profile" 
+              className="w-full h-full object-cover rounded-full transition-transform group-hover:scale-105" 
+              onError={(e) => { e.target.onerror = null; e.target.src = getImageUrl(''); }}
+            />
           ) : (
             <span className="material-symbols-outlined text-5xl">person</span>
           )}
+          <div className="absolute inset-0 bg-black/30 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+            <span className="material-symbols-outlined text-white text-2xl">visibility</span>
+          </div>
         </div>
         <div className="flex-grow text-center sm:text-left space-y-2">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 w-full">
@@ -365,7 +380,7 @@ export default function AgentProfilePage() {
             <form onSubmit={handleUpdateProfile} className="space-y-5">
               <div className="flex flex-col items-center gap-3 mb-6">
                 <label className="w-24 h-24 rounded-full overflow-hidden border-4 border-[#dae2ff] p-0.5 shadow-md flex-shrink-0 bg-[#003d9b]/10 flex items-center justify-center text-3xl font-bold text-[#003d9b] cursor-pointer group relative">
-                  <input type="file" className="hidden" accept="image/*" onChange={handleImageChange} />
+                  <input type="file" className="hidden" accept="image/jpeg,image/jpg,image/png,image/webp,image/heic,image/heif,image/*" onChange={handleImageChange} />
                   {editProfilePicPreview ? (
                     <img src={editProfilePicPreview} alt="Preview" className="w-full h-full object-cover rounded-full" />
                   ) : (
@@ -415,6 +430,82 @@ export default function AgentProfilePage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* WhatsApp Style Full Photo Viewer Modal */}
+      {showFullPhoto && createPortal(
+        <div 
+          className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-md flex flex-col justify-between animate-fade-in text-white"
+          onClick={() => setShowFullPhoto(false)}
+        >
+          {/* Top Header */}
+          <div 
+            className="flex items-center justify-between p-4 bg-gradient-to-b from-black/80 to-transparent z-10"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3">
+              <button 
+                type="button"
+                onClick={() => setShowFullPhoto(false)} 
+                className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-2xl">arrow_back</span>
+              </button>
+              <div>
+                <h3 className="font-bold text-base leading-tight">{currentUser.fullName}</h3>
+                <p className="text-[11px] text-gray-400">Agent Profile Photo</p>
+              </div>
+            </div>
+
+            <button 
+              type="button"
+              onClick={() => {
+                setShowFullPhoto(false);
+                openEditModal();
+              }}
+              className="flex items-center gap-1.5 bg-[#003d9b] hover:bg-[#003d9b]/90 text-white text-xs font-bold px-4 py-2 rounded-full transition-all cursor-pointer shadow-lg active:scale-95"
+            >
+              <span className="material-symbols-outlined text-base">edit</span>
+              <span>Edit Photo</span>
+            </button>
+          </div>
+
+          {/* Main Photo Center */}
+          <div className="flex-1 flex items-center justify-center p-4 relative">
+            {currentUser.profilePhotoUrl ? (
+              <img 
+                src={getImageUrl(currentUser.profilePhotoUrl)} 
+                alt="Full Profile" 
+                className="max-w-full max-h-[75vh] w-auto h-auto object-contain rounded-2xl shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+              />
+            ) : (
+              <div className="w-64 h-64 rounded-full bg-white/10 border-4 border-white/20 flex flex-col items-center justify-center gap-3">
+                <span className="material-symbols-outlined text-7xl text-gray-400">person</span>
+                <p className="text-xs text-gray-300 font-semibold">No Profile Photo Uploaded</p>
+                <button 
+                  type="button"
+                  onClick={() => {
+                    setShowFullPhoto(false);
+                    openEditModal();
+                  }}
+                  className="mt-2 text-xs font-bold bg-[#003d9b] text-white px-4 py-2 rounded-full hover:opacity-90 transition-opacity"
+                >
+                  Upload Photo
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Footer Caption */}
+          <div 
+            className="p-4 bg-gradient-to-t from-black/80 to-transparent text-center text-xs text-gray-400 font-medium"
+            onClick={(e) => e.stopPropagation()}
+          >
+            Tap anywhere outside to close
           </div>
         </div>,
         document.body

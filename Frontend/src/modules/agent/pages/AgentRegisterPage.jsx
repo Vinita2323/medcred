@@ -560,16 +560,26 @@ export default function AgentRegisterPage() {
       };
       formData.append('bankDetails', JSON.stringify(bankDetails));
 
-      // Files
-      formData.append('profilePic', profileFile);
-      formData.append('aadhaarFront', frontFile);
-      formData.append('aadhaarBack', backFile);
-      formData.append('panCard', panFile);
+      // Compress files for mobile compatibility
+      if (profileFile) {
+        const compressed = await compressImage(profileFile);
+        formData.append('profilePic', compressed);
+      }
+      if (frontFile) {
+        const compressed = await compressImage(frontFile);
+        formData.append('aadhaarFront', compressed);
+      }
+      if (backFile) {
+        const compressed = await compressImage(backFile);
+        formData.append('aadhaarBack', compressed);
+      }
+      if (panFile) {
+        const compressed = await compressImage(panFile);
+        formData.append('panCard', compressed);
+      }
 
-
-      const res = await api.post(ENDPOINTS.AGENT_REGISTER, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      // Do NOT send manual Content-Type header so Axios attaches boundary automatically
+      const res = await api.post(ENDPOINTS.AGENT_REGISTER, formData);
 
       if (res.data.success) {
         localStorage.removeItem('medcred_agent_reg');

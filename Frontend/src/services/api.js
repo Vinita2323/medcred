@@ -28,9 +28,21 @@ const clearAuth = () => {
 // Attach Access Token to every request automatically
 api.interceptors.request.use(
   (config) => {
+    // If accessing via local network IP (e.g. 192.168.x.x), dynamically point baseURL to host's port 5000
+    if (typeof window !== 'undefined' && window.location.hostname && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1' && /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(window.location.hostname)) {
+      config.baseURL = `http://${window.location.hostname}:5000/api/v1`;
+    }
+
     const token = getAccessToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+    // Delete Content-Type header if sending FormData so Axios generates 'multipart/form-data; boundary=...'
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type'];
+      if (config.headers.common) {
+        delete config.headers.common['Content-Type'];
+      }
     }
     return config;
   },

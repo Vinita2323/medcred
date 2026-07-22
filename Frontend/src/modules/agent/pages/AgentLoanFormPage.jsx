@@ -41,11 +41,11 @@ export default function AgentLoanFormPage() {
       formData.append('admissionDate', admissionDate);
       formData.append('loanAmount', loanAmount);
       formData.append('tenure', tenure);
-      formData.append('prescriptionFile', prescriptionFile);
+      const compressedPrescription = await compressImage(prescriptionFile);
+      formData.append('prescriptionFile', compressedPrescription);
 
-      const res = await api.post(ENDPOINTS.AGENT_LOAN_APPLY, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      // Do NOT send manual Content-Type header so Axios attaches boundary automatically
+      const res = await api.post(ENDPOINTS.AGENT_LOAN_APPLY, formData);
 
       if (res.data.success) {
         setSubmitted(true);

@@ -68,9 +68,11 @@ export default function ProfilePage() {
     }
   }, []);
 
+  const [isPhotoViewerOpen, setIsPhotoViewerOpen] = useState(false);
+
   // Prevent background scroll when modals are open
   useEffect(() => {
-    if (isEditing || isHealthEditing || isDeleteModalOpen) {
+    if (isEditing || isHealthEditing || isDeleteModalOpen || isPhotoViewerOpen) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
@@ -78,7 +80,7 @@ export default function ProfilePage() {
     return () => {
       document.body.style.overflow = 'unset';
     };
-  }, [isEditing, isHealthEditing, isDeleteModalOpen]);
+  }, [isEditing, isHealthEditing, isDeleteModalOpen, isPhotoViewerOpen]);
 
   const fetchProfile = async () => {
     try {
@@ -218,6 +220,8 @@ export default function ProfilePage() {
     }
   };
 
+  const [profilePicCacheBust, setProfilePicCacheBust] = useState(Date.now());
+
   const handlePhotoUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -227,11 +231,8 @@ export default function ProfilePage() {
       const formData = new FormData();
       formData.append('profilePhoto', compressed);
 
-      const response = await api.patch(ENDPOINTS.USER_PROFILE, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      });
+      // Do NOT set manual 'Content-Type': 'multipart/form-data' so Axios attached boundary automatically
+      const response = await api.patch(ENDPOINTS.USER_PROFILE, formData);
 
       if (response.data.success) {
         const updatedUser = {
@@ -240,11 +241,14 @@ export default function ProfilePage() {
         };
         setUser(updatedUser);
         updateUser(updatedUser);
+        setProfilePicCacheBust(Date.now());
         setImageErrors(prev => ({ ...prev, profile: false }));
       }
     } catch (error) {
       console.error('Error uploading photo:', error);
-      alert('Failed to upload photo.');
+      alert('Failed to upload photo. Please check your image format and try again.');
+    } finally {
+      if (e.target) e.target.value = '';
     }
   };
 
@@ -328,12 +332,16 @@ export default function ProfilePage() {
         {/* Hero Profile Section */}
         <section className="flex flex-col items-center text-center mt-2 lg:mt-0 lg:bg-white lg:p-8 lg:rounded-[32px] lg:shadow-xl lg:border lg:border-blue-100">
           <div className="relative inline-block">
-            <div className="w-24 h-24 rounded-full p-1 bg-gradient-to-tr from-primary to-secondary shadow-lg relative cursor-pointer group" onClick={() => fileInputRef.current?.click()}>
+            <div 
+              className="w-24 h-24 rounded-full p-1 bg-gradient-to-tr from-primary to-secondary shadow-lg relative cursor-pointer group" 
+              onClick={() => setIsPhotoViewerOpen(true)}
+              title="Click to view profile picture"
+            >
               {profilePic && !imageErrors.profile ? (
                 <img 
                   alt={profileName} 
-                  className="w-full h-full rounded-full border-4 border-surface object-cover" 
-                  src={getImageUrl(profilePic)} 
+                  className="w-full h-full rounded-full border-4 border-surface object-cover transition-transform group-hover:scale-105" 
+                  src={getImageUrl(profilePic, profilePicCacheBust)} 
                   onError={() => setImageErrors(prev => ({...prev, profile: true}))}
                 />
               ) : (
@@ -341,20 +349,28 @@ export default function ProfilePage() {
                   <span className="material-symbols-outlined text-4xl text-primary/50">person</span>
                 </div>
               )}
-              {/* Edit Icon Overlay */}
+              {/* View Icon Overlay */}
               <div className="absolute inset-1 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                <span className="material-symbols-outlined text-white text-2xl">edit</span>
+                <span className="material-symbols-outlined text-white text-2xl">visibility</span>
               </div>
-              <div className="absolute bottom-1 right-1 bg-white rounded-full p-1 shadow-md flex items-center justify-center pointer-events-none z-10 border border-outline-variant/30">
+              <button 
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  fileInputRef.current?.click();
+                }}
+                className="absolute bottom-1 right-1 bg-white rounded-full p-1.5 shadow-md flex items-center justify-center z-10 border border-outline-variant/30 hover:bg-gray-100 cursor-pointer active:scale-90 transition-transform"
+                title="Change Photo"
+              >
                 <span className="material-symbols-outlined text-primary text-[14px] font-bold" style={{ fontVariationSettings: "'FILL' 1" }}>edit</span>
-              </div>
+              </button>
             </div>
             {/* Hidden file input */}
             <input 
               type="file" 
               ref={fileInputRef} 
               className="hidden" 
-              accept="image/*" 
+              accept="image/jpeg,image/jpg,image/png,image/webp,image/heic,image/heif,image/*" 
               onChange={handlePhotoUpload} 
             />
             <div className="absolute bottom-1 right-1 bg-white rounded-full p-0.5 shadow-md flex items-center justify-center pointer-events-none">
@@ -1011,7 +1027,7 @@ export default function ProfilePage() {
                   clearUser();
                   navigate('/');
                 }}
-                className="flex-1 bg-error text-white text-sm font-bold py-3 rounded-xl hover:opacity-90 active:scale-95 transition-all cursor-pointer shadow-md"
+                  className="flex-1 bg-error text-white text-sm font-bold py-3 rounded-xl hover:opacity-90 active:scale-95 transition-all cursor-pointer shadow-md"
               >
                 Yes, Delete
               </button>
@@ -1020,7 +1036,82 @@ export default function ProfilePage() {
         </div>
       )}
 
-      {!(isEditing || isHealthEditing || isDeleteModalOpen) && <BottomNavBar />}
+      {/* WhatsApp Style Full-Screen Profile Photo Viewer Modal */}
+      {isPhotoViewerOpen && (
+        <div 
+          className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-md flex flex-col justify-between animate-fade-in text-white"
+          onClick={() => setIsPhotoViewerOpen(false)}
+        >
+          {/* Top Bar */}
+          <div 
+            className="flex items-center justify-between p-4 bg-gradient-to-b from-black/80 to-transparent z-10"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3">
+              <button 
+                type="button"
+                onClick={() => setIsPhotoViewerOpen(false)} 
+                className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-2xl">arrow_back</span>
+              </button>
+              <div>
+                <h3 className="font-bold text-base leading-tight">{profileName}</h3>
+                <p className="text-[11px] text-gray-400">Profile Photo</p>
+              </div>
+            </div>
+
+            <button 
+              type="button"
+              onClick={() => {
+                setIsPhotoViewerOpen(false);
+                fileInputRef.current?.click();
+              }}
+              className="flex items-center gap-1.5 bg-primary hover:bg-primary/90 text-white text-xs font-bold px-4 py-2 rounded-full transition-all cursor-pointer shadow-lg active:scale-95"
+            >
+              <span className="material-symbols-outlined text-base">edit</span>
+              <span>Change Photo</span>
+            </button>
+          </div>
+
+          {/* Main Photo Content */}
+          <div className="flex-1 flex items-center justify-center p-4 relative overflow-hidden">
+            {profilePic && !imageErrors.profile ? (
+              <img 
+                src={getImageUrl(profilePic, profilePicCacheBust)} 
+                alt={profileName}
+                className="max-w-full max-h-[75vh] w-auto h-auto object-contain rounded-2xl shadow-2xl transition-transform duration-300 scale-100"
+                onClick={(e) => e.stopPropagation()}
+              />
+            ) : (
+              <div className="w-64 h-64 rounded-full bg-white/10 border-4 border-white/20 flex flex-col items-center justify-center gap-3">
+                <span className="material-symbols-outlined text-7xl text-gray-400">person</span>
+                <p className="text-xs text-gray-300 font-semibold">No Profile Photo Uploaded</p>
+                <button 
+                  type="button"
+                  onClick={() => {
+                    setIsPhotoViewerOpen(false);
+                    fileInputRef.current?.click();
+                  }}
+                  className="mt-2 text-xs font-bold bg-primary text-white px-4 py-2 rounded-full hover:opacity-90 transition-opacity"
+                >
+                  Upload Photo
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Bottom Bar / Caption */}
+          <div 
+            className="p-4 bg-gradient-to-t from-black/80 to-transparent text-center text-xs text-gray-400 font-medium"
+            onClick={(e) => e.stopPropagation()}
+          >
+            Tap anywhere outside to close
+          </div>
+        </div>
+      )}
+
+      {!(isEditing || isHealthEditing || isDeleteModalOpen || isPhotoViewerOpen) && <BottomNavBar />}
     </div>
   );
 }

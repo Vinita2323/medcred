@@ -111,13 +111,22 @@ export default function KycPage() {
       formData.append('dob', form.dob);
       formData.append('address', form.address);
       if (form.pan) formData.append('pan', form.pan);
-      if (photoFile) formData.append('photo', photoFile);
-      if (aadhaarFrontFile) formData.append('aadhaarFront', aadhaarFrontFile);
-      if (aadhaarBackFile) formData.append('aadhaarBack', aadhaarBackFile);
 
-      const res = await api.post(ENDPOINTS.KYC_SUBMIT, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      if (photoFile) {
+        const compressed = await compressImage(photoFile);
+        formData.append('photo', compressed);
+      }
+      if (aadhaarFrontFile) {
+        const compressed = await compressImage(aadhaarFrontFile);
+        formData.append('aadhaarFront', compressed);
+      }
+      if (aadhaarBackFile) {
+        const compressed = await compressImage(aadhaarBackFile);
+        formData.append('aadhaarBack', compressed);
+      }
+
+      // Do NOT send manual Content-Type header so Axios attaches boundary automatically
+      const res = await api.post(ENDPOINTS.KYC_SUBMIT, formData);
 
       if (res.data?.success) {
         setStep('pending');

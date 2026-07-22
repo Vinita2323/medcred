@@ -86,9 +86,8 @@ export default function AddFamilyMemberPage() {
     }
 
     try {
-      const res = await api.post(ENDPOINTS.FAMILY_ADD, data, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      // Do NOT send manual Content-Type header so Axios attaches boundary automatically
+      const res = await api.post(ENDPOINTS.FAMILY_ADD, data);
       if (res.data.success) {
         alert(`${formData.name} has been added successfully! Verification is in progress.`);
         navigate('/family');
@@ -135,7 +134,7 @@ export default function AddFamilyMemberPage() {
                   ) : (
                     <span className="material-symbols-outlined text-outline text-4xl">person_add</span>
                   )}
-                  <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+                  <input type="file" accept="image/jpeg,image/jpg,image/png,image/webp,image/heic,image/heif,image/*" className="hidden" onChange={handleFileChange} />
                 </div>
                 <div className="absolute bottom-0 right-0 bg-primary text-white w-8 h-8 rounded-full flex items-center justify-center shadow-md pointer-events-none">
                   <span className="material-symbols-outlined text-sm">photo_camera</span>

@@ -14,20 +14,33 @@ export const STORAGE_KEYS = {
   USER_DATA: 'medcred_user_data',
 };
 
-export const SERVER_URL = import.meta.env.VITE_SERVER_URL || "https://medcred.onrender.com";
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || "https://medcred.onrender.com/api/v1";
+const getDynamicHost = () => {
+  if (typeof window !== 'undefined' && window.location.hostname && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1' && /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(window.location.hostname)) {
+    return `http://${window.location.hostname}:5000`;
+  }
+  return null;
+};
+
+const dynamicHost = getDynamicHost();
+export const SERVER_URL = dynamicHost || import.meta.env.VITE_SERVER_URL || "https://medcred.onrender.com";
+export const API_BASE_URL = dynamicHost ? `${dynamicHost}/api/v1` : (import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || "https://medcred.onrender.com/api/v1");
 
 // Helper to resolve image paths from backend
 const PLACEHOLDER_IMG = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'%3E%3Crect width='400' height='300' fill='%23f0f2f5'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='14' fill='%23aaa'%3ENo Image%3C/text%3E%3C/svg%3E`;
 
-export const getImageUrl = (path) => {
+export const getImageUrl = (path, cacheBust = false) => {
   if (!path || typeof path !== 'string' || path.trim() === '') return PLACEHOLDER_IMG;
   if (path.startsWith('data:')) return path;            // base64 data URL
-  if (path.startsWith('http')) return path;             // external URL
   
   const normalizedPath = path.replace(/\\/g, '/');
   const cleanPath = normalizedPath.startsWith('/') ? normalizedPath : `/${normalizedPath}`;
-  return `${SERVER_URL}${cleanPath}`;
+  const fullUrl = path.startsWith('http') ? path : `${SERVER_URL}${cleanPath}`;
+
+  if (cacheBust) {
+    const separator = fullUrl.includes('?') ? '&' : '?';
+    return `${fullUrl}${separator}t=${typeof cacheBust === 'number' ? cacheBust : Date.now()}`;
+  }
+  return fullUrl;
 };
 
 // API Endpoints Mapping

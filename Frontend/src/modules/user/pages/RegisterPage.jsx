@@ -250,20 +250,20 @@ export default function RegisterPage() {
       payload.append('familyMembers', JSON.stringify(familyMembers));
       
       if (profileFile) {
-        payload.append('profilePic', profileFile);
+        const compressed = await compressImage(profileFile);
+        payload.append('profilePic', compressed);
       }
       if (aadhaarFrontFile) {
-        payload.append('aadhaarFront', aadhaarFrontFile);
+        const compressed = await compressImage(aadhaarFrontFile);
+        payload.append('aadhaarFront', compressed);
       }
       if (aadhaarBackFile) {
-        payload.append('aadhaarBack', aadhaarBackFile);
+        const compressed = await compressImage(aadhaarBackFile);
+        payload.append('aadhaarBack', compressed);
       }
 
-      const res = await api.post(ENDPOINTS.USER_REGISTER, payload, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      });
+      // Do NOT send manual Content-Type header so Axios attaches boundary automatically
+      const res = await api.post(ENDPOINTS.USER_REGISTER, payload);
 
       if (res.data.success) {
         // Build Self member + all added family members

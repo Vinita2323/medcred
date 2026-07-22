@@ -12,51 +12,70 @@ import imageCompression from 'browser-image-compression';
 export async function compressImage(file) {
   if (!file) return file;
 
-  // Skip compression for non-image files (like PDFs)
-  if (!file.type.startsWith('image/')) return file;
+  // Detailed initial logging for mobile debugging
+  console.log('[compressImage] Selected File details:', {
+    name: file.name,
+    size: `${(file.size / 1024).toFixed(1)} KB`,
+    type: file.type,
+    lastModified: file.lastModified,
+  });
+
+  // Skip compression for non-image files (e.g. PDFs) unless extension indicates an image
+  const isImageMime = file.type && file.type.startsWith('image/');
+  const isImageExt = /\.(jpg|jpeg|png|webp|heic|heif|gif|bmp)$/i.test(file.name || '');
+
+  if (!isImageMime && !isImageExt) {
+    return file;
+  }
 
   // --- Sanitize filename -----------------------------------------------
-  // Camera-captured files on iOS/Android often have names like "", "image",
-  // "image.jpg", or just "blob". We ensure a safe, non-empty filename.
   const rawName = file.name || '';
   const dotIndex = rawName.lastIndexOf('.');
   let baseName = dotIndex > 0 ? rawName.substring(0, dotIndex) : rawName;
-  if (!baseName || baseName === 'image' || baseName === 'blob') {
+  if (!baseName || baseName.toLowerCase() === 'image' || baseName.toLowerCase() === 'blob') {
     baseName = `upload_${Date.now()}`;
   }
-  // ---------------------------------------------------------------------
 
+  // Mobile safe options: useWebWorker set to false to prevent iOS Safari/Android WebView worker context failures
   const options = {
-    maxSizeMB: 5,              // Max 5MB
-    maxWidthOrHeight: 2048,    // Max 2048px
-    useWebWorker: true,        // Background thread — UI stays responsive
-    fileType: 'image/webp',    // Convert to WebP for smaller size
-    initialQuality: 0.9,       // 90% quality
+    maxSizeMB: 2,               // Max 2MB output target
+    maxWidthOrHeight: 1920,     // Max 1920px dimensions
+    useWebWorker: false,        // Safe for mobile browsers (avoids blob URL worker issues in Safari)
+    fileType: 'image/jpeg',     // JPEG output is universal across all mobile and desktop browsers
+    initialQuality: 0.85,       // 85% quality balance
   };
 
   try {
     const compressed = await imageCompression(file, options);
     console.log(
-      `[compressImage] ${file.name || '(no name)'}: ` +
-      `${(file.size / 1024).toFixed(0)}KB → ${(compressed.size / 1024).toFixed(0)}KB`
+      `[compressImage] Success: ${file.name || '(no name)'} ` +
+      `[${(file.size / 1024).toFixed(0)}KB] → [${(compressed.size / 1024).toFixed(0)}KB]`
     );
 
-    // Build a proper File object with a guaranteed valid name + MIME type.
-    // This is critical for mobile: blobs returned by camera capture may have
-    // no name, causing FormData to send an unnamed part that some servers reject.
-    const webpFile = new File([compressed], `${baseName}.webp`, {
-      type: 'image/webp',
+    const safeFile = new File([compressed], `${baseName}.jpg`, {
+      type: 'image/jpeg',
       lastModified: Date.now(),
     });
-    return webpFile;
+    return safeFile;
   } catch (err) {
-    console.warn('[compressImage] Compression failed, using original file:', err);
-    // Fallback: return a File with a sanitized name so upload still works
-    if (file.name) return file;
-    return new File([file], `${baseName}${getExtFromMime(file.type)}`, {
-      type: file.type || 'image/jpeg',
-      lastModified: Date.now(),
-    });
+    console.warn('[compressImage] Primary compression failed, attempting secondary fallback:', err);
+    try {
+      // Secondary fallback with minimal settings
+      const fallbackOptions = { maxSizeMB: 4, maxWidthOrHeight: 2048, useWebWorker: false };
+      const compressedFallback = await imageCompression(file, fallbackOptions);
+      return new File([compressedFallback], `${baseName}.jpg`, {
+        type: 'image/jpeg',
+        lastModified: Date.now(),
+      });
+    } catch (fallbackErr) {
+      console.warn('[compressImage] All compression failed, returning sanitized original file:', fallbackErr);
+      const safeType = file.type && file.type.startsWith('image/') ? file.type : 'image/jpeg';
+      const safeExt = getExtFromMime(safeType);
+      return new File([file], `${baseName}${safeExt}`, {
+        type: safeType,
+        lastModified: Date.now(),
+      });
+    }
   }
 }
 
