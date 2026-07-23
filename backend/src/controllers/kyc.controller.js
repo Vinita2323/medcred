@@ -45,6 +45,9 @@ export const submitKYC = async (req, res) => {
       kycStatus: 'pending',
       kycRef: kyc._id,
       aadhaarNumber,
+      // Copy image URLs onto User so profile page can display them directly
+      ...(aadhaarFrontUrl && { aadhaarFrontUrl }),
+      ...(aadhaarBackUrl && { aadhaarBackUrl }),
       // We can also update name, dob, address if we want to sync them
       fullName: name || req.user.fullName,
       dob: dob || req.user.dob,

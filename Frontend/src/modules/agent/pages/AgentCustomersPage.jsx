@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../../services/api';
-import { ENDPOINTS, SERVER_URL } from '../../../services/types';
+import { ENDPOINTS, getImageUrl } from '../../../services/types';
 
 export default function AgentCustomersPage() {
   const navigate = useNavigate();
@@ -27,11 +27,7 @@ export default function AgentCustomersPage() {
           status: user.kycStatus === 'verified' ? 'Approved' : 'Pending',
           limit: user.creditLimit != null ? `₹${user.creditLimit.toLocaleString('en-IN')}` : (user.planId ? 'Allocated' : '—'),
           commission: user.planId ? 'Earned' : 'Pending',
-          photo: user.profilePhoto
-            ? (user.profilePhoto.startsWith('http') || user.profilePhoto.startsWith('data:') 
-                ? user.profilePhoto 
-                : `${SERVER_URL}${user.profilePhoto.includes('/uploads') ? (user.profilePhoto.startsWith('/') ? user.profilePhoto : `/${user.profilePhoto}`) : `/uploads/${user.profilePhoto}`}`)
-            : 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png' // Default user placeholder
+          photo: user.profilePhoto ? getImageUrl(user.profilePhoto) : 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png'
         })));
       }
     } catch (error) {

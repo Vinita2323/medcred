@@ -155,6 +155,7 @@ const register = async (req, res) => {
             email: user.email,
             kycStatus: user.kycStatus,
             hasCard: !!user.cardId,
+            profileImage: user.profilePhoto,
           }
         }
       });
@@ -288,6 +289,7 @@ const verifyOtpHandler = async (req, res) => {
           email: user.email,
           kycStatus: user.kycStatus,
           hasCard: !!user.cardId,
+          profileImage: user.profilePhoto,
         },
       },
     });
@@ -360,6 +362,7 @@ const login = async (req, res) => {
           email: user.email,
           kycStatus: user.kycStatus,
           hasCard: !!user.cardId,
+          profileImage: user.profilePhoto,
         },
       },
     });
@@ -541,6 +544,7 @@ const verifyLoginOtp = async (req, res) => {
           email: user.email,
           kycStatus: user.kycStatus,
           hasCard: !!user.cardId,
+          profileImage: user.profilePhoto,
         },
       },
     });

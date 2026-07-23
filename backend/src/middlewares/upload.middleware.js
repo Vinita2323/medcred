@@ -15,11 +15,13 @@ const storage = multer.diskStorage({
   },
   filename: function (req, file, cb) {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    let ext = path.extname(file.originalname);
+    let ext = path.extname(file.originalname).toLowerCase();
     if (!ext) {
       if (file.mimetype === 'image/webp') ext = '.webp';
-      else if (file.mimetype === 'image/jpeg') ext = '.jpg';
+      else if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/jpg') ext = '.jpg';
       else if (file.mimetype === 'image/png') ext = '.png';
+      else if (file.mimetype === 'image/heic') ext = '.heic';
+      else if (file.mimetype === 'image/heif') ext = '.heif';
       else if (file.mimetype === 'application/pdf') ext = '.pdf';
       else ext = '.jpg';
     }
@@ -27,19 +29,37 @@ const storage = multer.diskStorage({
   },
 });
 
-// File filter (optional, to accept only images)
+// File filter (accepts all standard images, PDFs, HEIC/HEIF, and application/octet-stream fallback)
 const fileFilter = (req, file, cb) => {
-  if (file.mimetype.startsWith('image/') || file.mimetype === 'application/pdf') {
+  const allowedMimeTypes = [
+    'image/jpeg',
+    'image/jpg',
+    'image/png',
+    'image/webp',
+    'image/gif',
+    'image/heic',
+    'image/heif',
+    'application/pdf',
+  ];
+
+  const ext = path.extname(file.originalname).toLowerCase();
+  const allowedExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.heic', '.heif', '.pdf'];
+
+  if (
+    file.mimetype.startsWith('image/') ||
+    allowedMimeTypes.includes(file.mimetype) ||
+    allowedExtensions.includes(ext)
+  ) {
     cb(null, true);
   } else {
-    cb(new Error('Invalid file type! Please upload only images or PDFs.'), false);
+    cb(new Error('Invalid file type! Please upload only supported images (JPEG, PNG, WebP, HEIC) or PDFs.'), false);
   }
 };
 
 export const upload = multer({
   storage: storage,
   limits: {
-    fileSize: 1024 * 1024 * 5, // 5MB limit
+    fileSize: 1024 * 1024 * 20, // 20MB limit to handle high-res mobile camera photos
   },
   fileFilter: fileFilter,
 });

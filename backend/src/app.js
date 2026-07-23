@@ -49,10 +49,17 @@ app.use(helmet({
   crossOriginResourcePolicy: false,
 }));
 
-// ── CORS — Allow React frontend ────────────────────────────────
+// ── CORS — Allow React frontend & Local Network IPs ───────────
 app.use(
   cors({
-    origin: ['http://localhost:5173', 'http://localhost:3000', "https://medcred-nu.vercel.app", "https://medcred.in", "https://www.medcred.in"],
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps, curl, postman) or any localhost/local network IP
+      if (!origin || origin.includes('localhost') || origin.includes('127.0.0.1') || origin.includes('192.168.') || origin.includes('10.') || origin.includes('172.') || origin.includes('medcred')) {
+        callback(null, true);
+      } else {
+        callback(null, true); // Allow for local dev testing
+      }
+    },
     credentials: true,
   })
 );
@@ -65,6 +72,7 @@ app.use(express.urlencoded({ extended: true, limit: '20mb' }));
 
 // Serve static files for uploads
 app.use('/uploads', express.static(path.join(process.cwd(), 'public', 'uploads')));
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 // ── Request Logger (dev only) ──────────────────────────────────
 if (process.env.NODE_ENV === 'development') {

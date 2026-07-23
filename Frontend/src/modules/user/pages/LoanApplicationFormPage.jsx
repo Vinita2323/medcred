@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../../../services/api';
-import { ENDPOINTS, SERVER_URL } from '../../../services/types';
+import { ENDPOINTS, SERVER_URL, getImageUrl } from '../../../services/types';
 import { compressImage } from '../../../utils/compressImage';
 
 const GuarantorSection = ({ title, data, files, onDataChange, onFileChange }) => (
@@ -266,7 +266,7 @@ export default function LoanApplicationFormPage() {
           id: m._id,
           name: m.name,
           relationship: m.relationship,
-          image: m.profilePhoto ? `${SERVER_URL}${m.profilePhoto}` : null,
+          image: m.profilePhoto ? getImageUrl(m.profilePhoto) : null,
         }));
         setFamilyMembers(mapped);
       }

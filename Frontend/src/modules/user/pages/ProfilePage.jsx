@@ -68,11 +68,11 @@ export default function ProfilePage() {
     }
   }, []);
 
-  const [isPhotoViewerOpen, setIsPhotoViewerOpen] = useState(false);
+  const [photoViewerData, setPhotoViewerData] = useState(null);
 
   // Prevent background scroll when modals are open
   useEffect(() => {
-    if (isEditing || isHealthEditing || isDeleteModalOpen || isPhotoViewerOpen) {
+    if (isEditing || isHealthEditing || isDeleteModalOpen || photoViewerData) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
@@ -80,7 +80,7 @@ export default function ProfilePage() {
     return () => {
       document.body.style.overflow = 'unset';
     };
-  }, [isEditing, isHealthEditing, isDeleteModalOpen, isPhotoViewerOpen]);
+  }, [isEditing, isHealthEditing, isDeleteModalOpen, photoViewerData]);
 
   const fetchProfile = async () => {
     try {
@@ -334,7 +334,13 @@ export default function ProfilePage() {
           <div className="relative inline-block">
             <div 
               className="w-24 h-24 rounded-full p-1 bg-gradient-to-tr from-primary to-secondary shadow-lg relative cursor-pointer group" 
-              onClick={() => setIsPhotoViewerOpen(true)}
+              onClick={() => setPhotoViewerData({
+                url: profilePic && !imageErrors.profile ? getImageUrl(profilePic, profilePicCacheBust) : null,
+                title: profileName,
+                subtitle: 'Profile Photo',
+                canEdit: true,
+                isProfile: true
+              })}
               title="Click to view profile picture"
             >
               {profilePic && !imageErrors.profile ? (
@@ -700,14 +706,33 @@ export default function ProfilePage() {
                     <div className="grid grid-cols-2 gap-3">
                       <div className="flex flex-col gap-1">
                         <span className="text-[9px] font-bold text-on-surface-variant text-center">Front</span>
-                        <div className="w-full aspect-[1.58/1] bg-surface-container rounded-xl overflow-hidden border border-outline-variant/50 flex items-center justify-center">
+                        <div 
+                          className="w-full aspect-[1.58/1] bg-surface-container rounded-xl overflow-hidden border border-outline-variant/50 flex items-center justify-center cursor-pointer relative group"
+                          onClick={() => {
+                            const url = user?.kycRef?.aadhaarFrontUrl || user?.aadhaarFrontUrl;
+                            if (url && !imageErrors.front) {
+                              setPhotoViewerData({
+                                url: getImageUrl(url),
+                                title: profileName,
+                                subtitle: 'Aadhaar Front',
+                                canEdit: false,
+                                isProfile: false
+                              });
+                            }
+                          }}
+                        >
                           {(user?.kycRef?.aadhaarFrontUrl || user?.aadhaarFrontUrl) && !imageErrors.front ? (
-                            <img 
-                              src={getImageUrl(user?.kycRef?.aadhaarFrontUrl || user?.aadhaarFrontUrl)} 
-                              alt="Aadhaar Front" 
-                              className="w-full h-full object-cover" 
-                              onError={() => setImageErrors(prev => ({ ...prev, front: true }))}
-                            />
+                            <>
+                              <img 
+                                src={getImageUrl(user?.kycRef?.aadhaarFrontUrl || user?.aadhaarFrontUrl)} 
+                                alt="Aadhaar Front" 
+                                className="w-full h-full object-cover transition-transform group-hover:scale-105" 
+                                onError={() => setImageErrors(prev => ({ ...prev, front: true }))}
+                              />
+                              <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                <span className="material-symbols-outlined text-white text-2xl">visibility</span>
+                              </div>
+                            </>
                           ) : (
                             <span className="material-symbols-outlined text-outline text-2xl">badge</span>
                           )}
@@ -715,14 +740,33 @@ export default function ProfilePage() {
                       </div>
                       <div className="flex flex-col gap-1">
                         <span className="text-[9px] font-bold text-on-surface-variant text-center">Back</span>
-                        <div className="w-full aspect-[1.58/1] bg-surface-container rounded-xl overflow-hidden border border-outline-variant/50 flex items-center justify-center">
+                        <div 
+                          className="w-full aspect-[1.58/1] bg-surface-container rounded-xl overflow-hidden border border-outline-variant/50 flex items-center justify-center cursor-pointer relative group"
+                          onClick={() => {
+                            const url = user?.kycRef?.aadhaarBackUrl || user?.aadhaarBackUrl;
+                            if (url && !imageErrors.back) {
+                              setPhotoViewerData({
+                                url: getImageUrl(url),
+                                title: profileName,
+                                subtitle: 'Aadhaar Back',
+                                canEdit: false,
+                                isProfile: false
+                              });
+                            }
+                          }}
+                        >
                           {(user?.kycRef?.aadhaarBackUrl || user?.aadhaarBackUrl) && !imageErrors.back ? (
-                            <img 
-                              src={getImageUrl(user?.kycRef?.aadhaarBackUrl || user?.aadhaarBackUrl)} 
-                              alt="Aadhaar Back" 
-                              className="w-full h-full object-cover" 
-                              onError={() => setImageErrors(prev => ({ ...prev, back: true }))}
-                            />
+                            <>
+                              <img 
+                                src={getImageUrl(user?.kycRef?.aadhaarBackUrl || user?.aadhaarBackUrl)} 
+                                alt="Aadhaar Back" 
+                                className="w-full h-full object-cover transition-transform group-hover:scale-105" 
+                                onError={() => setImageErrors(prev => ({ ...prev, back: true }))}
+                              />
+                              <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                <span className="material-symbols-outlined text-white text-2xl">visibility</span>
+                              </div>
+                            </>
                           ) : (
                             <span className="material-symbols-outlined text-outline text-2xl">credit_card</span>
                           )}
@@ -1036,11 +1080,11 @@ export default function ProfilePage() {
         </div>
       )}
 
-      {/* WhatsApp Style Full-Screen Profile Photo Viewer Modal */}
-      {isPhotoViewerOpen && (
+      {/* WhatsApp Style Full-Screen Photo Viewer Modal */}
+      {photoViewerData && (
         <div 
           className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-md flex flex-col justify-between animate-fade-in text-white"
-          onClick={() => setIsPhotoViewerOpen(false)}
+          onClick={() => setPhotoViewerData(null)}
         >
           {/* Top Bar */}
           <div 
@@ -1050,53 +1094,57 @@ export default function ProfilePage() {
             <div className="flex items-center gap-3">
               <button 
                 type="button"
-                onClick={() => setIsPhotoViewerOpen(false)} 
+                onClick={() => setPhotoViewerData(null)} 
                 className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors cursor-pointer"
               >
                 <span className="material-symbols-outlined text-2xl">arrow_back</span>
               </button>
               <div>
-                <h3 className="font-bold text-base leading-tight">{profileName}</h3>
-                <p className="text-[11px] text-gray-400">Profile Photo</p>
+                <h3 className="font-bold text-base leading-tight">{photoViewerData.title}</h3>
+                <p className="text-[11px] text-gray-400">{photoViewerData.subtitle}</p>
               </div>
             </div>
 
-            <button 
-              type="button"
-              onClick={() => {
-                setIsPhotoViewerOpen(false);
-                fileInputRef.current?.click();
-              }}
-              className="flex items-center gap-1.5 bg-primary hover:bg-primary/90 text-white text-xs font-bold px-4 py-2 rounded-full transition-all cursor-pointer shadow-lg active:scale-95"
-            >
-              <span className="material-symbols-outlined text-base">edit</span>
-              <span>Change Photo</span>
-            </button>
+            {photoViewerData.canEdit && (
+              <button 
+                type="button"
+                onClick={() => {
+                  setPhotoViewerData(null);
+                  fileInputRef.current?.click();
+                }}
+                className="flex items-center gap-1.5 bg-primary hover:bg-primary/90 text-white text-xs font-bold px-4 py-2 rounded-full transition-all cursor-pointer shadow-lg active:scale-95"
+              >
+                <span className="material-symbols-outlined text-base">edit</span>
+                <span>Change Photo</span>
+              </button>
+            )}
           </div>
 
           {/* Main Photo Content */}
           <div className="flex-1 flex items-center justify-center p-4 relative overflow-hidden">
-            {profilePic && !imageErrors.profile ? (
+            {photoViewerData.url ? (
               <img 
-                src={getImageUrl(profilePic, profilePicCacheBust)} 
-                alt={profileName}
+                src={photoViewerData.url} 
+                alt={photoViewerData.subtitle}
                 className="max-w-full max-h-[75vh] w-auto h-auto object-contain rounded-2xl shadow-2xl transition-transform duration-300 scale-100"
                 onClick={(e) => e.stopPropagation()}
               />
             ) : (
               <div className="w-64 h-64 rounded-full bg-white/10 border-4 border-white/20 flex flex-col items-center justify-center gap-3">
-                <span className="material-symbols-outlined text-7xl text-gray-400">person</span>
-                <p className="text-xs text-gray-300 font-semibold">No Profile Photo Uploaded</p>
-                <button 
-                  type="button"
-                  onClick={() => {
-                    setIsPhotoViewerOpen(false);
-                    fileInputRef.current?.click();
-                  }}
-                  className="mt-2 text-xs font-bold bg-primary text-white px-4 py-2 rounded-full hover:opacity-90 transition-opacity"
-                >
-                  Upload Photo
-                </button>
+                <span className="material-symbols-outlined text-7xl text-gray-400">{photoViewerData.isProfile ? 'person' : 'image'}</span>
+                <p className="text-xs text-gray-300 font-semibold">No Photo Uploaded</p>
+                {photoViewerData.canEdit && (
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      setPhotoViewerData(null);
+                      fileInputRef.current?.click();
+                    }}
+                    className="mt-2 text-xs font-bold bg-primary text-white px-4 py-2 rounded-full hover:opacity-90 transition-opacity"
+                  >
+                    Upload Photo
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -1111,7 +1159,7 @@ export default function ProfilePage() {
         </div>
       )}
 
-      {!(isEditing || isHealthEditing || isDeleteModalOpen || isPhotoViewerOpen) && <BottomNavBar />}
+      {!(isEditing || isHealthEditing || isDeleteModalOpen || photoViewerData) && <BottomNavBar />}
     </div>
   );
 }

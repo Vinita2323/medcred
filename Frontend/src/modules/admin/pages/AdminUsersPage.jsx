@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import api from '../../../services/api';
-import { ENDPOINTS, SERVER_URL } from '../../../services/types';
+import { ENDPOINTS, getImageUrl } from '../../../services/types';
 
 const KYC_COLORS = {
   Verified: 'bg-green-100 text-green-700',
@@ -20,6 +20,110 @@ const STATUS_COLORS = {
   Blocked: 'bg-red-100 text-red-700',
 };
 
+// ── Reusable Document Preview Modal ─────────────────────────────────
+function DocPreviewModal({ doc, onClose }) {
+  if (!doc) return null;
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[200] bg-black/85 backdrop-blur-sm flex flex-col items-center justify-center p-4"
+      onClick={onClose}
+    >
+      {/* Header */}
+      <div
+        className="w-full max-w-2xl flex items-center justify-between mb-3 px-1"
+        onClick={e => e.stopPropagation()}
+      >
+        <span className="text-white font-bold text-sm">{doc.label}</span>
+        <div className="flex items-center gap-4">
+          <a
+            href={doc.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            download
+            className="text-white/80 hover:text-white text-xs font-semibold flex items-center gap-1 transition-colors"
+          >
+            <span className="material-symbols-outlined text-base">download</span>
+            Download
+          </a>
+          <a
+            href={doc.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-white/80 hover:text-white text-xs font-semibold flex items-center gap-1 transition-colors"
+          >
+            <span className="material-symbols-outlined text-base">open_in_new</span>
+            Open
+          </a>
+          <button
+            onClick={onClose}
+            className="material-symbols-outlined text-white/80 hover:text-white cursor-pointer text-2xl transition-colors"
+          >
+            close
+          </button>
+        </div>
+      </div>
+      {/* Image / PDF */}
+      <div
+        className="w-full max-w-2xl max-h-[80vh] overflow-auto rounded-2xl shadow-2xl bg-black/40 flex items-center justify-center"
+        onClick={e => e.stopPropagation()}
+      >
+        {doc.url.match(/\.pdf$/i) ? (
+          <iframe
+            src={doc.url}
+            title={doc.label}
+            className="w-full h-[70vh] rounded-2xl"
+          />
+        ) : (
+          <img
+            src={doc.url}
+            alt={doc.label}
+            className="max-w-full max-h-[80vh] object-contain rounded-2xl"
+          />
+        )}
+      </div>
+      <p className="text-white/40 text-xs mt-3">Tap outside to close</p>
+    </div>,
+    document.body
+  );
+}
+
+// ── KYC Doc Card ────────────────────────────────────────────────────
+function KycDocCard({ url, label, onPreview }) {
+  const [error, setError] = useState(false);
+  const resolvedUrl = url ? getImageUrl(url) : null;
+
+  if (!resolvedUrl) return null;
+
+  return (
+    <div
+      className="flex-shrink-0 flex flex-col gap-1 cursor-pointer"
+      onClick={() => onPreview({ url: resolvedUrl, label })}
+    >
+      <span className="text-[8px] font-bold text-[#737685] text-center">{label}</span>
+      <div className="w-20 h-14 rounded-lg bg-gray-100 border border-gray-200 overflow-hidden group relative">
+        {!error ? (
+          <>
+            <img
+              src={resolvedUrl}
+              alt={label}
+              className="w-full h-full object-cover"
+              onError={() => setError(true)}
+            />
+            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+              <span className="material-symbols-outlined text-white text-lg">zoom_in</span>
+            </div>
+          </>
+        ) : (
+          <div className="w-full h-full flex flex-col items-center justify-center gap-0.5">
+            <span className="material-symbols-outlined text-gray-400 text-base">broken_image</span>
+            <span className="text-[7px] text-gray-400 text-center leading-tight">{label}</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function AdminUsersPage() {
   const [users, setUsers]         = useState([]);
   const [search, setSearch]       = useState('');
@@ -27,6 +131,7 @@ export default function AdminUsersPage() {
   const [filterKYC, setFilterKYC] = useState('All');
   const [drawer, setDrawer]       = useState(null);   // user object
   const [loading, setLoading]     = useState(false);
+  const [docPreview, setDocPreview] = useState(null); // { url, label }
 
   const [drawerDetails, setDrawerDetails] = useState({ familyMembers: [], claims: [] });
 
@@ -67,7 +172,7 @@ export default function AdminUsersPage() {
       const res = await api.patch(ENDPOINTS.ADMIN_USER_STATUS(user.dbId), { status: newStatus });
       if (res.data?.success) {
         fetchUsers();
-        if (drawer?.id === user.id) setDrawer(null); // Close drawer to refresh state properly
+        if (drawer?.id === user.id) setDrawer(null);
       }
     } catch (error) {
       console.error('Failed to update user status', error);
@@ -84,7 +189,6 @@ export default function AdminUsersPage() {
       const res = await api.patch(endpoint, { status: 'verified' });
       
       if (res.data?.success) {
-        // Refresh users
         fetchUsers();
         if (drawer?.id === user.id) setDrawer({ ...drawer, kyc: 'Verified' });
       } else {
@@ -101,7 +205,7 @@ export default function AdminUsersPage() {
       const res = await api.patch(ENDPOINTS.ADMIN_USER_ACTIVATE_CARD(user.dbId));
       if (res.data?.success) {
         fetchUsers();
-        if (drawer?.id === user.id) setDrawer(null); // Close drawer to refresh state properly
+        if (drawer?.id === user.id) setDrawer(null);
       }
     } catch (error) {
       console.error('Failed to activate card', error);
@@ -329,29 +433,14 @@ export default function AdminUsersPage() {
                 ))}
               </div>
 
-              {/* KYC Documents */}
+              {/* KYC Documents — each card is clickable and opens the preview modal */}
               {drawerDetails.kycImages && (drawerDetails.kycImages.selfie || drawerDetails.kycImages.aadhaarFront || drawerDetails.kycImages.aadhaarBack) && (
                 <div>
-                  <h5 className="text-[9px] font-bold text-[#516161] uppercase tracking-wider mb-1">KYC Documents</h5>
-                  <div className="flex gap-2 overflow-x-auto pb-1">
-                    {drawerDetails.kycImages.selfie && (
-                      <div className="flex-shrink-0 w-16 h-16 rounded-lg bg-gray-100 border border-gray-200 overflow-hidden group relative">
-                        <img src={`${SERVER_URL}${drawerDetails.kycImages.selfie}`} alt="Selfie" className="w-full h-full object-cover" />
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-[8px] text-white font-bold cursor-pointer" onClick={() => window.open(`${SERVER_URL}${drawerDetails.kycImages.selfie}`, '_blank')}>View</div>
-                      </div>
-                    )}
-                    {drawerDetails.kycImages.aadhaarFront && (
-                      <div className="flex-shrink-0 w-24 h-16 rounded-lg bg-gray-100 border border-gray-200 overflow-hidden group relative">
-                        <img src={`${SERVER_URL}${drawerDetails.kycImages.aadhaarFront}`} alt="Aadhaar Front" className="w-full h-full object-cover" />
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-[8px] text-white font-bold cursor-pointer" onClick={() => window.open(`${SERVER_URL}${drawerDetails.kycImages.aadhaarFront}`, '_blank')}>Aadhaar Front</div>
-                      </div>
-                    )}
-                    {drawerDetails.kycImages.aadhaarBack && (
-                      <div className="flex-shrink-0 w-24 h-16 rounded-lg bg-gray-100 border border-gray-200 overflow-hidden group relative">
-                        <img src={`${SERVER_URL}${drawerDetails.kycImages.aadhaarBack}`} alt="Aadhaar Back" className="w-full h-full object-cover" />
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-[8px] text-white font-bold cursor-pointer" onClick={() => window.open(`${SERVER_URL}${drawerDetails.kycImages.aadhaarBack}`, '_blank')}>Aadhaar Back</div>
-                      </div>
-                    )}
+                  <h5 className="text-[9px] font-bold text-[#516161] uppercase tracking-wider mb-2">KYC Documents</h5>
+                  <div className="flex gap-3 overflow-x-auto pb-1">
+                    <KycDocCard url={drawerDetails.kycImages.selfie} label="Selfie" onPreview={setDocPreview} />
+                    <KycDocCard url={drawerDetails.kycImages.aadhaarFront} label="Aadhaar Front" onPreview={setDocPreview} />
+                    <KycDocCard url={drawerDetails.kycImages.aadhaarBack} label="Aadhaar Back" onPreview={setDocPreview} />
                   </div>
                 </div>
               )}
@@ -446,6 +535,9 @@ export default function AdminUsersPage() {
         </div>,
         document.body
       )}
+
+      {/* ── Document Preview Modal ──────────────────────────── */}
+      <DocPreviewModal doc={docPreview} onClose={() => setDocPreview(null)} />
     </div>
   );
 }

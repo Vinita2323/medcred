@@ -80,6 +80,7 @@ const agentLogin = async (req, res) => {
           referralCode: agent.referralCode,
           salesCount: agent.salesCount,
           earnings: agent.earnings,
+          profilePhotoUrl: agent.profilePhotoUrl,
         },
       },
     });
@@ -142,6 +143,7 @@ const agentVerifyOtp = async (req, res) => {
           role: agent.role,
           rank: agent.rank,
           status: agent.status,
+          profilePhotoUrl: agent.profilePhotoUrl,
         },
       },
     });

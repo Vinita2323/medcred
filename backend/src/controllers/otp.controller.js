@@ -98,6 +98,7 @@ export const verifyOtpHandler = async (req, res) => {
             email: user.email,
             kycStatus: user.kycStatus,
             hasCard: !!user.cardId,
+            profileImage: user.profilePhoto,
           }
         }
       });
