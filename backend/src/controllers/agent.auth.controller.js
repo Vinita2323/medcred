@@ -1,7 +1,7 @@
 import Agent from '../models/Agent.model.js';
 import Admin from '../models/Admin.model.js';
 import Notification from '../models/Notification.model.js';
-import { saveOtp, verifyOtp } from '../services/otp.service.js';
+import { saveOtp, verifyOtp, checkOtp } from '../services/otp.service.js';
 import { generateAccessToken, generateRefreshToken } from '../utils/generateToken.js';
 
 // ─────────────────────────────────────────────────────────────────
@@ -430,6 +430,9 @@ const forgotPassword = async (req, res) => {
 
     res.status(200).json({ success: true, message: 'OTP sent to your mobile number' });
   } catch (error) {
+    if (error.message && (error.message.includes('Please wait') || error.message.includes('Maximum OTP'))) {
+      return res.status(400).json({ success: false, message: error.message });
+    }
     console.error('Agent Forgot Password Error:', error);
     res.status(500).json({ success: false, message: 'Server error. Please try again.' });
   }
@@ -538,4 +541,30 @@ const validateJoinCode = async (req, res) => {
   }
 };
 
-export { agentRegister, agentLogin, agentVerifyOtp, agentSendOtp, forgotPassword, resetPassword, validateJoinCode };
+// ─────────────────────────────────────────────────────────────────
+// @route   POST /api/v1/agent/auth/check-otp
+// @desc    Validate OTP without marking as used
+// @access  Public
+// ─────────────────────────────────────────────────────────────────
+const agentCheckOtp = async (req, res) => {
+  try {
+    const { mobile, otp, purpose } = req.body;
+
+    if (!mobile || !otp || !purpose) {
+      return res.status(400).json({ success: false, message: 'Mobile, OTP, and purpose are required.' });
+    }
+
+    const verificationResult = await checkOtp(mobile, otp, purpose);
+
+    if (!verificationResult.valid) {
+      return res.status(400).json({ success: false, message: verificationResult.message });
+    }
+
+    res.status(200).json({ success: true, message: 'OTP is valid' });
+  } catch (error) {
+    console.error('Check OTP Error:', error);
+    res.status(500).json({ success: false, message: 'Server error. Please try again.' });
+  }
+};
+
+export { agentRegister, agentLogin, agentVerifyOtp, agentSendOtp, forgotPassword, resetPassword, validateJoinCode, agentCheckOtp };

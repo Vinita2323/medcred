@@ -9,17 +9,18 @@ import {
   resendOtp,
   sendLoginOtp,
   verifyLoginOtp,
+  checkOtpController,
 } from '../controllers/user.auth.controller.js';
 import { upload } from '../middlewares/upload.middleware.js';
 
 // POST /api/v1/auth/register
 router.post(
-  '/register', 
+  '/register',
   upload.fields([
     { name: 'profilePic', maxCount: 1 },
     { name: 'aadhaarFront', maxCount: 1 },
     { name: 'aadhaarBack', maxCount: 1 }
-  ]), 
+  ]),
   register
 );
 
@@ -43,5 +44,8 @@ router.post('/send-login-otp', sendLoginOtp);
 
 // POST /api/v1/auth/verify-login-otp
 router.post('/verify-login-otp', verifyLoginOtp);
+
+// POST /api/v1/auth/check-otp
+router.post('/check-otp', checkOtpController);
 
 export default router;

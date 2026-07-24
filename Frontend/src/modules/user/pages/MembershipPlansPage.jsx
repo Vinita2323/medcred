@@ -253,7 +253,7 @@ export default function MembershipPlansPage() {
       </main>
 
       {/* Fixed Bottom CTA */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-outline-variant/30 px-4 py-4 z-50 pb-safe">
+      <div className="fixed bottom-[72px] left-0 right-0 bg-white border-t border-outline-variant/30 px-4 py-4 z-40 pb-safe shadow-[0_-4px_12px_rgba(0,0,0,0.05)]">
         <div className="max-w-md mx-auto">
           <button
             onClick={handlePurchaseClick}

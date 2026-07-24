@@ -35,7 +35,7 @@ const PLACEHOLDER_IMG = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000
 export const getImageUrl = (path, cacheBust = false) => {
   if (!path || typeof path !== 'string' || path.trim() === '') return PLACEHOLDER_IMG;
   if (path.startsWith('data:')) return path;            // base64 data URL
-  
+
   const normalizedPath = path.replace(/\\/g, '/');
   const cleanPath = normalizedPath.startsWith('/') ? normalizedPath : `/${normalizedPath}`;
   const fullUrl = path.startsWith('http') ? path : `${SERVER_URL}${cleanPath}`;
@@ -58,12 +58,14 @@ export const ENDPOINTS = {
   USER_RESEND_OTP: '/auth/resend-otp',
   USER_SEND_LOGIN_OTP: '/auth/send-login-otp',
   USER_VERIFY_LOGIN_OTP: '/auth/verify-login-otp',
+  USER_CHECK_OTP: '/auth/check-otp',
 
   // AGENT AUTH
   AGENT_REGISTER: '/agent/auth/register',
   AGENT_LOGIN: '/agent/auth/login',
   AGENT_SEND_OTP: '/agent/auth/send-otp',
   AGENT_VERIFY_OTP: '/agent/auth/verify-otp',
+  AGENT_CHECK_OTP: '/agent/auth/check-otp',
   AGENT_FORGOT_PASSWORD: '/agent/auth/forgot-password',
   AGENT_RESET_PASSWORD: '/agent/auth/reset-password',
   AGENT_VALIDATE_JOIN_CODE: '/agent/auth/validate-join-code',

@@ -138,10 +138,13 @@ export default function ProfilePage() {
     );
   }
 
-  const getImageUrl = (url) => {
+  const getImageUrl = (url, cacheBust) => {
     if (!url) return null;
-    if (url.startsWith('http')) return url;
-    return `${SERVER_URL}${url.startsWith('/') ? '' : '/'}${url}`;
+    let finalUrl = url.startsWith('http') ? url : `${SERVER_URL}${url.startsWith('/') ? '' : '/'}${url}`;
+    if (cacheBust) {
+      finalUrl += (finalUrl.includes('?') ? '&' : '?') + `t=${cacheBust}`;
+    }
+    return finalUrl;
   };
 
   // Derived display values (fallback to demo if no user registered)

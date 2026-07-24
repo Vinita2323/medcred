@@ -51,30 +51,15 @@ export async function compressImage(file) {
       `[compressImage] Success: ${file.name || '(no name)'} ` +
       `[${(file.size / 1024).toFixed(0)}KB] → [${(compressed.size / 1024).toFixed(0)}KB]`
     );
-
-    const safeFile = new File([compressed], `${baseName}.jpg`, {
-      type: 'image/jpeg',
-      lastModified: Date.now(),
-    });
-    return safeFile;
+    return compressed;
   } catch (err) {
     console.warn('[compressImage] Primary compression failed, attempting secondary fallback:', err);
     try {
-      // Secondary fallback with minimal settings
       const fallbackOptions = { maxSizeMB: 4, maxWidthOrHeight: 2048, useWebWorker: false };
-      const compressedFallback = await imageCompression(file, fallbackOptions);
-      return new File([compressedFallback], `${baseName}.jpg`, {
-        type: 'image/jpeg',
-        lastModified: Date.now(),
-      });
+      return await imageCompression(file, fallbackOptions);
     } catch (fallbackErr) {
-      console.warn('[compressImage] All compression failed, returning sanitized original file:', fallbackErr);
-      const safeType = file.type && file.type.startsWith('image/') ? file.type : 'image/jpeg';
-      const safeExt = getExtFromMime(safeType);
-      return new File([file], `${baseName}${safeExt}`, {
-        type: safeType,
-        lastModified: Date.now(),
-      });
+      console.warn('[compressImage] All compression failed, returning original file:', fallbackErr);
+      return file;
     }
   }
 }

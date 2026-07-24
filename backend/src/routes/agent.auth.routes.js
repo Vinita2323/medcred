@@ -6,7 +6,8 @@ import {
   agentSendOtp,
   forgotPassword,
   resetPassword,
-  validateJoinCode
+  validateJoinCode,
+  agentCheckOtp
 } from '../controllers/agent.auth.controller.js';
 import { upload } from '../middlewares/upload.middleware.js';
 
@@ -36,6 +37,9 @@ router.post('/send-otp', agentSendOtp);
 
 // POST /api/v1/agent/auth/verify-otp
 router.post('/verify-otp', agentVerifyOtp);
+
+// POST /api/v1/agent/auth/check-otp
+router.post('/check-otp', agentCheckOtp);
 
 // POST /api/v1/agent/auth/forgot-password
 router.post('/forgot-password', forgotPassword);
