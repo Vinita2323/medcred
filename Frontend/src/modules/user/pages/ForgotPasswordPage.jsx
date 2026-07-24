@@ -9,7 +9,7 @@ export default function ForgotPasswordPage() {
   const [step, setStep] = useState('mobile'); // mobile | otp | newpass | success
   const [mobile, setMobile] = useState(location.state?.mobile || '');
   const [otp, setOtp] = useState(new Array(6).fill(''));
-  const [timer, setTimer] = useState(30);
+  const [timer, setTimer] = useState(5);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
@@ -47,7 +47,7 @@ export default function ForgotPasswordPage() {
       setLoading(true);
       await api.post(ENDPOINTS.USER_FORGOT_PASSWORD, { mobile });
       setStep('otp');
-      setTimer(30);
+      setTimer(5);
     } catch (error) {
       setErrorMsg(error.response?.data?.message || 'Failed to send OTP.');
     } finally {
@@ -56,13 +56,28 @@ export default function ForgotPasswordPage() {
     }
   };
 
+  const handleVerifyOtpNext = async () => {
+    const otpCode = otp.join('');
+    if (otpCode.length < 6) { setErrorMsg('Enter complete 6-digit OTP'); return; }
+    setErrorMsg('');
+    try {
+      setLoading(true);
+      await api.post(ENDPOINTS.USER_CHECK_OTP, { mobile, otp: otpCode, purpose: 'forgot_password' });
+      setStep('newpass');
+    } catch (error) {
+      setErrorMsg(error.response?.data?.message || 'Invalid OTP.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleResetPassword = async () => {
     if (password.length < 6) { setErrorMsg('Password must be at least 6 characters'); return; }
     if (password !== confirmPassword) { setErrorMsg('Passwords do not match'); return; }
-    
+
     setErrorMsg('');
     const otpCode = otp.join('');
-    
+
     try {
       setLoading(true);
       const payload = {
@@ -136,7 +151,7 @@ export default function ForgotPasswordPage() {
 
             {/* Progress dots */}
             <div className="flex justify-center gap-2">
-              {['mobile','otp','newpass'].map(s => (
+              {['mobile', 'otp', 'newpass'].map(s => (
                 <div key={s} className={`h-1.5 rounded-full transition-all ${step === s || (step === 'newpass' && s !== 'newpass') || (step === 'otp' && s === 'mobile') ? 'w-8 bg-primary' : 'w-4 bg-outline-variant'}`} />
               ))}
             </div>
@@ -158,7 +173,7 @@ export default function ForgotPasswordPage() {
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-on-surface-variant border-r border-outline-variant pr-3 font-semibold">+91</span>
                     <input
                       type="tel" maxLength={10} value={mobile}
-                      onChange={e => { setMobile(e.target.value.replace(/\D/g,'')); setErrorMsg(''); }}
+                      onChange={e => { setMobile(e.target.value.replace(/\D/g, '')); setErrorMsg(''); }}
                       placeholder="98765 43210"
                       className="w-full h-13 pl-16 pr-4 border border-outline-variant rounded-2xl text-base font-semibold focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all py-4"
                     />
@@ -200,10 +215,11 @@ export default function ForgotPasswordPage() {
                   </p>
                 </div>
                 <button
-                  onClick={() => { if (otp.join('').length < 6) { setErrorMsg('Enter complete 6-digit OTP'); return; } setErrorMsg(''); setStep('newpass'); }}
-                  className="w-full py-4 bg-primary text-white font-black rounded-2xl shadow-lg hover:opacity-90 cursor-pointer transition-all active:scale-[0.98]"
+                  onClick={handleVerifyOtpNext}
+                  disabled={loading}
+                  className="w-full py-4 bg-primary text-white font-black rounded-2xl shadow-lg hover:opacity-90 cursor-pointer transition-all active:scale-[0.98] disabled:opacity-70 flex justify-center items-center gap-2"
                 >
-                  Next
+                  {loading ? <span className="material-symbols-outlined animate-spin">progress_activity</span> : 'Next'}
                 </button>
               </div>
             )}
@@ -235,8 +251,8 @@ export default function ForgotPasswordPage() {
                 {password && (
                   <div className="space-y-1">
                     <div className="flex gap-1">
-                      {[1,2,3,4].map(i => (
-                        <div key={i} className={`h-1 flex-1 rounded-full ${password.length >= i*3 ? (password.length >= 10 ? 'bg-tertiary' : 'bg-primary') : 'bg-outline-variant'}`} />
+                      {[1, 2, 3, 4].map(i => (
+                        <div key={i} className={`h-1 flex-1 rounded-full ${password.length >= i * 3 ? (password.length >= 10 ? 'bg-tertiary' : 'bg-primary') : 'bg-outline-variant'}`} />
                       ))}
                     </div>
                     <p className="text-[10px] text-on-surface-variant">{password.length < 6 ? 'Too short' : password.length < 10 ? 'Moderate' : 'Strong password ✓'}</p>

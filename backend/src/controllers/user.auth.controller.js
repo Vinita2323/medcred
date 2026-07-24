@@ -2,7 +2,7 @@ import User from '../models/User.model.js';
 import OtpStore from '../models/OtpStore.model.js';
 import Notification from '../models/Notification.model.js';
 import FamilyMember from '../models/FamilyMember.model.js';
-import { saveOtp, verifyOtp } from '../services/otp.service.js';
+import { saveOtp, verifyOtp, checkOtp } from '../services/otp.service.js';
 import { generateAccessToken, generateRefreshToken } from '../utils/generateToken.js';
 
 // ─────────────────────────────────────────────────────────────────
@@ -51,7 +51,7 @@ const register = async (req, res) => {
     let profilePhotoPath = null;
     let aadhaarFrontUrl = null;
     let aadhaarBackUrl = null;
-    
+
     if (req.files) {
       if (req.files.profilePic && req.files.profilePic[0]) {
         profilePhotoPath = `/uploads/${req.files.profilePic[0].filename}`;
@@ -402,7 +402,32 @@ const forgotPassword = async (req, res) => {
 
     res.status(200).json({ success: true, message: 'OTP sent to your mobile number' });
   } catch (error) {
+    if (error.message && (error.message.includes('Please wait') || error.message.includes('Maximum OTP'))) {
+      return res.status(400).json({ success: false, message: error.message });
+    }
     console.error('Forgot Password Error:', error);
+    res.status(500).json({ success: false, message: 'Server error. Please try again.' });
+  }
+};
+
+// ─────────────────────────────────────────────────────────────────
+// @route   POST /api/v1/auth/check-otp
+// @desc    Check OTP validity without consuming it
+// @access  Public
+// ─────────────────────────────────────────────────────────────────
+const checkOtpHandler = async (req, res) => {
+  try {
+    const { mobile, otp } = req.body;
+    if (!mobile || !otp) {
+      return res.status(400).json({ success: false, message: 'Mobile and OTP are required' });
+    }
+    const result = await checkOtp(mobile, otp, 'forgot_password');
+    if (!result.valid) {
+      return res.status(400).json({ success: false, message: result.message });
+    }
+    res.status(200).json({ success: true, message: 'OTP is valid' });
+  } catch (error) {
+    console.error('Check OTP Error:', error);
     res.status(500).json({ success: false, message: 'Server error. Please try again.' });
   }
 };
@@ -554,4 +579,30 @@ const verifyLoginOtp = async (req, res) => {
   }
 };
 
-export { register, verifyOtpHandler, login, forgotPassword, resetPassword, resendOtp, sendLoginOtp, verifyLoginOtp };
+// ─────────────────────────────────────────────────────────────────
+// @route   POST /api/v1/auth/check-otp
+// @desc    Validate OTP without marking as used
+// @access  Public
+// ─────────────────────────────────────────────────────────────────
+const checkOtpController = async (req, res) => {
+  try {
+    const { mobile, otp, purpose } = req.body;
+
+    if (!mobile || !otp || !purpose) {
+      return res.status(400).json({ success: false, message: 'Mobile, OTP, and purpose are required.' });
+    }
+
+    const verificationResult = await checkOtp(mobile, otp, purpose);
+
+    if (!verificationResult.valid) {
+      return res.status(400).json({ success: false, message: verificationResult.message });
+    }
+
+    res.status(200).json({ success: true, message: 'OTP is valid' });
+  } catch (error) {
+    console.error('Check OTP Error:', error);
+    res.status(500).json({ success: false, message: 'Server error. Please try again.' });
+  }
+};
+
+export { register, verifyOtpHandler, login, forgotPassword, resetPassword, resendOtp, sendLoginOtp, verifyLoginOtp, checkOtpController };

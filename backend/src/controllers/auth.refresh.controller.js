@@ -78,7 +78,7 @@ export const refreshTokenHandler = async (req, res) => {
 // ─────────────────────────────────────────────────────────────────
 export const logoutHandler = async (req, res) => {
   try {
-    const { refreshToken } = req.body;
+    const { refreshToken } = req.body || {};
 
     if (refreshToken) {
       const { user } = await findUserByRefreshToken(refreshToken);

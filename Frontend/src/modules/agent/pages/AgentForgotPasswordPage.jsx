@@ -8,7 +8,7 @@ export default function AgentForgotPasswordPage() {
   const [step, setStep] = useState('mobile'); // mobile | otp | newpass | success
   const [mobile, setMobile] = useState('');
   const [otp, setOtp] = useState(new Array(6).fill(''));
-  const [timer, setTimer] = useState(30);
+  const [timer, setTimer] = useState(5);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
@@ -46,12 +46,27 @@ export default function AgentForgotPasswordPage() {
       setLoading(true);
       await api.post(ENDPOINTS.AGENT_FORGOT_PASSWORD, { mobileNumber: mobile });
       setStep('otp');
-      setTimer(30);
+      setTimer(5);
     } catch (error) {
       setErrorMsg(error.response?.data?.message || 'Failed to send OTP.');
     } finally {
       setLoading(false);
       isSubmitting.current = false;
+    }
+  };
+
+  const handleVerifyOtpNext = async () => {
+    const otpCode = otp.join('');
+    if (otpCode.length < 6) { setErrorMsg('Enter complete 6-digit OTP'); return; }
+    setErrorMsg('');
+    try {
+      setLoading(true);
+      await api.post(ENDPOINTS.AGENT_CHECK_OTP, { mobile, otp: otpCode, purpose: 'agent_forgot_password' });
+      setStep('newpass');
+    } catch (error) {
+      setErrorMsg(error.response?.data?.message || 'Invalid OTP.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -209,10 +224,11 @@ export default function AgentForgotPasswordPage() {
                       )}
                     </div>
                     <button
-                      onClick={() => { if (otp.join('').length < 6) { setErrorMsg('Enter complete 6-digit OTP'); return; } setErrorMsg(''); setStep('newpass'); }}
-                      className="w-full mt-4 bg-[#003d9b] text-white py-3 rounded-lg font-bold shadow-md hover:bg-[#0052cc] transition-all"
+                      onClick={handleVerifyOtpNext}
+                      disabled={loading}
+                      className="w-full mt-4 bg-[#003d9b] text-white py-3 rounded-lg font-bold shadow-md hover:bg-[#0052cc] transition-all disabled:opacity-70 flex justify-center items-center gap-2"
                     >
-                      Next
+                      {loading ? <span className="material-symbols-outlined animate-spin">progress_activity</span> : 'Next'}
                     </button>
                   </>
                 )}
