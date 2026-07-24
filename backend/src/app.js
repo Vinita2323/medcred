@@ -47,6 +47,7 @@ const app = express();
 // ── Security Middleware ────────────────────────────────────────
 app.use(helmet({
   crossOriginResourcePolicy: false,
+  crossOriginEmbedderPolicy: false,
 }));
 
 // ── CORS — Allow React frontend & Local Network IPs ───────────
@@ -70,9 +71,15 @@ import path from 'path';
 app.use(express.json({ limit: '20mb' }));
 app.use(express.urlencoded({ extended: true, limit: '20mb' }));
 
+import { fileURLToPath } from 'url';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 // Serve static files for uploads
-app.use('/uploads', express.static(path.join(process.cwd(), 'public', 'uploads')));
-app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+app.use('/uploads', express.static(path.join(__dirname, '..', 'public', 'uploads')));
+app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
+app.use('/api/uploads', express.static(path.join(__dirname, '..', 'public', 'uploads')));
+app.use('/api/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
 // ── Request Logger (dev only) ──────────────────────────────────
 if (process.env.NODE_ENV === 'development') {
