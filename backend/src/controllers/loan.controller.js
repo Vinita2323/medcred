@@ -89,7 +89,10 @@ export const applyLoan = async (req, res) => {
     const hasBypass = user?.bypassLoanWaitingPeriod || false;
 
     const today = new Date();
-    if (!hasBypass && today < new Date(card.loanEligibleFrom)) {
+    const requiredWaitDays = card.planId?.loanEligibilityAfterDays !== undefined ? card.planId.loanEligibilityAfterDays : 30;
+    const loanEligibleFrom = card.loanEligibleFrom ? new Date(card.loanEligibleFrom) : new Date(new Date(card.purchasedAt).setDate(new Date(card.purchasedAt).getDate() + requiredWaitDays));
+
+    if (!hasBypass && requiredWaitDays > 0 && today < loanEligibleFrom) {
       return res.status(400).json({ success: false, message: 'You are not yet eligible for a loan.' });
     }
 

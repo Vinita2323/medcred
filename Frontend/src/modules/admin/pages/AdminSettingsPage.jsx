@@ -6,7 +6,7 @@ export default function AdminSettingsPage() {
   const [limits, setLimits] = useState({
     hospitalClaimLimit: 200000,
     homeClaimLimit: 80000,
-    loanWaitDays: 30
+    loanWaitDays: 0
   });
 
   const [plans, setPlans] = useState({});
@@ -32,7 +32,7 @@ export default function AdminSettingsPage() {
           setLimits({
             hospitalClaimLimit: fetchedPlans[0].hospitalClaimLimit || 200000,
             homeClaimLimit: fetchedPlans[0].homeTreatmentClaimLimit || 80000,
-            loanWaitDays: fetchedPlans[0].loanEligibilityAfterDays || 30
+            loanWaitDays: fetchedPlans[0].loanEligibilityAfterDays !== undefined ? fetchedPlans[0].loanEligibilityAfterDays : 0
           });
 
           // Map the prices and validities

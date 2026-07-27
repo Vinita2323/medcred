@@ -21,7 +21,7 @@ export default function LoanPage() {
   const [daysUntilEligible, setDaysUntilEligible] = useState(0);
   const [daysActive, setDaysActive] = useState(0);
   const [progressPct, setProgressPct] = useState(0);
-  const [requiredWaitDays, setRequiredWaitDays] = useState(30);
+  const [requiredWaitDays, setRequiredWaitDays] = useState(0);
   const [maxLimit, setMaxLimit] = useState(200000);
   const [activeLoan, setActiveLoan] = useState(null);
   const [loanHistory, setLoanHistory] = useState([]);

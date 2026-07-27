@@ -42,7 +42,7 @@ const planSchema = new mongoose.Schema(
     },
     loanEligibilityAfterDays: {
       type: Number,
-      default: 30,
+      default: 0,
     },
     maxLoanAmount: {
       type: Number,
