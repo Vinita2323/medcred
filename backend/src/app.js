@@ -42,6 +42,7 @@ import adminSupportRoutes from './routes/admin.support.routes.js';
 import adminProductRoutes from './routes/admin.product.routes.js';
 import adminOrderRoutes from './routes/admin.order.routes.js';
 import notificationRoutes from './routes/notification.routes.js';
+import locationRoutes from './routes/location.routes.js';
 const app = express();
 
 // ── Security Middleware ────────────────────────────────────────
@@ -139,6 +140,7 @@ apiRouter.use('/v1/hospitals', hospitalRoutes);
 apiRouter.use('/v1/support', supportRoutes);
 apiRouter.use('/v1/admin/support', adminSupportRoutes);
 apiRouter.use('/v1/notifications', notificationRoutes);
+apiRouter.use('/v1/location', locationRoutes);
 
 // Register the router for both /api and root / paths
 app.use('/api', apiRouter);

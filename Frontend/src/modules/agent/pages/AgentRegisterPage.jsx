@@ -5,8 +5,10 @@ import { ENDPOINTS } from '../../../services/types';
 import { compressImage } from '../../../utils/compressImage';
 import { indianTerritories } from '../../../utils/indianTerritories';
 import { useFormValidation } from '../../../hooks/useFormValidation';
+import { loadGoogleMaps, parseAddressComponents, createSessionToken, getNormalizedPlaceDetails } from '../../../utils/googleMapsService';
+import { searchLocationsHybrid } from '../../../utils/locationSearchEngine';
 
-// Searchable dropdown for single select
+// Searchable dropdown for single select with prefix, partial & fuzzy matching
 function SearchableSelect({ label, value, onChange, options, disabled, placeholder }) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -22,9 +24,24 @@ function SearchableSelect({ label, value, onChange, options, disabled, placehold
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const filteredOptions = options.filter(opt =>
-    opt.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredOptions = React.useMemo(() => {
+    if (!search || search.trim().length === 0) return options;
+    const q = search.trim().toLowerCase();
+
+    const prefixMatches = [];
+    const containsMatches = [];
+
+    for (const opt of options) {
+      const optLower = opt.toLowerCase();
+      if (optLower.startsWith(q)) {
+        prefixMatches.push(opt);
+      } else if (optLower.includes(q)) {
+        containsMatches.push(opt);
+      }
+    }
+
+    return [...prefixMatches, ...containsMatches];
+  }, [options, search]);
 
   return (
     <div className="relative" ref={wrapperRef}>
@@ -66,6 +83,19 @@ function SearchableSelect({ label, value, onChange, options, disabled, placehold
                   {opt}
                 </div>
               ))
+            ) : search.trim().length > 0 ? (
+              <div
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onChange(search.trim());
+                  setIsOpen(false);
+                  setSearch('');
+                }}
+                className="px-3 py-2 text-xs rounded cursor-pointer bg-[#003d9b]/10 text-[#003d9b] font-semibold text-center hover:bg-[#003d9b]/20"
+              >
+                Use "{search.trim()}"
+              </div>
             ) : (
               <div className="px-3 py-2 text-xs text-gray-400 text-center">No options found</div>
             )}
@@ -92,9 +122,24 @@ function SearchableMultiSelect({ label, selected, onChange, options, disabled, p
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const filteredOptions = options.filter(opt =>
-    opt.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredOptions = React.useMemo(() => {
+    if (!search || search.trim().length === 0) return options;
+    const q = search.trim().toLowerCase();
+
+    const prefixMatches = [];
+    const containsMatches = [];
+
+    for (const opt of options) {
+      const optLower = opt.toLowerCase();
+      if (optLower.startsWith(q)) {
+        prefixMatches.push(opt);
+      } else if (optLower.includes(q)) {
+        containsMatches.push(opt);
+      }
+    }
+
+    return [...prefixMatches, ...containsMatches];
+  }, [options, search]);
 
   const toggleOption = (opt) => {
     if (selected.includes(opt)) {
@@ -155,6 +200,131 @@ function SearchableMultiSelect({ label, selected, onChange, options, disabled, p
               <div className="px-3 py-2 text-xs text-gray-400 text-center">No options found</div>
             )}
           </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Google Maps Places Autocomplete Input Component with Debounce & Session Token
+function GoogleAddressAutocomplete({ onAddressSelect, placeholder = "Search address via Google Maps..." }) {
+  const [inputVal, setInputVal] = useState('');
+  const [predictions, setPredictions] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const [sessionToken, setSessionToken] = useState(null);
+  const wrapperRef = useRef(null);
+  const debounceTimerRef = useRef(null);
+  const cancelReqTokenRef = useRef(0);
+
+  useEffect(() => {
+    createSessionToken().then(token => setSessionToken(token));
+
+    function handleClickOutside(event) {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleInputChange = (e) => {
+    const val = e.target.value;
+    setInputVal(val);
+
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    if (!val || val.trim().length === 0) {
+      setPredictions([]);
+      setIsLoading(false);
+      setIsOpen(false);
+      return;
+    }
+
+    setIsLoading(true);
+    setIsOpen(true);
+
+    const currentReqId = ++cancelReqTokenRef.current;
+
+    // 300ms Debounce
+    debounceTimerRef.current = setTimeout(async () => {
+      try {
+        const results = await searchLocationsHybrid(val, sessionToken);
+        if (cancelReqTokenRef.current === currentReqId) {
+          setPredictions(results);
+          setIsLoading(false);
+        }
+      } catch (err) {
+        if (cancelReqTokenRef.current === currentReqId) {
+          setPredictions([]);
+          setIsLoading(false);
+        }
+      }
+    }, 300);
+  };
+
+  const handleSelectPrediction = async (item) => {
+    setInputVal(item.description || item.title);
+    setIsOpen(false);
+    setPredictions([]);
+
+    if (item.normalized) {
+      // Local match normalized object
+      onAddressSelect(item.normalized);
+    } else if (item.placeId) {
+      // Google Place ID details fetch
+      setIsLoading(true);
+      const details = await getNormalizedPlaceDetails(item.placeId, sessionToken);
+      setIsLoading(false);
+      if (details) {
+        onAddressSelect(details);
+        // Refresh session token after place selection
+        createSessionToken().then(token => setSessionToken(token));
+      }
+    }
+  };
+
+  return (
+    <div className="relative mb-3" ref={wrapperRef}>
+      <div className="flex items-center gap-2 bg-[#f3f3fd] border border-[#003d9b]/30 rounded-lg px-3 py-2.5 transition-all focus-within:border-[#003d9b] focus-within:ring-1 focus-within:ring-[#003d9b]">
+        <span className="material-symbols-outlined text-[#003d9b] text-lg">location_on</span>
+        <input
+          type="text"
+          value={inputVal}
+          onChange={handleInputChange}
+          onFocus={() => inputVal.trim() && setIsOpen(true)}
+          placeholder={placeholder}
+          className="w-full bg-transparent text-xs text-[#191b23] focus:outline-none placeholder:text-gray-400 font-medium"
+        />
+        {isLoading ? (
+          <span className="material-symbols-outlined text-[#003d9b] text-sm animate-spin">progress_activity</span>
+        ) : (
+          <span className="text-[10px] text-[#003d9b] font-bold bg-[#003d9b]/10 px-1.5 py-0.5 rounded">Google Maps</span>
+        )}
+      </div>
+
+      {isOpen && predictions.length > 0 && (
+        <div className="absolute z-50 w-full mt-1 bg-white border border-[#c3c6d6] rounded-lg shadow-lg max-h-60 overflow-y-auto p-1 space-y-1">
+          {predictions.map((p, idx) => (
+            <div
+              key={p.placeId || idx}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleSelectPrediction(p);
+              }}
+              className="px-3 py-2 text-xs rounded cursor-pointer hover:bg-[#003d9b]/10 hover:text-[#003d9b] transition-colors border-b border-gray-50 last:border-0"
+            >
+              <div className="font-semibold text-[#191b23] flex items-center justify-between">
+                <span>{p.title}</span>
+                {p.isLocal && <span className="text-[9px] bg-blue-50 text-blue-600 px-1 rounded font-normal">Local</span>}
+              </div>
+              {p.subtitle && <div className="text-[10px] text-gray-500 truncate">{p.subtitle}</div>}
+            </div>
+          ))}
         </div>
       )}
     </div>
@@ -381,25 +551,68 @@ export default function AgentRegisterPage() {
     return indianTerritories[matchedStateKey].districts[workingDistrict] || [];
   };
 
+  const findStateKey = (stateName) => {
+    if (!stateName) return null;
+    return Object.keys(indianTerritories).find(
+      key => key.toLowerCase() === stateName.trim().toLowerCase()
+    ) || null;
+  };
+
+  const findDistrictKey = (stateKey, districtName) => {
+    if (!stateKey || !districtName || !indianTerritories[stateKey]) return null;
+    const districtsObj = indianTerritories[stateKey].districts;
+    return Object.keys(districtsObj).find(
+      key => key.toLowerCase() === districtName.trim().toLowerCase()
+    ) || null;
+  };
+
   // Address helper selection lists
   const getPermDistricts = () => {
-    if (!permState || !indianTerritories[permState]) return [];
-    return Object.keys(indianTerritories[permState].districts);
+    const sKey = findStateKey(permState);
+    if (!sKey || !indianTerritories[sKey]) return [];
+    return Object.keys(indianTerritories[sKey].districts);
   };
 
   const getPermCities = () => {
-    if (!permState || !permDistrict || !indianTerritories[permState]) return [];
-    return indianTerritories[permState].districts[permDistrict] || [];
+    const sKey = findStateKey(permState);
+    if (!sKey) return [];
+    const dKey = findDistrictKey(sKey, permDistrict);
+    if (!dKey) return [];
+    return indianTerritories[sKey].districts[dKey] || [];
   };
 
   const getCurrDistricts = () => {
-    if (!currState || !indianTerritories[currState]) return [];
-    return Object.keys(indianTerritories[currState].districts);
+    const sKey = findStateKey(currState);
+    if (!sKey || !indianTerritories[sKey]) return [];
+    return Object.keys(indianTerritories[sKey].districts);
   };
 
   const getCurrCities = () => {
-    if (!currState || !currDistrict || !indianTerritories[currState]) return [];
-    return indianTerritories[currState].districts[currDistrict] || [];
+    const sKey = findStateKey(currState);
+    if (!sKey) return [];
+    const dKey = findDistrictKey(sKey, currDistrict);
+    if (!dKey) return [];
+    return indianTerritories[sKey].districts[dKey] || [];
+  };
+
+  const handlePermAddressSelect = (parsed) => {
+    if (parsed.houseNo) setPermHouseNo(parsed.houseNo);
+    if (parsed.street) setPermStreet(parsed.street);
+    if (parsed.area) setPermArea(parsed.area);
+    if (parsed.state) setPermState(parsed.state);
+    if (parsed.district) setPermDistrict(parsed.district);
+    if (parsed.city) setPermCity(parsed.city);
+    if (parsed.pincode) setPermPincode(parsed.pincode);
+  };
+
+  const handleCurrAddressSelect = (parsed) => {
+    if (parsed.houseNo) setCurrHouseNo(parsed.houseNo);
+    if (parsed.street) setCurrStreet(parsed.street);
+    if (parsed.area) setCurrArea(parsed.area);
+    if (parsed.state) setCurrState(parsed.state);
+    if (parsed.district) setCurrDistrict(parsed.district);
+    if (parsed.city) setCurrCity(parsed.city);
+    if (parsed.pincode) setCurrPincode(parsed.pincode);
   };
 
   const goToStep = (targetStep) => {
@@ -918,6 +1131,11 @@ export default function AgentRegisterPage() {
                   <div className="space-y-4">
                     <h4 className="text-xs font-extrabold text-[#003d9b] uppercase tracking-wider">Permanent Address</h4>
                     
+                    <GoogleAddressAutocomplete 
+                      onAddressSelect={handlePermAddressSelect} 
+                      placeholder="Search Permanent Address via Google Maps..." 
+                    />
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <div className="relative input-group">
@@ -964,44 +1182,44 @@ export default function AgentRegisterPage() {
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
-                        <div className="relative input-group">
-                          <input 
-                            className="input-field block w-full px-4 py-3 bg-transparent border border-[#c3c6d6] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003d9b] focus:border-transparent text-sm" 
-                            placeholder=" " 
-                            type="text"
-                            value={permState}
-                            onChange={(e) => setPermState(e.target.value)}
-                          />
-                          <label className="absolute left-4 top-3 text-[#434654] text-xs">State</label>
-                        </div>
+                        <SearchableSelect
+                          label="State"
+                          value={permState}
+                          onChange={(val) => {
+                            setPermState(val);
+                            setPermDistrict('');
+                            setPermCity('');
+                          }}
+                          options={availableStates}
+                          placeholder="Select State"
+                        />
                         {step3Errors.permState && <p className="text-red-500 text-[10px] mt-1">{step3Errors.permState}</p>}
                       </div>
 
                       <div>
-                        <div className="relative input-group">
-                          <input 
-                            className="input-field block w-full px-4 py-3 bg-transparent border border-[#c3c6d6] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003d9b] focus:border-transparent text-sm" 
-                            placeholder=" " 
-                            type="text"
-                            value={permDistrict}
-                            onChange={(e) => setPermDistrict(e.target.value)}
-                          />
-                          <label className="absolute left-4 top-3 text-[#434654] text-xs">District</label>
-                        </div>
+                        <SearchableSelect
+                          label="District"
+                          value={permDistrict}
+                          onChange={(val) => {
+                            setPermDistrict(val);
+                            setPermCity('');
+                          }}
+                          options={getPermDistricts()}
+                          disabled={!permState}
+                          placeholder="Select District"
+                        />
                         {step3Errors.permDistrict && <p className="text-red-500 text-[10px] mt-1">{step3Errors.permDistrict}</p>}
                       </div>
 
                       <div>
-                        <div className="relative input-group">
-                          <input 
-                            className="input-field block w-full px-4 py-3 bg-transparent border border-[#c3c6d6] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003d9b] focus:border-transparent text-sm" 
-                            placeholder=" " 
-                            type="text"
-                            value={permCity}
-                            onChange={(e) => setPermCity(e.target.value)}
-                          />
-                          <label className="absolute left-4 top-3 text-[#434654] text-xs">City</label>
-                        </div>
+                        <SearchableSelect
+                          label="City"
+                          value={permCity}
+                          onChange={(val) => setPermCity(val)}
+                          options={getPermCities()}
+                          disabled={!permDistrict}
+                          placeholder="Select City"
+                        />
                         {step3Errors.permCity && <p className="text-red-500 text-[10px] mt-1">{step3Errors.permCity}</p>}
                       </div>
                     </div>
@@ -1038,6 +1256,11 @@ export default function AgentRegisterPage() {
                     <div className="space-y-4 pt-4 border-t border-[#c3c6d6]/20">
                       <h4 className="text-xs font-extrabold text-[#003d9b] uppercase tracking-wider">Current Address</h4>
                       
+                      <GoogleAddressAutocomplete 
+                        onAddressSelect={handleCurrAddressSelect} 
+                        placeholder="Search Current Address via Google Maps..." 
+                      />
+
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                           <div className="relative input-group">
@@ -1084,44 +1307,44 @@ export default function AgentRegisterPage() {
 
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
-                          <div className="relative input-group">
-                            <input 
-                              className="input-field block w-full px-4 py-3 bg-transparent border border-[#c3c6d6] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003d9b] focus:border-transparent text-sm" 
-                              placeholder=" " 
-                              type="text"
-                              value={currState}
-                              onChange={(e) => setCurrState(e.target.value)}
-                            />
-                            <label className="absolute left-4 top-3 text-[#434654] text-xs">State</label>
-                          </div>
+                          <SearchableSelect
+                            label="State"
+                            value={currState}
+                            onChange={(val) => {
+                              setCurrState(val);
+                              setCurrDistrict('');
+                              setCurrCity('');
+                            }}
+                            options={availableStates}
+                            placeholder="Select State"
+                          />
                           {step3Errors.currState && <p className="text-red-500 text-[10px] mt-1">{step3Errors.currState}</p>}
                         </div>
 
                         <div>
-                          <div className="relative input-group">
-                            <input 
-                              className="input-field block w-full px-4 py-3 bg-transparent border border-[#c3c6d6] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003d9b] focus:border-transparent text-sm" 
-                              placeholder=" " 
-                              type="text"
-                              value={currDistrict}
-                              onChange={(e) => setCurrDistrict(e.target.value)}
-                            />
-                            <label className="absolute left-4 top-3 text-[#434654] text-xs">District</label>
-                          </div>
+                          <SearchableSelect
+                            label="District"
+                            value={currDistrict}
+                            onChange={(val) => {
+                              setCurrDistrict(val);
+                              setCurrCity('');
+                            }}
+                            options={getCurrDistricts()}
+                            disabled={!currState}
+                            placeholder="Select District"
+                          />
                           {step3Errors.currDistrict && <p className="text-red-500 text-[10px] mt-1">{step3Errors.currDistrict}</p>}
                         </div>
 
                         <div>
-                          <div className="relative input-group">
-                            <input 
-                              className="input-field block w-full px-4 py-3 bg-transparent border border-[#c3c6d6] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003d9b] focus:border-transparent text-sm" 
-                              placeholder=" " 
-                              type="text"
-                              value={currCity}
-                              onChange={(e) => setCurrCity(e.target.value)}
-                            />
-                            <label className="absolute left-4 top-3 text-[#434654] text-xs">City</label>
-                          </div>
+                          <SearchableSelect
+                            label="City"
+                            value={currCity}
+                            onChange={(val) => setCurrCity(val)}
+                            options={getCurrCities()}
+                            disabled={!currDistrict}
+                            placeholder="Select City"
+                          />
                           {step3Errors.currCity && <p className="text-red-500 text-[10px] mt-1">{step3Errors.currCity}</p>}
                         </div>
                       </div>
