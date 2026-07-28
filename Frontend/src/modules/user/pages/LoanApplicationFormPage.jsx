@@ -250,7 +250,7 @@ export default function LoanApplicationFormPage() {
     try {
       const res = await api.get(ENDPOINTS.HOSPITALS);
       if (res.data.success) {
-        setHospitals(res.data.data.filter(h => h.isActive));
+        setHospitals(res.data.data.filter(h => h.status === 'active' || h.isActive !== false));
       }
     } catch (err) {
       console.error('Failed to fetch hospitals', err);

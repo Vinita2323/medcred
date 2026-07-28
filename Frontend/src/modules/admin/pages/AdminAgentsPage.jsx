@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import api from '../../../services/api';
-import { ENDPOINTS } from '../../../services/types';
+import { ENDPOINTS, getImageUrl } from '../../../services/types';
 
 const TABS = ['All Agents', 'Super Agents', 'Agents', 'Field Agents', 'Pending Requests', 'Hierarchy'];
 
@@ -855,8 +855,8 @@ export default function AdminAgentsPage() {
                     { label: 'Bank Passbook', url: detailsAgent.chequePassbookUrl }
                   ].map((doc, idx) => (
                     doc.url ? (
-                      <button key={idx} type="button" onClick={() => setLightboxUrl(`http://localhost:5000${doc.url}`)} className="flex-shrink-0 w-24 aspect-square bg-[#f5f8ff] rounded-xl overflow-hidden border border-[#c3c6d6]/40 hover:border-[#003d9b] transition-colors group relative cursor-pointer">
-                        <img src={`http://localhost:5000${doc.url}`} alt={doc.label} className="w-full h-full object-cover" />
+                      <button key={idx} type="button" onClick={() => setLightboxUrl(getImageUrl(doc.url))} className="flex-shrink-0 w-24 aspect-square bg-[#f5f8ff] rounded-xl overflow-hidden border border-[#c3c6d6]/40 hover:border-[#003d9b] transition-colors group relative cursor-pointer">
+                        <img src={getImageUrl(doc.url)} alt={doc.label} className="w-full h-full object-cover" />
                         <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                           <span className="material-symbols-outlined text-white text-sm">zoom_in</span>
                         </div>

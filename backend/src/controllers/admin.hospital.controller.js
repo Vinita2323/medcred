@@ -73,7 +73,10 @@ export const adminAddHospital = async (req, res) => {
       isClaimEnabled: claimEnabled || false,
       isNetworkHospital: network || false,
       addedBy: req.user._id,
-      status: 'pending',
+      status: 'active',
+      isVerified: true,
+      verifiedBy: req.user._id,
+      verifiedAt: new Date(),
     });
 
     await hospital.save();
